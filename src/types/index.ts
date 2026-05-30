@@ -267,6 +267,7 @@ export interface AppContextValue {
   appState: AppState;
   authMode: AuthMode;
   authError: string;
+  authLoading?: boolean;
   loginForm: LoginForm;
   setLoginForm: React.Dispatch<React.SetStateAction<LoginForm>>;
   registerForm: RegisterForm;
@@ -277,4 +278,5 @@ export interface AppContextValue {
   handleLogout: () => void;
   handleSelectAccount: (account: Account) => void;
   handleModeChange: (mode: AuthMode) => void;
+  refreshAppData?: () => Promise<void>;
 }

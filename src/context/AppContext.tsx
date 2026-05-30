@@ -1,7 +1,15 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { initialAccounts, initialAppState } from "../data/mockData";
-import { loadJson, saveJson, SESSION_KEY, STATE_KEY, ACCOUNTS_KEY } from "../utils/storage";
+import { initialAppState } from "../data/mockData";
+import * as authApi from "../api/auth.api";
+import { syncAppState } from "../api/dataSync";
+import { adminApi } from "../api/admin.api";
+import { jockeyApi } from "../api/jockey.api";
+import { refereeApi } from "../api/referee.api";
+import { spectatorApi } from "../api/spectator.api";
+import { setToken } from "../api/client";
+import { loadJson, saveJson, SESSION_KEY, STATE_KEY, TOKEN_KEY } from "../utils/storage";
+import { backendRoleToFe, roleBadge } from "../utils/roleMap";
 import type {
   Account,
   AppContextValue,
@@ -18,150 +26,195 @@ interface Session {
   userId: string;
 }
 
-const badgeMap: Record<string, string> = { owner: "HO", jockey: "JK", spectator: "SP" };
-const orgMap:   Record<string, string> = { owner: "New Stable", jockey: "Independent Rider", spectator: "New Fan" };
+export const DEMO_ACCOUNTS: Omit<Account, "password">[] = [
+  { id: "demo-spectator", role: "spectator", name: "Demo Spectator", organization: "Race Fan Club", email: "spectator@demo.local", badge: "SP" },
+  { id: "demo-jockey", role: "jockey", name: "Demo Jockey", organization: "Elite Rider Squad", email: "jockey1@demo.local", badge: "JK" },
+  { id: "demo-owner", role: "owner", name: "Demo Owner", organization: "Royal Stables", email: "owner@demo.local", badge: "HO" },
+  { id: "demo-referee", role: "referee", name: "Demo Referee", organization: "Central Track Officials", email: "referee@demo.local", badge: "RF" },
+  { id: "demo-admin", role: "admin", name: "Demo Admin", organization: "HorseRacing System Admin", email: "admin@demo.local", badge: "AD" },
+];
+
+const DEMO_PASSWORD = "Demo@123";
+
+const orgMap: Record<string, string> = {
+  owner: "Royal Stables",
+  jockey: "Elite Rider Squad",
+  spectator: "Race Fan Club",
+  referee: "Central Track Officials",
+  admin: "HorseRacing System Admin",
+};
+
+function authUserToAccount(user: { id: string; email: string; role: string; fullName: string }): Account {
+  const role = backendRoleToFe(user.role as Parameters<typeof backendRoleToFe>[0]);
+  return {
+    id: user.id,
+    role,
+    name: user.fullName,
+    organization: orgMap[role] ?? "HorseRacing",
+    email: user.email,
+    password: "",
+    badge: roleBadge(role),
+  };
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [accounts,     setAccounts]     = useState<Account[]>  (() => loadJson<Account[]>  (ACCOUNTS_KEY, initialAccounts));
-  const [appState,     setAppState]     = useState<AppState>   (() => loadJson<AppState>   (STATE_KEY,    initialAppState));
-  const [session,      setSession]      = useState<Session | null>(() => loadJson<Session | null>(SESSION_KEY, null));
-  const [authMode,     setAuthMode]     = useState<AuthMode>("login");
-  const [authError,    setAuthError]    = useState("");
-  const [loginForm,    setLoginForm]    = useState<LoginForm>   ({ email: "owner@royalstables.vn", password: "owner123" });
-  const [registerForm, setRegisterForm] = useState<RegisterForm>({ name: "", email: "", password: "", role: "owner" });
+  const [appState, setAppState] = useState<AppState>(() => loadJson<AppState>(STATE_KEY, initialAppState));
+  const [session, setSession] = useState<Session | null>(() => loadJson<Session | null>(SESSION_KEY, null));
+  const [user, setUser] = useState<Account | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [authError, setAuthError] = useState("");
+  const [loginForm, setLoginForm] = useState<LoginForm>({ email: "owner@demo.local", password: DEMO_PASSWORD });
+  const [registerForm, setRegisterForm] = useState<RegisterForm>({ name: "", email: "", password: "", role: "spectator" });
 
-  const user = useMemo<Account | null>(
-    () => accounts.find((a) => a.id === session?.userId) ?? null,
-    [accounts, session],
-  );
+  const refreshAppData = useCallback(async (account: Account) => {
+    const synced = await syncAppState(account);
+    setAppState(synced);
+  }, []);
 
-  useEffect(() => { saveJson(ACCOUNTS_KEY, accounts); }, [accounts]);
-  useEffect(() => { saveJson(STATE_KEY,    appState);  }, [appState]);
-  useEffect(() => { saveJson(SESSION_KEY,  session);   }, [session]);
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
+    setToken(token);
+    authApi
+      .getMe()
+      .then(async ({ user: me }) => {
+        const account = authUserToAccount(me);
+        setUser(account);
+        setSession({ userId: account.id });
+        await refreshAppData(account);
+      })
+      .catch(() => {
+        authApi.logout();
+        setUser(null);
+        setSession(null);
+      })
+      .finally(() => setAuthLoading(false));
+  }, [refreshAppData]);
 
-  function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => { saveJson(STATE_KEY, appState); }, [appState]);
+  useEffect(() => { saveJson(SESSION_KEY, session); }, [session]);
+
+  async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const account = accounts.find(
-      (a) =>
-        a.email.toLowerCase() === loginForm.email.trim().toLowerCase() &&
-        a.password === loginForm.password,
-    );
-    if (!account) {
-      setAuthError("Incorrect email or password. Please try again or select a system account on the left.");
+    setAuthError("");
+    try {
+      const { user: me } = await authApi.login(loginForm.email.trim(), loginForm.password);
+      const account = authUserToAccount(me);
+      setUser(account);
+      setSession({ userId: account.id });
+      await refreshAppData(account);
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Login failed");
+    }
+  }
+
+  async function handleRegisterSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (registerForm.role !== "spectator") {
+      setAuthError("Only spectator registration is available. Other roles: use demo accounts (password Demo@123).");
+      return;
+    }
+    if (!registerForm.name || !registerForm.email || registerForm.password.length < 8) {
+      setAuthError("Please fill in all fields and use a password of at least 8 characters.");
       return;
     }
     setAuthError("");
-    setSession({ userId: account.id });
+    try {
+      const { user: me } = await authApi.registerSpectator(
+        registerForm.email.trim(),
+        registerForm.password,
+        registerForm.name.trim(),
+      );
+      const account = authUserToAccount(me);
+      setUser(account);
+      setSession({ userId: account.id });
+      await refreshAppData(account);
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Registration failed");
+    }
   }
 
-  function handleRegisterSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!registerForm.name || !registerForm.email || registerForm.password.length < 6) {
-      setAuthError("Please fill in all fields and use a password of at least 6 characters.");
-      return;
-    }
-    if (accounts.some((a) => a.email.toLowerCase() === registerForm.email.trim().toLowerCase())) {
-      setAuthError("This email address is already registered in the system.");
-      return;
-    }
-    const newAccount: Account = {
-      id:           `${registerForm.role}-${Date.now()}`,
-      role:         registerForm.role as Role,
-      name:         registerForm.name.trim(),
-      organization: orgMap[registerForm.role] ?? "Unknown",
-      email:        registerForm.email.trim(),
-      password:     registerForm.password,
-      badge:        badgeMap[registerForm.role] ?? "?",
-    };
-    setAccounts((prev) => [...prev, newAccount]);
-    setAppState((prev) => ({
-      ...prev,
-      users: [
-        ...prev.users,
-        { id: `user-${Date.now()}`, name: newAccount.name, role: newAccount.role, status: "Active", lastSeen: "Just created" },
-      ],
-      notifications: [
-        ...prev.notifications,
-        {
-          id:     `noti-${Date.now()}`,
-          userId: newAccount.id,
-          tone:   "info" as const,
-          title:  "Account created successfully",
-          detail: "You can now sign in to access your role-based dashboard.",
-        },
-      ],
-    }));
-    setAuthError("");
-    setAuthMode("login");
-    setLoginForm({ email: newAccount.email, password: newAccount.password });
-    setRegisterForm({ name: "", email: "", password: "", role: "owner" });
-  }
+  async function handleAction(type: string, id: string, value?: string) {
+    if (!user) return;
 
-  function handleAction(type: string, id: string, value?: string) {
-    setAppState((prev) => {
-      if (type === "ownerConfirmRace") {
-        return { ...prev, races: prev.races.map((r) => (r.id === id ? { ...r, ownerConfirmed: !r.ownerConfirmed } : r)) };
-      }
+    try {
       if (type === "jockeyInvite") {
-        return {
-          ...prev,
-          invitations: prev.invitations.map((inv) => (inv.id === id ? { ...inv, status: value ?? inv.status } : inv)),
-          races: prev.races.map((race) => {
-            const inv = prev.invitations.find((i) => i.id === id);
-            if (!inv || race.id !== inv.raceId) return race;
-            return { ...race, jockeyConfirmed: value === "Accepted" };
-          }),
-        };
+        const action = value === "Accepted" ? "accept" : "decline";
+        await jockeyApi.respondInvitation(id, action);
+        await refreshAppData(user);
+        return;
       }
-      if (type === "refereeCheck") {
-        return {
+
+      if (type === "approval") {
+        const status = value === "Approved" ? "approved" : "rejected";
+        await adminApi.updateRegistration(id, status);
+        await refreshAppData(user);
+        return;
+      }
+
+      if (type === "publishQueue") {
+        await adminApi.publishResult(id);
+        await refreshAppData(user);
+        return;
+      }
+
+      if (type === "refereeCheck" && value) {
+        const [raceId, horseId] = id.split(":");
+        if (raceId && horseId) {
+          const field = value === "horseCheck" ? "vetApprovedAt" : value === "jockeyCheck" ? "confirmedAt" : null;
+          if (field) {
+            await refereeApi.toggleCheck(raceId, horseId, field);
+            await refreshAppData(user);
+            return;
+          }
+        }
+        setAppState((prev) => ({
           ...prev,
           refereeChecks: prev.refereeChecks.map((c) =>
-            c.id === id && value ? { ...c, [value]: !c[value as keyof typeof c] } : c,
+            c.id === id && value === "trackCheck" ? { ...c, trackCheck: !c.trackCheck } : c,
           ),
-        };
+        }));
+        return;
       }
-      if (type === "approval") {
-        return { ...prev, approvals: prev.approvals.map((a) => (a.id === id ? { ...a, status: value ?? a.status } : a)) };
+
+      if (type === "makePrediction") {
+        const raceId = appState.liveBoard.raceId;
+        const race = (await spectatorApi.listRaces()).races.find((r) => r.id === raceId);
+        const horse = race?.participants.find((p) => p.name === id);
+        if (horse) {
+          await spectatorApi.createPrediction(raceId, [{ rank: 1, horseId: horse.id }]);
+          await refreshAppData(user);
+        }
+        return;
       }
-      if (type === "publishQueue") {
-        return {
-          ...prev,
-          publishQueue: prev.publishQueue.map((item) =>
-            item.id === id ? { ...item, publishStatus: "Published" } : item,
-          ),
-        };
-      }
-      if (type === "makePrediction" && user) {
-        return {
-          ...prev,
-          predictions: [
-            {
-              id:          `pred-${Date.now()}`,
-              spectatorId: user.id,
-              raceId:      prev.liveBoard.raceId,
-              horse:       id,
-              odds:        "2.7",
-              status:      "Open",
-              reward:      "-",
-            },
-            ...prev.predictions,
-          ],
-        };
-      }
-      return prev;
-    });
+
+      setAppState((prev) => {
+        if (type === "ownerConfirmRace") {
+          return { ...prev, races: prev.races.map((r) => (r.id === id ? { ...r, ownerConfirmed: !r.ownerConfirmed } : r)) };
+        }
+        return prev;
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   function handleLogout() {
+    authApi.logout();
+    setUser(null);
     setSession(null);
     setAuthMode("login");
+    setAppState(initialAppState);
   }
 
-  function handleSelectAccount(account: Account) {
+  function handleSelectAccount(account: Omit<Account, "password">) {
     setAuthMode("login");
     setAuthError("");
-    setLoginForm({ email: account.email, password: account.password });
+    setLoginForm({ email: account.email, password: DEMO_PASSWORD });
   }
 
   function handleModeChange(mode: AuthMode) {
@@ -169,12 +222,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAuthMode(mode);
   }
 
+  const demoAccounts = useMemo(
+    () => DEMO_ACCOUNTS.map((a) => ({ ...a, password: DEMO_PASSWORD })),
+    [],
+  );
+
   const value: AppContextValue = {
-    user,
-    accounts,
+    user: authLoading ? null : user,
+    accounts: demoAccounts,
     appState,
     authMode,
     authError,
+    authLoading,
     loginForm,
     setLoginForm,
     registerForm,
@@ -185,6 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleLogout,
     handleSelectAccount,
     handleModeChange,
+    refreshAppData: () => (user ? refreshAppData(user) : Promise.resolve()),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

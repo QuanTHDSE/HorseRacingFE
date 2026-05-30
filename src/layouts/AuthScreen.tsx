@@ -43,7 +43,7 @@ export default function AuthScreen() {
           </article>
         </div>
 
-        <Panel title="System accounts" subtitle="Select an account to sign in instantly">
+        <Panel title="System accounts" subtitle="Demo accounts — password Demo@123">
           <div className="demo-account-list">
             {accounts.map((account) => (
               <button
@@ -56,9 +56,7 @@ export default function AuthScreen() {
                 <div>
                   <strong>{account.name}</strong>
                   <p>{roleConfigs[account.role].label}</p>
-                  <span>
-                    {account.email} / {account.password}
-                  </span>
+                  <span>{account.email}</span>
                 </div>
               </button>
             ))}

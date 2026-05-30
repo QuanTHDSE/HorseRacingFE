@@ -1,6 +1,7 @@
 export const SESSION_KEY = "horse-racing-session";
 export const STATE_KEY = "horse-racing-state";
 export const ACCOUNTS_KEY = "horse-racing-accounts";
+export const TOKEN_KEY = "horse-racing-token";
 
 export function loadJson<T>(key: string, fallback: T): T {
   try {

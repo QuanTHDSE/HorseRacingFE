@@ -4,13 +4,15 @@ import AuthScreen from "./layouts/AuthScreen";
 import AppShell from "./layouts/AppShell";
 
 function ProtectedRoute() {
-  const { user } = useApp();
+  const { user, authLoading } = useApp();
+  if (authLoading) return <div className="auth-layout"><p>Loading...</p></div>;
   if (!user) return <Navigate to="/login" replace />;
   return <AppShell />;
 }
 
 function LoginRoute() {
-  const { user } = useApp();
+  const { user, authLoading } = useApp();
+  if (authLoading) return <div className="auth-layout"><p>Loading...</p></div>;
   if (user) return <Navigate to="/dashboard" replace />;
   return <AuthScreen />;
 }
