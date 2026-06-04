@@ -3,6 +3,7 @@ import type {
   AppState,
 } from "../types";
 
+
 export const initialAccounts: Account[] = [
   { id: "owner-1",    role: "owner",     name: "Nguyen Minh Chau", organization: "Royal Stables",           email: "owner@royalstables.vn",    password: "owner123",    badge: "HO" },
   { id: "jockey-1",   role: "jockey",    name: "Tran Bao Long",    organization: "Elite Rider Squad",        email: "jockey@eliterider.vn",     password: "jockey123",   badge: "JK" },
@@ -112,5 +113,17 @@ export const initialAppState: AppState = {
     { id: "noti-3", userId: "referee-1",   tone: "warning", title: "Track verification still open",              detail: "Race 06 has one unresolved wet track note."                  },
     { id: "noti-4", userId: "spectator-1", tone: "success", title: "Prediction reward is ready to claim",        detail: "Weekly bonus 1.5M has been added to your wallet."            },
     { id: "noti-5", userId: "admin-1",     tone: "warning", title: "Three approvals need review",                detail: "Pending horse registration, jockey profile, and enrollment." },
+  ],
+  racetracks: [
+    { id: "track-1", name: "Central Track",   location: "Ho Chi Minh City", surface: "Grass",     length: "2000m", capacity: 8000, status: "Active"      },
+    { id: "track-2", name: "Sunset Arena",    location: "Da Nang",          surface: "Dirt",      length: "1600m", capacity: 5000, status: "Active"      },
+    { id: "track-3", name: "Golden Field",    location: "Can Tho",          surface: "Synthetic", length: "1800m", capacity: 6500, status: "Maintenance" },
+    { id: "track-4", name: "River Sprint Oval",location: "Hue",             surface: "Grass",     length: "1400m", capacity: 3800, status: "Active"      },
+  ],
+  jockeyApplications: [
+    { id: "japp-1", jockeyId: "jockey-2", jockeyName: "Ngo Gia Huy",   raceId: "race-1", raceName: "Race 05 - Central Sprint", horseName: "Storm Rider",   appliedAt: "2026-06-01", status: "Pending"  },
+    { id: "japp-2", jockeyId: "jockey-3", jockeyName: "Phan Anh Kiet", raceId: "race-2", raceName: "Race 06 - Bronze Cup",      horseName: "Silver Flash",  appliedAt: "2026-06-01", status: "Pending"  },
+    { id: "japp-3", jockeyId: "jockey-2", jockeyName: "Ngo Gia Huy",   raceId: "race-3", raceName: "Race 03 - Copper Mile",     horseName: "Night Runner",  appliedAt: "2026-05-28", status: "Approved" },
+    { id: "japp-4", jockeyId: "jockey-3", jockeyName: "Phan Anh Kiet", raceId: "race-4", raceName: "Race 01 - Sunset Derby",    horseName: "Desert Wind",   appliedAt: "2026-06-02", status: "Pending"  },
   ],
 };

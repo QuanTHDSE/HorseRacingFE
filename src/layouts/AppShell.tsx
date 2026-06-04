@@ -59,11 +59,11 @@ export default function AppShell() {
         </button>
 
         <div className="brand-block">
-          <div className="brand-mark">HR</div>
+          <div className="brand-mark">RT</div>
           {!collapsed && (
             <div>
-              <p className="kicker">HorseRacing</p>
-              <h1>{role.homeLabel}</h1>
+              <p className="kicker">Management</p>
+              <h1>RacetrackVN</h1>
             </div>
           )}
         </div>

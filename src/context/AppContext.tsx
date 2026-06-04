@@ -8,6 +8,8 @@ import type {
   AppState,
   AuthMode,
   LoginForm,
+  NewRaceInput,
+  Racetrack,
   RegisterForm,
   Role,
 } from "../types";
@@ -22,8 +24,12 @@ const badgeMap: Record<string, string> = { owner: "HO", jockey: "JK", spectator:
 const orgMap:   Record<string, string> = { owner: "New Stable", jockey: "Independent Rider", spectator: "New Fan" };
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [accounts,     setAccounts]     = useState<Account[]>  (() => loadJson<Account[]>  (ACCOUNTS_KEY, initialAccounts));
-  const [appState,     setAppState]     = useState<AppState>   (() => loadJson<AppState>   (STATE_KEY,    initialAppState));
+  const [accounts, setAccounts] = useState<Account[]>(() => loadJson<Account[]>(ACCOUNTS_KEY, initialAccounts));
+  // Merge stored state with initialAppState so new fields are always present
+  const [appState, setAppState] = useState<AppState>(() => {
+    const stored = loadJson<Partial<AppState>>(STATE_KEY, {});
+    return { ...initialAppState, ...stored };
+  });
   const [session,      setSession]      = useState<Session | null>(() => loadJson<Session | null>(SESSION_KEY, null));
   const [authMode,     setAuthMode]     = useState<AuthMode>("login");
   const [authError,    setAuthError]    = useState("");
@@ -124,6 +130,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (type === "approval") {
         return { ...prev, approvals: prev.approvals.map((a) => (a.id === id ? { ...a, status: value ?? a.status } : a)) };
       }
+      if (type === "jockeyApplication") {
+        return {
+          ...prev,
+          jockeyApplications: prev.jockeyApplications.map((a) =>
+            a.id === id ? { ...a, status: value ?? a.status } : a,
+          ),
+        };
+      }
       if (type === "publishQueue") {
         return {
           ...prev,
@@ -151,6 +165,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return prev;
     });
+  }
+
+  function handleCreateRacetrack(data: Omit<Racetrack, "id">) {
+    setAppState((prev) => ({
+      ...prev,
+      racetracks: [
+        ...prev.racetracks,
+        { ...data, id: `track-${Date.now()}` },
+      ],
+    }));
+  }
+
+  function handleCreateRace(data: NewRaceInput) {
+    const track = appState.racetracks.find((t) => t.id === data.racetrackId);
+    setAppState((prev) => ({
+      ...prev,
+      races: [
+        ...prev.races,
+        {
+          id:             `race-${Date.now()}`,
+          ownerId:        "",
+          horseId:        "",
+          jockeyId:       null,
+          refereeId:      "",
+          tournamentId:   data.tournamentId,
+          name:           data.name,
+          round:          data.round,
+          date:           data.date,
+          track:          track?.name ?? data.racetrackId,
+          distance:       data.distance,
+          ownerConfirmed:  false,
+          jockeyConfirmed: false,
+          refereeStatus:  "Not assigned",
+          liveStatus:     "Draft",
+        },
+      ],
+    }));
   }
 
   function handleLogout() {
@@ -182,6 +233,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleLoginSubmit,
     handleRegisterSubmit,
     handleAction,
+    handleCreateRacetrack,
+    handleCreateRace,
     handleLogout,
     handleSelectAccount,
     handleModeChange,

@@ -1,7 +1,36 @@
-import { Badge, Panel } from "../components";
 import { roleConfigs } from "../config/roleConfigs";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
+
+const FEATURES = [
+  {
+    icon: "🏟️",
+    title: "Tournament & Race Setup",
+    desc: "Create tournaments, configure racetracks, and manage complete race calendars end-to-end.",
+  },
+  {
+    icon: "🐴",
+    title: "Horse & Jockey Management",
+    desc: "Register horses, assign jockeys, track health records and performance statistics.",
+  },
+  {
+    icon: "📡",
+    title: "Live Race Control",
+    desc: "Referee dashboards with real-time monitoring, violation logging, and instant alerts.",
+  },
+  {
+    icon: "🏅",
+    title: "Results & Predictions",
+    desc: "Publish official results, distribute rewards, and engage spectators with live predictions.",
+  },
+];
+
+const STATS = [
+  { value: "12+",  label: "Tournaments"  },
+  { value: "48",   label: "Horses"       },
+  { value: "24",   label: "Jockeys"      },
+  { value: "6",    label: "Racetracks"   },
+];
 
 export default function AuthScreen() {
   const {
@@ -20,53 +49,91 @@ export default function AuthScreen() {
 
   return (
     <div className="auth-layout">
-      <section className="auth-hero">
-        <Badge tone="accent">HorseRacing Management Platform</Badge>
-        <h1>The complete platform for managing horse racing tournaments end-to-end</h1>
-        <p>
-          A role-based management system for horse owners, jockeys, race referees, spectators, and administrators —
-          covering every stage from registration and scheduling to live monitoring and result publication.
-        </p>
 
-        <div className="auth-highlight-grid">
-          <article className="highlight-card">
-            <h3>Role-based workspaces</h3>
-            <p>Every user enters a tailored workspace with role-specific menus, actions, and relevant race data.</p>
-          </article>
-          <article className="highlight-card">
-            <h3>End-to-end race workflow</h3>
-            <p>From horse registration and jockey assignment to pre-race checks, live monitoring, and result publishing.</p>
-          </article>
-          <article className="highlight-card">
-            <h3>Real-time race management</h3>
-            <p>Confirm races, approve registrations, accept invitations, and submit predictions all within one platform.</p>
-          </article>
+      {/* ════════════════════════════════════════
+          LEFT — Hero panel
+      ════════════════════════════════════════ */}
+      <section className="auth-hero">
+
+        {/* Brand header */}
+        <div className="auth-hero-brand">
+          <div className="auth-hero-logo">RT</div>
+          <div>
+            <span className="auth-hero-brand-name">RacetrackVN</span>
+            <span className="auth-hero-brand-sub">Management Platform</span>
+          </div>
         </div>
 
-        <Panel title="System accounts" subtitle="Select an account to sign in instantly">
-          <div className="demo-account-list">
+        {/* Hero copy */}
+        <div className="auth-hero-copy">
+          <span className="auth-hero-eyebrow">🏆 Vietnam's #1 Horse Racing Platform</span>
+          <h1>Manage every race,<br />from start to finish</h1>
+          <p>
+            The complete digital platform connecting owners, jockeys, referees, and spectators —
+            covering the entire lifecycle of every horse racing tournament.
+          </p>
+        </div>
+
+        {/* Platform stats */}
+        <div className="auth-stats-row">
+          {STATS.map((s) => (
+            <div key={s.label} className="auth-stat">
+              <strong>{s.value}</strong>
+              <span>{s.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Feature showcase */}
+        <div className="auth-features">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="auth-feature">
+              <span className="auth-feature-icon">{f.icon}</span>
+              <div>
+                <h4>{f.title}</h4>
+                <p>{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick-access accounts */}
+        <div className="auth-accounts-section">
+          <p className="auth-accounts-label">Quick access — click a role to sign in instantly</p>
+          <div className="auth-accounts-grid">
             {accounts.map((account) => (
               <button
                 key={account.id}
-                className="demo-account-card"
+                className="auth-account-btn"
                 type="button"
                 onClick={() => handleSelectAccount(account)}
+                title={`${account.email} / ${account.password}`}
               >
-                <div className="demo-badge">{account.badge}</div>
-                <div>
-                  <strong>{account.name}</strong>
-                  <p>{roleConfigs[account.role].label}</p>
-                  <span>
-                    {account.email} / {account.password}
-                  </span>
-                </div>
+                <div className="auth-account-badge">{account.badge}</div>
+                <strong>{account.name.split(" ").pop()}</strong>
+                <span>{roleConfigs[account.role].label}</span>
               </button>
             ))}
           </div>
-        </Panel>
+        </div>
+
       </section>
 
+      {/* ════════════════════════════════════════
+          RIGHT — Form panel
+      ════════════════════════════════════════ */}
       <section className="auth-panel">
+
+        {/* Panel brand */}
+        <div className="auth-panel-top">
+          <div className="auth-panel-mark">RT</div>
+          <div>
+            <p className="auth-panel-brand">RacetrackVN</p>
+            <p className="auth-panel-sub">Secure access to your workspace</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
         <div className="auth-tabs">
           <button
             className={cn("auth-tab", authMode === "login" && "is-active")}
@@ -91,12 +158,13 @@ export default function AuthScreen() {
               <p>Sign in to access your role-based workspace and manage your racing activities.</p>
             </div>
             <label className="field">
-              <span>Email</span>
+              <span>Email address</span>
               <input
                 name="email"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="owner@royalstables.vn"
+                autoComplete="email"
               />
             </label>
             <label className="field">
@@ -107,17 +175,21 @@ export default function AuthScreen() {
                 value={loginForm.password}
                 onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="Enter your password"
+                autoComplete="current-password"
               />
             </label>
             {authError ? <div className="form-error">{authError}</div> : null}
-            <button className="primary-button" type="submit">
-              Sign In
+            <button className="primary-button" type="submit" style={{ width: "100%" }}>
+              Sign In →
             </button>
+            <p className="auth-form-hint">
+              Select a role card on the left to auto-fill credentials.
+            </p>
           </form>
         ) : (
           <form className="auth-form" onSubmit={handleRegisterSubmit}>
             <div className="form-copy">
-              <h2>Create an account</h2>
+              <h2>Join RacetrackVN</h2>
               <p>Register as a horse owner, jockey, or spectator. Referee and admin accounts are managed by the system.</p>
             </div>
             <label className="field">
@@ -127,15 +199,17 @@ export default function AuthScreen() {
                 value={registerForm.name}
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="Enter your full name"
+                autoComplete="name"
               />
             </label>
             <label className="field">
-              <span>Email</span>
+              <span>Email address</span>
               <input
                 name="email"
                 value={registerForm.email}
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="name@example.vn"
+                autoComplete="email"
               />
             </label>
             <label className="field">
@@ -146,27 +220,33 @@ export default function AuthScreen() {
                 value={registerForm.password}
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="At least 6 characters"
+                autoComplete="new-password"
               />
             </label>
             <label className="field">
-              <span>Select role</span>
+              <span>Your role</span>
               <select
                 name="role"
                 value={registerForm.role}
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
               >
-                <option value="owner">Horse Owner</option>
-                <option value="jockey">Jockey</option>
-                <option value="spectator">Spectator</option>
+                <option value="owner">🐴  Horse Owner</option>
+                <option value="jockey">🏇  Jockey</option>
+                <option value="spectator">👁  Spectator</option>
               </select>
             </label>
             {authError ? <div className="form-error">{authError}</div> : null}
-            <button className="primary-button" type="submit">
-              Create account
+            <button className="primary-button" type="submit" style={{ width: "100%" }}>
+              Create account →
             </button>
           </form>
         )}
+
+        <p className="auth-panel-footer">
+          © 2026 RacetrackVN · All rights reserved
+        </p>
       </section>
+
     </div>
   );
 }

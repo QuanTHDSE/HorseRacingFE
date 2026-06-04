@@ -208,6 +208,39 @@ export interface Notification {
   detail: string;
 }
 
+export type RacetrackSurface = "Grass" | "Dirt" | "Synthetic";
+export type RacetrackStatus  = "Active" | "Maintenance" | "Inactive";
+
+export interface Racetrack {
+  id: string;
+  name: string;
+  location: string;
+  surface: RacetrackSurface;
+  length: string;
+  capacity: number;
+  status: RacetrackStatus;
+}
+
+export interface JockeyApplication {
+  id: string;
+  jockeyId: string;
+  jockeyName: string;
+  raceId: string;
+  raceName: string;
+  horseName: string;
+  appliedAt: string;
+  status: "Pending" | "Approved" | "Rejected";
+}
+
+export interface NewRaceInput {
+  name: string;
+  tournamentId: string;
+  racetrackId: string;
+  date: string;
+  distance: string;
+  round: string;
+}
+
 // ─── App state ────────────────────────────────────────────────────────────────
 
 export interface AppState {
@@ -230,6 +263,8 @@ export interface AppState {
   assignments: Assignment[];
   publishQueue: PublishItem[];
   notifications: Notification[];
+  racetracks: Racetrack[];
+  jockeyApplications: JockeyApplication[];
 }
 
 // ─── Role config ──────────────────────────────────────────────────────────────
@@ -274,6 +309,8 @@ export interface AppContextValue {
   handleLoginSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   handleRegisterSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   handleAction: (type: string, id: string, value?: string) => void;
+  handleCreateRacetrack: (data: Omit<Racetrack, "id">) => void;
+  handleCreateRace: (data: NewRaceInput) => void;
   handleLogout: () => void;
   handleSelectAccount: (account: Account) => void;
   handleModeChange: (mode: AuthMode) => void;
