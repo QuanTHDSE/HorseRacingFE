@@ -1,4 +1,3 @@
-import { roleConfigs } from "../config/roleConfigs";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
 
@@ -26,24 +25,23 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: "12+",  label: "Tournaments"  },
-  { value: "48",   label: "Horses"       },
-  { value: "24",   label: "Jockeys"      },
-  { value: "6",    label: "Racetracks"   },
+  { value: "12+", label: "Tournaments" },
+  { value: "48", label: "Horses" },
+  { value: "24", label: "Jockeys" },
+  { value: "6", label: "Racetracks" },
 ];
 
 export default function AuthScreen() {
   const {
-    accounts,
     loginForm,
     setLoginForm,
     registerForm,
     setRegisterForm,
     authMode,
     authError,
+    isLoading,
     handleLoginSubmit,
     handleRegisterSubmit,
-    handleSelectAccount,
     handleModeChange,
   } = useApp();
 
@@ -97,26 +95,6 @@ export default function AuthScreen() {
           ))}
         </div>
 
-        {/* Quick-access accounts */}
-        <div className="auth-accounts-section">
-          <p className="auth-accounts-label">Quick access — click a role to sign in instantly</p>
-          <div className="auth-accounts-grid">
-            {accounts.map((account) => (
-              <button
-                key={account.id}
-                className="auth-account-btn"
-                type="button"
-                onClick={() => handleSelectAccount(account)}
-                title={`${account.email} / ${account.password}`}
-              >
-                <div className="auth-account-badge">{account.badge}</div>
-                <strong>{account.name.split(" ").pop()}</strong>
-                <span>{roleConfigs[account.role].label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
       </section>
 
       {/* ════════════════════════════════════════
@@ -163,8 +141,9 @@ export default function AuthScreen() {
                 name="email"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="owner@royalstables.vn"
+                placeholder="you@example.vn"
                 autoComplete="email"
+                disabled={isLoading}
               />
             </label>
             <label className="field">
@@ -176,21 +155,19 @@ export default function AuthScreen() {
                 onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="Enter your password"
                 autoComplete="current-password"
+                disabled={isLoading}
               />
             </label>
             {authError ? <div className="form-error">{authError}</div> : null}
-            <button className="primary-button" type="submit" style={{ width: "100%" }}>
-              Sign In →
+            <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
+              {isLoading ? "Signing in…" : "Sign In →"}
             </button>
-            <p className="auth-form-hint">
-              Select a role card on the left to auto-fill credentials.
-            </p>
           </form>
         ) : (
           <form className="auth-form" onSubmit={handleRegisterSubmit}>
             <div className="form-copy">
               <h2>Join RacetrackVN</h2>
-              <p>Register as a horse owner, jockey, or spectator. Referee and admin accounts are managed by the system.</p>
+              <p>Register as a spectator to follow races and make predictions.</p>
             </div>
             <label className="field">
               <span>Full name</span>
@@ -200,6 +177,7 @@ export default function AuthScreen() {
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="Enter your full name"
                 autoComplete="name"
+                disabled={isLoading}
               />
             </label>
             <label className="field">
@@ -210,6 +188,7 @@ export default function AuthScreen() {
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
                 placeholder="name@example.vn"
                 autoComplete="email"
+                disabled={isLoading}
               />
             </label>
             <label className="field">
@@ -219,25 +198,14 @@ export default function AuthScreen() {
                 type="password"
                 value={registerForm.password}
                 onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 autoComplete="new-password"
+                disabled={isLoading}
               />
             </label>
-            <label className="field">
-              <span>Your role</span>
-              <select
-                name="role"
-                value={registerForm.role}
-                onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-              >
-                <option value="owner">🐴  Horse Owner</option>
-                <option value="jockey">🏇  Jockey</option>
-                <option value="spectator">👁  Spectator</option>
-              </select>
-            </label>
             {authError ? <div className="form-error">{authError}</div> : null}
-            <button className="primary-button" type="submit" style={{ width: "100%" }}>
-              Create account →
+            <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
+              {isLoading ? "Creating account…" : "Create account →"}
             </button>
           </form>
         )}

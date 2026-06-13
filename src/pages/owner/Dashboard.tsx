@@ -1,69 +1,86 @@
 import { Badge, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
+function fmtDate(iso?: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+const HEALTH_TONE: Record<string, string> = { Fit: "success", Injured: "warning", Retired: "neutral" };
+const REG_TONE: Record<string, string>    = { Pending: "warning", Approved: "success", Rejected: "danger" };
+
 export default function OwnerDashboard() {
   const { user, appState } = useApp();
   if (!user) return null;
-  const ownedHorses = appState.horses.filter((h) => h.ownerId === user.id);
-  const ownerHorseIds = new Set(ownedHorses.map((h) => h.id));
-  const ownerRaces = appState.races.filter((r) => r.ownerId === user.id || ownerHorseIds.has(r.horseId));
+
+  const horses    = appState.horses;
+  const regs      = appState.ownerRegistrations;
+  const fitCount  = horses.filter((h) => h.health === "Fit").length;
+  const pendingRegs  = regs.filter((r) => r.status === "Pending").length;
+  const approvedRegs = regs.filter((r) => r.status === "Approved").length;
+
+  const recentHorses = horses.slice(0, 4);
+  const recentRegs   = regs.slice(0, 5);
 
   return (
     <div className="page-stack">
       <section className="hero-card">
         <div>
           <Badge tone="accent">Owner dashboard</Badge>
-          <h3>One place to manage horses, race schedules, jockeys, and rewards</h3>
-          <p>
-            This dashboard surfaces the key tasks an owner needs to complete first: confirm races, track horse profiles,
-            check jockeys, and view the latest results.
-          </p>
-        </div>
-        <div className="hero-actions">
-          <button className="primary-button" type="button">Register new horse</button>
-          <button className="secondary-button" type="button">Open race schedule</button>
+          <h3>Welcome back, {user.name}</h3>
+          <p>Manage horses, register for races, and hire jockeys — all in one place.</p>
         </div>
       </section>
 
-      <div className="metric-grid three">
-        <MetricCard label="Horses under management" value={String(ownedHorses.length)} note="2 approved, 1 pending approval" />
-        <MetricCard
-          label="Races awaiting confirmation"
-          value={String(ownerRaces.filter((r) => !r.ownerConfirmed).length)}
-          note="Needs to be handled before today's deadline"
-          tone="warning"
-        />
-        <MetricCard label="Rewards this season" value="830M" note="Updated after each published result" tone="success" />
+      <div className="metric-grid four">
+        <MetricCard label="Total horses"           value={String(horses.length)}    note="In your stable"               />
+        <MetricCard label="Fit horses"             value={String(fitCount)}          note="Ready to race"          tone="success" />
+        <MetricCard label="Active registrations"   value={String(approvedRegs)}      note="Approved for races"     tone="accent"  />
+        <MetricCard label="Pending registrations"  value={String(pendingRegs)}       note="Awaiting admin review"  tone="warning" />
       </div>
 
       <div className="content-grid two">
-        <Panel title="Priority horses" subtitle="Focus on readiness and upcoming race schedule">
+        <Panel title="My horses" subtitle="Health and assignment overview">
+          {recentHorses.length === 0 && (
+            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No horses registered yet.</p>
+          )}
           <div className="card-list">
-            {ownedHorses.map((horse) => (
+            {recentHorses.map((horse) => (
               <article key={horse.id} className="info-card">
                 <div className="card-head">
                   <strong>{horse.name}</strong>
-                  <Badge tone={horse.status === "Approved" ? "success" : "warning"}>{horse.status}</Badge>
+                  <Badge tone={HEALTH_TONE[horse.health] as any ?? "neutral"}>{horse.health}</Badge>
                 </div>
-                <p>{horse.breed} • {horse.age} yrs old • {horse.health}</p>
-                <span>Ranking {horse.ranking} • Earnings {horse.earnings}</span>
+                <p style={{ margin: "4px 0 2px", fontSize: "0.875rem" }}>
+                  {horse.breed} · {horse.age} yrs{horse.color ? ` · ${horse.color}` : ""}
+                </p>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  {horse.jockeyName ? `Jockey: ${horse.jockeyName}` : "No jockey assigned"}
+                  {horse.weight ? ` · ${horse.weight}kg` : ""}
+                </span>
               </article>
             ))}
           </div>
         </Panel>
 
-        <Panel title="Upcoming races" subtitle="Changes confirmed directly on the table">
+        <Panel title="Recent registrations" subtitle="Race entry status">
+          {recentRegs.length === 0 && (
+            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No race registrations yet.</p>
+          )}
           <div className="card-list">
-            {ownerRaces.map((race) => (
-              <article key={race.id} className="info-card">
+            {recentRegs.map((reg) => (
+              <article key={reg.id} className="info-card">
                 <div className="card-head">
-                  <strong>{race.name}</strong>
-                  <Badge tone={race.ownerConfirmed ? "success" : "warning"}>
-                    {race.ownerConfirmed ? "Confirmed" : "Needs confirmation"}
-                  </Badge>
+                  <strong>{reg.raceName}</strong>
+                  <Badge tone={REG_TONE[reg.status] as any ?? "neutral"}>{reg.status}</Badge>
                 </div>
-                <p>{race.date} • {race.track}</p>
-                <span>{race.distance}</span>
+                <p style={{ margin: "4px 0 2px", fontSize: "0.875rem" }}>
+                  Horse: <strong>{reg.horseName}</strong>
+                </p>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  {fmtDate(reg.raceDate)}
+                  {reg.jockeyName ? ` · Jockey: ${reg.jockeyName}` : ""}
+                </span>
               </article>
             ))}
           </div>

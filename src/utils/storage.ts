@@ -1,6 +1,5 @@
-export const SESSION_KEY = "horse-racing-session";
-export const STATE_KEY = "horse-racing-state";
-export const ACCOUNTS_KEY = "horse-racing-accounts";
+// Token storage is now handled by src/services/api.ts (TOKEN_KEY).
+// This file is kept for any future utility needs.
 
 export function loadJson<T>(key: string, fallback: T): T {
   try {

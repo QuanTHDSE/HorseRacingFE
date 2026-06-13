@@ -12,7 +12,6 @@ export interface Account {
   name: string;
   organization: string;
   email: string;
-  password: string;
   badge: string;
 }
 
@@ -30,6 +29,11 @@ export interface Horse {
   earnings: string;
   ranking: string;
   jockeyId: string | null;
+  color?: string;
+  weight?: number;
+  trainerName?: string;
+  registrationId?: string;
+  jockeyName?: string;
 }
 
 export interface Jockey {
@@ -59,6 +63,11 @@ export interface Race {
   jockeyConfirmed: boolean;
   refereeStatus: string;
   liveStatus: string;
+  horseName?: string;
+  ownerName?: string;
+  laneNumber?: number;
+  tournamentName?: string;
+  result?: { rank?: number; finishTime?: number; prize?: number } | null;
 }
 
 export interface Result {
@@ -80,6 +89,12 @@ export interface Invitation {
   raceId: string;
   offer: string;
   status: string;
+  horseName?: string;
+  raceName?: string;
+  raceDate?: string;
+  ownerName?: string;
+  raceStatus?: string;
+  message?: string;
 }
 
 export interface RefereeCheck {
@@ -115,6 +130,8 @@ export interface Tournament {
   name: string;
   location: string;
   range: string;
+  startDate: string;
+  endDate: string;
   status: string;
   prizePool: string;
   races: number;
@@ -173,6 +190,21 @@ export interface Approval {
   applicant: string;
   requestedRole: string;
   status: string;
+  // ── Detail fields (for review before approving) ──
+  horseName?: string;
+  horseBreed?: string;
+  horseAge?: number;
+  horseHealth?: string;
+  raceName?: string;
+  raceRound?: number;
+  raceDate?: string;
+  raceStatus?: string;
+  ownerName?: string;
+  jockeyName?: string;
+  submittedAt?: string;
+  processedByName?: string;
+  processedAt?: string;
+  adminNote?: string;
 }
 
 export interface SystemUser {
@@ -232,13 +264,145 @@ export interface JockeyApplication {
   status: "Pending" | "Approved" | "Rejected";
 }
 
+export interface JockeyDashboard {
+  pendingInvitations: number;
+  upcomingRaces: number;
+  completedRaces: number;
+}
+
+export interface RaceParticipantDetail {
+  id: string;
+  horseId: string;
+  horseName: string;
+  jockeyId: string;
+  jockeyName: string;
+  ownerId: string;
+  ownerName: string;
+  laneNumber: number;
+  isScratched: boolean;
+  confirmedAt?: string | null;
+}
+
+export interface RaceDetail {
+  id: string;
+  name: string;
+  round: number;
+  scheduledAt: string;
+  status: string;
+  liveStatus: string;
+  distance?: number;
+  surface?: string;
+  maxParticipants: number;
+  tournamentId: string;
+  tournamentName?: string;
+  participantCount: number;
+  participants: RaceParticipantDetail[];
+}
+
+export interface CreateHorseInput {
+  name: string;
+  breed: string;
+  age: number;
+  registrationId?: string;
+  weight?: number;
+  color?: string;
+  trainerName?: string;
+}
+
+export interface OwnerRegistration {
+  id: string;
+  horseId: string;
+  horseName: string;
+  raceId: string;
+  raceName: string;
+  raceDate?: string;
+  raceStatus?: string;
+  jockeyId?: string;
+  jockeyName?: string;
+  status: string;
+  createdAt?: string;
+}
+
+export interface AddParticipantInput {
+  horseId: string;
+  jockeyId: string;
+  ownerId: string;
+  laneNumber?: number;
+}
+
 export interface NewRaceInput {
   name: string;
   tournamentId: string;
-  racetrackId: string;
+  racetrackId?: string;
   date: string;
   distance: string;
   round: string;
+  maxParticipants?: number;
+}
+
+export interface CreateTournamentInput {
+  name: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  prizePool?: number;
+  description?: string;
+}
+
+export interface PredictionConfig {
+  isEnabled: boolean;
+  pointsPerCorrect: number;
+  bonusPointsTop3: number;
+  predictionOpenAt?: string | null;
+  predictionCloseAt?: string | null;
+  maxPredictionsPerRace: number;
+  poolEnabled: boolean;
+  entryFee: number;
+  feePercent: number;
+  organizerFeeRate: number;
+  racingRewardRate: number;
+  spectatorRewardRate: number;
+  ownerShareRate: number;
+  jockeyShareRate: number;
+  rankRewardRates: number[];
+  rolloverPolicy: "refund" | "rollover_next_race" | "to_organizer";
+  minScoreToShare: number;
+}
+
+export interface SpectatorRaceParticipant {
+  id: string;
+  name: string;
+  laneNumber: number;
+}
+
+export interface SpectatorRaceResult {
+  id: string;
+  publishedAt: string | null;
+  rankings: Array<{
+    rank: number;
+    horse: { id: string; name: string };
+    jockey: { id: string; fullName: string };
+    finishTime?: number;
+    prize: number;
+  }>;
+}
+
+export interface SpectatorRace {
+  id: string;
+  name: string;
+  round: number;
+  scheduledAt: string;
+  status: string;
+  liveStatus: string;
+  distance?: number;
+  tournamentId: string;
+  tournamentName: string;
+  participants: SpectatorRaceParticipant[];
+  canPredict: boolean;
+  hasPrediction: boolean;
+  predictionOpenAt?: string | null;
+  predictionCloseAt?: string | null;
+  result?: SpectatorRaceResult | null;
 }
 
 // ─── App state ────────────────────────────────────────────────────────────────
@@ -265,6 +429,8 @@ export interface AppState {
   notifications: Notification[];
   racetracks: Racetrack[];
   jockeyApplications: JockeyApplication[];
+  ownerRegistrations: OwnerRegistration[];
+  spectatorRaces: SpectatorRace[];
 }
 
 // ─── Role config ──────────────────────────────────────────────────────────────
@@ -298,10 +464,10 @@ export interface RegisterForm {
 
 export interface AppContextValue {
   user: Account | null;
-  accounts: Account[];
   appState: AppState;
   authMode: AuthMode;
   authError: string;
+  isLoading: boolean;
   loginForm: LoginForm;
   setLoginForm: React.Dispatch<React.SetStateAction<LoginForm>>;
   registerForm: RegisterForm;
@@ -311,7 +477,26 @@ export interface AppContextValue {
   handleAction: (type: string, id: string, value?: string) => void;
   handleCreateRacetrack: (data: Omit<Racetrack, "id">) => void;
   handleCreateRace: (data: NewRaceInput) => void;
+  handleCreateTournament: (data: CreateTournamentInput) => Promise<void>;
+  handleUpdateTournamentStatus: (id: string, status: string) => Promise<void>;
+  handleGetTournamentById: (id: string) => Promise<Tournament & { raceCount?: number }>;
+  handleGetJockeyDashboard: () => Promise<JockeyDashboard>;
+  handleGetJockeyRaceById: (id: string) => Promise<Race>;
+  handleGetRaceById: (id: string) => Promise<RaceDetail>;
+  handleAddParticipant: (raceId: string, data: AddParticipantInput) => Promise<RaceDetail>;
+  handleUpdateRaceStatus: (raceId: string, status: string) => Promise<RaceDetail>;
+  handleCreateHorse: (data: CreateHorseInput) => Promise<void>;
+  handleUpdateHorse: (id: string, data: Partial<CreateHorseInput>) => Promise<void>;
+  handleRegisterForRace: (raceId: string, horseId: string) => Promise<void>;
+  handleCancelRegistration: (id: string) => Promise<void>;
+  handleInviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) => Promise<void>;
+  handleGetSpectatorRaceById: (id: string) => Promise<SpectatorRace>;
+  handleUpdateRegistration: (id: string, status: "Approved" | "Rejected", adminNote?: string) => Promise<void>;
+  handleDeleteTournament: (id: string) => Promise<void>;
+  handleDeleteRace: (id: string) => Promise<void>;
+  handleDeleteHorse: (id: string) => Promise<void>;
+  handleGetPredictionConfig: (id: string) => Promise<PredictionConfig | null>;
+  handleUpdatePredictionConfig: (id: string, config: Partial<PredictionConfig>) => Promise<PredictionConfig>;
   handleLogout: () => void;
-  handleSelectAccount: (account: Account) => void;
   handleModeChange: (mode: AuthMode) => void;
 }

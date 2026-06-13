@@ -639,6 +639,24 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-1px);
 }
 
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: var(--r-full);
+  background: var(--c-danger-c);
+  color: var(--c-danger);
+  font-size: .9rem;
+  font-weight: 600;
+  transition: background var(--dur-s) var(--ease-std),
+              transform var(--dur-s) var(--spring);
+}
+.danger-button:hover  { background: #ffa9a3; transform: translateY(-1px); }
+.danger-button:disabled { opacity: .5; cursor: not-allowed; }
+
 .ghost-button {
   display: inline-flex;
   align-items: center;
@@ -1737,4 +1755,107 @@ button:disabled {
   .auth-stats-row .auth-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,.06); }
 
   .auth-accounts-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ================================================================
+ * TOURNAMENT PAGE — Filter tabs, detail panel, xs button
+ * ================================================================ */
+
+/* ── Filter tabs (used in panel header action slot) ────────────── */
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--c-surf-low);
+  padding: 4px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--c-outline-var);
+}
+
+.filter-tab {
+  padding: 5px 14px;
+  border-radius: var(--r-full);
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--c-muted);
+  letter-spacing: .02em;
+  transition: background var(--dur-s) var(--ease-std), color var(--dur-s) var(--ease-std);
+}
+
+.filter-tab:hover {
+  background: var(--c-surf-high);
+  color: var(--c-on-surface);
+}
+
+.filter-tab.is-active {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+/* ── Extra-small button variant ────────────────────────────────── */
+.btn-xs {
+  padding: 4px 12px !important;
+  font-size: .78rem !important;
+  border-radius: var(--r-full) !important;
+}
+
+.btn-xs.is-active {
+  background: var(--c-surf-highest);
+  border-color: var(--c-outline);
+}
+
+/* ── Detail panel body ──────────────────────────────────────────── */
+.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--c-surf-low);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-outline-var);
+}
+
+.detail-label {
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--c-muted);
+}
+
+.detail-item strong {
+  font-size: .95rem;
+  color: var(--c-on-surface);
+  line-height: 1.4;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--c-surf-low);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-outline-var);
+}
+
+.detail-action-hint {
+  font-size: .84rem;
+  color: var(--c-muted);
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .detail-grid { grid-template-columns: repeat(2, 1fr); }
 }
