@@ -93,6 +93,9 @@ export interface ApiPredictionConfig {
   maxPredictionsPerRace: number;
   poolEnabled: boolean;
   entryFee: number;
+  minRiskMultiplier: number;
+  maxRiskMultiplier: number;
+  quickRiskMultipliers: number[];
   feePercent: number;
   organizerFeeRate: number;
   racingRewardRate: number;
@@ -102,6 +105,53 @@ export interface ApiPredictionConfig {
   rankRewardRates: number[];
   rolloverPolicy: "refund" | "rollover_next_race" | "to_organizer";
   minScoreToShare: number;
+}
+
+export interface ApiRefereeDashboard {
+  upcomingRaces: number;
+  completedRaces: number;
+  pendingConfirmations: number;
+}
+
+export interface ApiRefereeRace {
+  id: string;
+  name: string;
+  round: number;
+  scheduledAt: string;
+  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  participantCount: number;
+  hasResult: boolean;
+  confirmedAt: string | null;
+  publishedAt: string | null;
+}
+
+export interface ApiRefereeCheck {
+  raceId: string;
+  raceName: string;
+  horseId: string;
+  horseName: string;
+  jockeyId: string;
+  jockeyName: string;
+  ownerId: string;
+  laneNumber: number;
+  vetApproved: boolean;
+  confirmed: boolean;
+}
+
+export interface ApiRefereeResult {
+  id: string;
+  confirmedAt: string | null;
+  publishedAt: string | null;
+  rankingsCount: number;
+}
+
+export interface ApiResultRankingInput {
+  rank: number;
+  horseId: string;
+  jockeyId: string;
+  ownerId: string;
+  finishTime?: number;
+  prize?: number;
 }
 
 export interface ApiTournamentItem {
@@ -508,13 +558,22 @@ export const api = {
   },
 
   referee: {
-    listRaces: () => request<{ races: unknown[] }>("/referee/races"),
+    getDashboard: () =>
+      request<{ dashboard: ApiRefereeDashboard }>("/referee/dashboard"),
+    listRaces: () => request<{ races: ApiRefereeRace[] }>("/referee/races"),
     listChecks: (raceId: string) =>
-      request<{ checks: unknown[] }>(`/referee/races/${raceId}/checks`),
-    toggleCheck: (raceId: string, horseId: string, field: string) =>
+      request<{ checks: ApiRefereeCheck[] }>(`/referee/races/${raceId}/checks`),
+    toggleCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") =>
       request<{ ok: boolean }>(`/referee/races/${raceId}/checks`, {
         method: "PATCH",
         body: JSON.stringify({ horseId, field }),
+      }),
+    getResult: (raceId: string) =>
+      request<{ result: ApiRefereeResult | null }>(`/referee/races/${raceId}/result`),
+    upsertResult: (raceId: string, rankings: ApiResultRankingInput[]) =>
+      request<{ result: { id: string } }>(`/referee/races/${raceId}/result`, {
+        method: "POST",
+        body: JSON.stringify({ rankings }),
       }),
     confirmResult: (raceId: string) =>
       request<{ ok: boolean }>(`/referee/races/${raceId}/result/confirm`, { method: "PATCH" }),

@@ -83,10 +83,10 @@ export default function AdminTournamentsPage() {
     return true;
   });
 
-  const total      = tournaments.length;
-  const liveCount  = tournaments.filter((t) => t.status === "Live").length;
-  const regCount   = tournaments.filter((t) => t.status === "Registration").length;
-  const doneCount  = tournaments.filter((t) => t.status === "Completed").length;
+  const total = tournaments.length;
+  const liveCount = tournaments.filter((t) => t.status === "Live").length;
+  const regCount = tournaments.filter((t) => t.status === "Registration").length;
+  const doneCount = tournaments.filter((t) => t.status === "Completed").length;
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -99,10 +99,10 @@ export default function AdminTournamentsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs: string[] = [];
-    if (!form.name.trim())      errs.push("Tournament name is required.");
-    if (!form.location.trim())  errs.push("Location is required.");
-    if (!form.startDate)        errs.push("Start date is required.");
-    if (!form.endDate)          errs.push("End date is required.");
+    if (!form.name.trim()) errs.push("Tournament name is required.");
+    if (!form.location.trim()) errs.push("Location is required.");
+    if (!form.startDate) errs.push("Start date is required.");
+    if (!form.endDate) errs.push("End date is required.");
     if (form.startDate && form.endDate && form.endDate <= form.startDate)
       errs.push("End date must be after start date.");
     if (errs.length) { setFormErrors(errs); return; }
@@ -176,10 +176,10 @@ export default function AdminTournamentsPage() {
 
       {/* ── Metrics ── */}
       <div className="metric-grid four">
-        <MetricCard label="Total tournaments" value={String(total)}    note="All tournaments" />
-        <MetricCard label="Live now"           value={String(liveCount)}  note="Ongoing"         tone="success" />
-        <MetricCard label="Registration open"  value={String(regCount)}   note="Accepting entries" tone="accent" />
-        <MetricCard label="Completed"          value={String(doneCount)}  note="Finished"        tone="neutral" />
+        <MetricCard label="Total tournaments" value={String(total)} note="All tournaments" />
+        <MetricCard label="Live now" value={String(liveCount)} note="Ongoing" tone="success" />
+        <MetricCard label="Registration open" value={String(regCount)} note="Accepting entries" tone="accent" />
+        <MetricCard label="Completed" value={String(doneCount)} note="Finished" tone="neutral" />
       </div>
 
       {/* ── Create form ── */}
@@ -296,11 +296,11 @@ export default function AdminTournamentsPage() {
       >
         <DataTable
           columns={[
-            { key: "name",      label: "Name"      },
-            { key: "location",  label: "Location"  },
-            { key: "range",     label: "Dates"     },
+            { key: "name", label: "Name" },
+            { key: "location", label: "Location" },
+            { key: "range", label: "Dates" },
             { key: "prizePool", label: "Prize pool" },
-            { key: "races",     label: "Races",    render: (row) => String(row.races) },
+            { key: "races", label: "Races", render: (row) => String(row.races) },
             {
               key: "status",
               label: "Status",

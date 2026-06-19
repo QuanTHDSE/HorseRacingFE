@@ -125,6 +125,56 @@ export interface Report {
   status: string;
 }
 
+// ─── Referee (live BE) ────────────────────────────────────────────────────────
+
+export interface RefereeRace {
+  id: string;
+  name: string;
+  round: number;
+  scheduledAt: string;
+  status: string;
+  liveStatus: string;
+  participantCount: number;
+  hasResult: boolean;
+  confirmedAt: string | null;
+  publishedAt: string | null;
+}
+
+export interface RefereeParticipantCheck {
+  raceId: string;
+  raceName: string;
+  horseId: string;
+  horseName: string;
+  jockeyId: string;
+  jockeyName: string;
+  ownerId: string;
+  laneNumber: number;
+  vetApproved: boolean;
+  confirmed: boolean;
+}
+
+export interface RefereeResultStatus {
+  id: string;
+  confirmedAt: string | null;
+  publishedAt: string | null;
+  rankingsCount: number;
+}
+
+export interface RefereeDashboard {
+  upcomingRaces: number;
+  completedRaces: number;
+  pendingConfirmations: number;
+}
+
+export interface ResultRankingInput {
+  rank: number;
+  horseId: string;
+  jockeyId: string;
+  ownerId: string;
+  finishTime?: number;
+  prize?: number;
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -358,6 +408,9 @@ export interface PredictionConfig {
   maxPredictionsPerRace: number;
   poolEnabled: boolean;
   entryFee: number;
+  minRiskMultiplier: number;
+  maxRiskMultiplier: number;
+  quickRiskMultipliers: number[];
   feePercent: number;
   organizerFeeRate: number;
   racingRewardRate: number;
@@ -431,6 +484,7 @@ export interface AppState {
   jockeyApplications: JockeyApplication[];
   ownerRegistrations: OwnerRegistration[];
   spectatorRaces: SpectatorRace[];
+  refereeRaces: RefereeRace[];
 }
 
 // ─── Role config ──────────────────────────────────────────────────────────────
@@ -497,6 +551,13 @@ export interface AppContextValue {
   handleDeleteHorse: (id: string) => Promise<void>;
   handleGetPredictionConfig: (id: string) => Promise<PredictionConfig | null>;
   handleUpdatePredictionConfig: (id: string, config: Partial<PredictionConfig>) => Promise<PredictionConfig>;
+  handleGetRefereeDashboard: () => Promise<RefereeDashboard>;
+  handleRefreshRefereeRaces: () => Promise<void>;
+  handleGetRefereeChecks: (raceId: string) => Promise<RefereeParticipantCheck[]>;
+  handleToggleRefereeCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") => Promise<RefereeParticipantCheck[]>;
+  handleGetRaceResult: (raceId: string) => Promise<RefereeResultStatus | null>;
+  handleSubmitRaceResult: (raceId: string, rankings: ResultRankingInput[]) => Promise<void>;
+  handleConfirmRaceResult: (raceId: string) => Promise<void>;
   handleLogout: () => void;
   handleModeChange: (mode: AuthMode) => void;
 }

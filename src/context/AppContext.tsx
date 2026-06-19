@@ -13,6 +13,8 @@ import {
   type ApiPrediction,
   type ApiPredictionConfig,
   type ApiPublishQueueItem,
+  type ApiRefereeCheck,
+  type ApiRefereeRace,
   type ApiRaceDetail,
   type ApiRegistration,
   type ApiRole,
@@ -40,6 +42,11 @@ import type {
   Prediction,
   PredictionConfig,
   PublishItem,
+  RefereeDashboard,
+  RefereeParticipantCheck,
+  RefereeRace,
+  RefereeResultStatus,
+  ResultRankingInput,
   Race,
   RaceDetail,
   RaceParticipantDetail,
@@ -79,6 +86,7 @@ const EMPTY_STATE: AppState = {
   jockeyApplications: [],
   ownerRegistrations: [],
   spectatorRaces: [],
+  refereeRaces: [],
 };
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
@@ -149,7 +157,10 @@ function mapPredictionConfig(c: ApiPredictionConfig): PredictionConfig {
     predictionCloseAt: c.predictionCloseAt ?? null,
     maxPredictionsPerRace: c.maxPredictionsPerRace,
     poolEnabled: c.poolEnabled,
-    entryFee: c.entryFee,
+    entryFee: c.entryFee ?? 0,
+    minRiskMultiplier: c.minRiskMultiplier ?? 1,
+    maxRiskMultiplier: c.maxRiskMultiplier ?? 10,
+    quickRiskMultipliers: c.quickRiskMultipliers ?? [1, 2, 3, 6],
     feePercent: c.feePercent,
     organizerFeeRate: c.organizerFeeRate,
     racingRewardRate: c.racingRewardRate,
@@ -379,6 +390,42 @@ function mapSpectatorRace(r: ApiSpectatorRace): SpectatorRace {
     predictionOpenAt: r.predictionOpenAt,
     predictionCloseAt: r.predictionCloseAt,
     result: r.result ?? null,
+  };
+}
+
+function mapRefereeRace(r: ApiRefereeRace): RefereeRace {
+  const statusMap: Record<string, string> = {
+    scheduled: "Upcoming",
+    ongoing: "Live",
+    completed: "Completed",
+    cancelled: "Cancelled",
+  };
+  return {
+    id: r.id,
+    name: r.name,
+    round: r.round,
+    scheduledAt: r.scheduledAt,
+    status: r.status,
+    liveStatus: statusMap[r.status] ?? r.status,
+    participantCount: r.participantCount,
+    hasResult: r.hasResult,
+    confirmedAt: r.confirmedAt,
+    publishedAt: r.publishedAt,
+  };
+}
+
+function mapRefereeCheck(c: ApiRefereeCheck): RefereeParticipantCheck {
+  return {
+    raceId: c.raceId,
+    raceName: c.raceName,
+    horseId: c.horseId,
+    horseName: c.horseName,
+    jockeyId: c.jockeyId,
+    jockeyName: c.jockeyName,
+    ownerId: c.ownerId,
+    laneNumber: c.laneNumber,
+    vetApproved: c.vetApproved,
+    confirmed: c.confirmed,
   };
 }
 
@@ -681,14 +728,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setAppState((prev) => ({ ...prev, tournaments, spectatorRaces, predictions, rewards, notifications }));
       } else if (role === "referee") {
-        const [notiRes] = await Promise.allSettled([api.referee.listNotifications()]);
+        const [racesRes, notiRes] = await Promise.allSettled([
+          api.referee.listRaces(),
+          api.referee.listNotifications(),
+        ]);
+
+        const refereeRaces =
+          racesRes.status === "fulfilled"
+            ? racesRes.value.races.map(mapRefereeRace)
+            : [];
 
         const notifications =
           notiRes.status === "fulfilled"
             ? notiRes.value.notifications.map((n) => mapNotification(n, account.id))
             : [];
 
-        setAppState((prev) => ({ ...prev, notifications }));
+        setAppState((prev) => ({ ...prev, refereeRaces, notifications }));
       }
     } catch (err) {
       console.error("fetchDataForUser failed:", err);
@@ -1107,6 +1162,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapPredictionConfig(res.tournament.predictionConfig);
   }
 
+  // ─── Referee ──────────────────────────────────────────────────────────────
+
+  async function handleGetRefereeDashboard(): Promise<RefereeDashboard> {
+    const res = await api.referee.getDashboard();
+    return res.dashboard;
+  }
+
+  async function handleRefreshRefereeRaces(): Promise<void> {
+    const res = await api.referee.listRaces();
+    setAppState((prev) => ({ ...prev, refereeRaces: res.races.map(mapRefereeRace) }));
+  }
+
+  async function handleGetRefereeChecks(raceId: string): Promise<RefereeParticipantCheck[]> {
+    const res = await api.referee.listChecks(raceId);
+    return res.checks.map(mapRefereeCheck);
+  }
+
+  async function handleToggleRefereeCheck(
+    raceId: string,
+    horseId: string,
+    field: "vetApprovedAt" | "confirmedAt",
+  ): Promise<RefereeParticipantCheck[]> {
+    await api.referee.toggleCheck(raceId, horseId, field);
+    const res = await api.referee.listChecks(raceId);
+    return res.checks.map(mapRefereeCheck);
+  }
+
+  async function handleGetRaceResult(raceId: string): Promise<RefereeResultStatus | null> {
+    const res = await api.referee.getResult(raceId);
+    return res.result;
+  }
+
+  async function handleSubmitRaceResult(raceId: string, rankings: ResultRankingInput[]): Promise<void> {
+    await api.referee.upsertResult(raceId, rankings);
+    await handleRefreshRefereeRaces();
+  }
+
+  async function handleConfirmRaceResult(raceId: string): Promise<void> {
+    await api.referee.confirmResult(raceId);
+    await handleRefreshRefereeRaces();
+  }
+
   // ─── Logout ───────────────────────────────────────────────────────────────
 
   function handleLogout() {
@@ -1156,6 +1253,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleDeleteHorse,
     handleGetPredictionConfig,
     handleUpdatePredictionConfig,
+    handleGetRefereeDashboard,
+    handleRefreshRefereeRaces,
+    handleGetRefereeChecks,
+    handleToggleRefereeCheck,
+    handleGetRaceResult,
+    handleSubmitRaceResult,
+    handleConfirmRaceResult,
     handleLogout,
     handleModeChange,
   };

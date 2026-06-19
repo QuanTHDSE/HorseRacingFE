@@ -27,14 +27,12 @@ export const roleConfigs: Record<Role, RoleConfig> = {
   },
   referee: {
     label: "Race Referee",
-    accent: "Pre-race checklists, violation logs, and result confirmation",
+    accent: "Pre-race checklists and race result confirmation",
     homeLabel: "Referee control room",
     menu: [
       { id: "dashboard", label: "Dashboard", abbr: "DB" },
       { id: "checks", label: "Pre-race Checks", abbr: "PC" },
-      { id: "monitor", label: "Live Monitor", abbr: "LM" },
-      { id: "violations", label: "Violations", abbr: "VL" },
-      { id: "reports", label: "Reports & Results", abbr: "RP" },
+      { id: "results", label: "Results", abbr: "RS" },
     ],
   },
   spectator: {
