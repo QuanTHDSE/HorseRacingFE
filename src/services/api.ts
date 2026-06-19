@@ -189,6 +189,19 @@ export interface ApiSpectatorPoints {
   }>;
 }
 
+export interface ApiPaymentTransaction {
+  id: string;
+  provider: string;
+  amountVnd: number;
+  points: number;
+  exchangeRateVndPerPoint: number;
+  status: string;
+  providerTransactionId?: string | null;
+  paidAt?: string | null;
+  expiredAt?: string | null;
+  createdAt: string;
+}
+
 export interface ApiViewingTicketInfo {
   requiresTicket: boolean;
   hasPass: boolean;
@@ -497,12 +510,20 @@ export const api = {
     createPrediction: (
       raceId: string,
       predictedRanks: Array<{ rank: number; horseId: string }>,
+      riskMultiplier = 1,
     ) =>
       request<{ prediction: ApiPrediction }>(`/spectator/predictions/${raceId}`, {
         method: "POST",
-        body: JSON.stringify({ raceId, predictedRanks }),
+        body: JSON.stringify({ raceId, predictedRanks, riskMultiplier }),
       }),
     getPoints: () => request<{ points: ApiSpectatorPoints }>("/spectator/points"),
+    topUpPoints: (points: number) =>
+      request<{ payment: ApiPaymentTransaction; points: ApiSpectatorPoints }>("/spectator/top-ups", {
+        method: "POST",
+        body: JSON.stringify({ points }),
+      }),
+    listTopUps: () =>
+      request<{ payments: ApiPaymentTransaction[] }>("/spectator/top-ups"),
     listNotifications: () =>
       request<{ notifications: ApiNotification[] }>("/spectator/notifications"),
   },

@@ -48,6 +48,7 @@ import type {
   Reward,
   Role,
   SpectatorRace,
+  SpectatorPointsSummary,
   SystemUser,
   Tone,
   Tournament,
@@ -79,6 +80,7 @@ const EMPTY_STATE: AppState = {
   jockeyApplications: [],
   ownerRegistrations: [],
   spectatorRaces: [],
+  spectatorPoints: null,
 };
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
@@ -354,6 +356,14 @@ function mapPointsToRewards(pts: ApiSpectatorPoints, spectatorId: string): Rewar
       amount: `${tx.points} pts`,
       status: "Claimed",
     }));
+}
+
+function mapPointsSummary(pts: ApiSpectatorPoints): SpectatorPointsSummary {
+  return {
+    currentBalance: pts.currentBalance,
+    totalPointsEarned: pts.totalPointsEarned,
+    totalPointsSpent: pts.totalPointsSpent,
+  };
 }
 
 function mapSpectatorRace(r: ApiSpectatorRace): SpectatorRace {
@@ -679,7 +689,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? notiRes.value.notifications.map((n) => mapNotification(n, account.id))
             : [];
 
-        setAppState((prev) => ({ ...prev, tournaments, spectatorRaces, predictions, rewards, notifications }));
+        const spectatorPoints =
+          ptsRes.status === "fulfilled" ? mapPointsSummary(ptsRes.value.points) : null;
+
+        setAppState((prev) => ({
+          ...prev,
+          tournaments,
+          spectatorRaces,
+          predictions,
+          rewards,
+          notifications,
+          spectatorPoints,
+        }));
       } else if (role === "referee") {
         const [notiRes] = await Promise.allSettled([api.referee.listNotifications()]);
 
@@ -1046,6 +1067,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapSpectatorRace(res.race);
   }
 
+  async function refreshSpectatorState(account: Account): Promise<void> {
+    const [racesRes, predsRes, ptsRes] = await Promise.all([
+      api.spectator.listRaces(),
+      api.spectator.listPredictions(account.id),
+      api.spectator.getPoints(),
+    ]);
+
+    setAppState((prev) => ({
+      ...prev,
+      spectatorRaces: racesRes.races.map(mapSpectatorRace),
+      predictions: predsRes.predictions.map((p) => mapPrediction(p, account.id)),
+      rewards: mapPointsToRewards(ptsRes.points, account.id),
+      spectatorPoints: mapPointsSummary(ptsRes.points),
+    }));
+  }
+
+  async function handleCreatePrediction(
+    raceId: string,
+    horseId: string,
+    riskMultiplier = 1,
+  ): Promise<void> {
+    if (!user || user.role !== "spectator") return;
+    await api.spectator.createPrediction(raceId, [{ rank: 1, horseId }], riskMultiplier);
+    await refreshSpectatorState(user);
+  }
+
+  async function handleTopUpPoints(points: number): Promise<void> {
+    if (!user || user.role !== "spectator") return;
+    const res = await api.spectator.topUpPoints(points);
+    setAppState((prev) => ({
+      ...prev,
+      rewards: mapPointsToRewards(res.points, user.id),
+      spectatorPoints: mapPointsSummary(res.points),
+    }));
+  }
+
   async function handleUpdateRegistration(
     id: string,
     status: "Approved" | "Rejected",
@@ -1150,6 +1207,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCancelRegistration,
     handleInviteJockey,
     handleGetSpectatorRaceById,
+    handleCreatePrediction,
+    handleTopUpPoints,
     handleUpdateRegistration,
     handleDeleteTournament,
     handleDeleteRace,
