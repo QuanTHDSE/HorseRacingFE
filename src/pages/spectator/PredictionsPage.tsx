@@ -2,25 +2,34 @@ import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 export default function PredictionsPage() {
-  const { user, appState, handleAction } = useApp();
+  const { user, appState, handleCreatePrediction } = useApp();
   if (!user) return null;
   const myPredictions = appState.predictions.filter((p) => p.spectatorId === user.id);
+  const openRaces = appState.spectatorRaces.filter((race) => race.canPredict && !race.hasPrediction);
 
   return (
     <div className="page-stack">
-      <Panel title="Create and track predictions" subtitle="Pick a horse for the live race">
-        <div className="prediction-actions">
-          {appState.liveBoard.positions.slice(0, 3).map((item) => (
-            <button
-              key={item.horse}
-              className="secondary-button"
-              type="button"
-              onClick={() => handleAction("makePrediction", item.horse)}
-            >
-              Predict {item.horse}
-            </button>
-          ))}
-        </div>
+      <Panel title="Create and track predictions" subtitle="Minimum entry is 100 points">
+        {openRaces.length === 0 ? (
+          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
+            No races are open for predictions right now.
+          </p>
+        ) : (
+          <div className="prediction-actions">
+            {openRaces.slice(0, 3).flatMap((race) =>
+              race.participants.slice(0, 4).map((horse) => (
+                <button
+                  key={`${race.id}-${horse.id}`}
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => handleCreatePrediction(race.id, horse.id, 1)}
+                >
+                  Predict {horse.name} · 100 pts
+                </button>
+              )),
+            )}
+          </div>
+        )}
         <DataTable
           columns={[
             { key: "raceId", label: "Race"     },

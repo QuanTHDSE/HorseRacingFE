@@ -55,6 +55,7 @@ import type {
   Reward,
   Role,
   SpectatorRace,
+  SpectatorPointsSummary,
   SystemUser,
   Tone,
   Tournament,
@@ -87,6 +88,7 @@ const EMPTY_STATE: AppState = {
   ownerRegistrations: [],
   spectatorRaces: [],
   refereeRaces: [],
+  spectatorPoints: null,
 };
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
@@ -367,6 +369,14 @@ function mapPointsToRewards(pts: ApiSpectatorPoints, spectatorId: string): Rewar
     }));
 }
 
+function mapPointsSummary(pts: ApiSpectatorPoints): SpectatorPointsSummary {
+  return {
+    currentBalance: pts.currentBalance,
+    totalPointsEarned: pts.totalPointsEarned,
+    totalPointsSpent: pts.totalPointsSpent,
+  };
+}
+
 function mapSpectatorRace(r: ApiSpectatorRace): SpectatorRace {
   const statusMap: Record<string, string> = {
     scheduled: "Upcoming",
@@ -482,16 +492,16 @@ function mapRaceDetail(r: ApiRaceDetail): RaceDetail {
     const horse = p.horseId as any;
     const jockey = p.jockeyId as any;
     const owner = p.ownerId as any;
-    const horseId  = typeof horse  === "string" ? horse  : horse?._id  ?? "";
+    const horseId = typeof horse === "string" ? horse : horse?._id ?? "";
     return {
-      id:         p._id ?? `${horseId}-${p.laneNumber}`,
+      id: p._id ?? `${horseId}-${p.laneNumber}`,
       horseId,
-      horseName:  typeof horse  === "object" ? horse?.name      ?? "—" : "—",
-      jockeyId:   typeof jockey === "string" ? jockey : jockey?._id ?? "",
+      horseName: typeof horse === "object" ? horse?.name ?? "—" : "—",
+      jockeyId: typeof jockey === "string" ? jockey : jockey?._id ?? "",
       jockeyName: typeof jockey === "object" ? jockey?.fullName ?? "—" : "—",
-      ownerId:    typeof owner  === "string" ? owner  : owner?._id  ?? "",
-      ownerName:  typeof owner  === "object" ? owner?.fullName  ?? "—" : "—",
-      laneNumber:  p.laneNumber,
+      ownerId: typeof owner === "string" ? owner : owner?._id ?? "",
+      ownerName: typeof owner === "object" ? owner?.fullName ?? "—" : "—",
+      laneNumber: p.laneNumber,
       isScratched: !!p.scratchedAt,
       confirmedAt: p.confirmedAt,
     };
@@ -558,17 +568,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const jockeyApplications =
           regsRes.status === "fulfilled"
             ? regsRes.value.registrations
-                .filter((r) => r.status === "pending")
-                .map((r) => ({
-                  id: r.id,
-                  jockeyId: r.jockey?.id ?? "",
-                  jockeyName: r.jockey?.fullName ?? "Unknown",
-                  raceId: r.race.id,
-                  raceName: r.race.name,
-                  horseName: r.horse.name,
-                  appliedAt: r.createdAt?.slice(0, 10) ?? "",
-                  status: "Pending" as const,
-                }))
+              .filter((r) => r.status === "pending")
+              .map((r) => ({
+                id: r.id,
+                jockeyId: r.jockey?.id ?? "",
+                jockeyName: r.jockey?.fullName ?? "Unknown",
+                raceId: r.race.id,
+                raceName: r.race.name,
+                horseName: r.horse.name,
+                appliedAt: r.createdAt?.slice(0, 10) ?? "",
+                status: "Pending" as const,
+              }))
             : [];
 
         const publishQueue =
@@ -726,7 +736,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? notiRes.value.notifications.map((n) => mapNotification(n, account.id))
             : [];
 
-        setAppState((prev) => ({ ...prev, tournaments, spectatorRaces, predictions, rewards, notifications }));
+        const spectatorPoints =
+          ptsRes.status === "fulfilled" ? mapPointsSummary(ptsRes.value.points) : null;
+
+        setAppState((prev) => ({
+          ...prev,
+          tournaments,
+          spectatorRaces,
+          predictions,
+          rewards,
+          notifications,
+          spectatorPoints,
+        }));
       } else if (role === "referee") {
         const [racesRes, notiRes] = await Promise.allSettled([
           api.referee.listRaces(),
@@ -1101,6 +1122,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapSpectatorRace(res.race);
   }
 
+  async function refreshSpectatorState(account: Account): Promise<void> {
+    const [racesRes, predsRes, ptsRes] = await Promise.all([
+      api.spectator.listRaces(),
+      api.spectator.listPredictions(account.id),
+      api.spectator.getPoints(),
+    ]);
+
+    setAppState((prev) => ({
+      ...prev,
+      spectatorRaces: racesRes.races.map(mapSpectatorRace),
+      predictions: predsRes.predictions.map((p) => mapPrediction(p, account.id)),
+      rewards: mapPointsToRewards(ptsRes.points, account.id),
+      spectatorPoints: mapPointsSummary(ptsRes.points),
+    }));
+  }
+
+  async function handleCreatePrediction(
+    raceId: string,
+    horseId: string,
+    riskMultiplier = 1,
+  ): Promise<void> {
+    if (!user || user.role !== "spectator") return;
+    await api.spectator.createPrediction(raceId, [{ rank: 1, horseId }], riskMultiplier);
+    await refreshSpectatorState(user);
+  }
+
+  async function handleTopUpPoints(points: number): Promise<void> {
+    if (!user || user.role !== "spectator") return;
+    const res = await api.spectator.topUpPoints(points);
+    setAppState((prev) => ({
+      ...prev,
+      rewards: mapPointsToRewards(res.points, user.id),
+      spectatorPoints: mapPointsSummary(res.points),
+    }));
+  }
+
   async function handleUpdateRegistration(
     id: string,
     status: "Approved" | "Rejected",
@@ -1247,6 +1304,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCancelRegistration,
     handleInviteJockey,
     handleGetSpectatorRaceById,
+    handleCreatePrediction,
+    handleTopUpPoints,
     handleUpdateRegistration,
     handleDeleteTournament,
     handleDeleteRace,

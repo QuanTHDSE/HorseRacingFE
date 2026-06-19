@@ -234,6 +234,12 @@ export interface Reward {
   status: string;
 }
 
+export interface SpectatorPointsSummary {
+  currentBalance: number;
+  totalPointsEarned: number;
+  totalPointsSpent: number;
+}
+
 export interface Approval {
   id: string;
   type: string;
@@ -291,7 +297,7 @@ export interface Notification {
 }
 
 export type RacetrackSurface = "Grass" | "Dirt" | "Synthetic";
-export type RacetrackStatus  = "Active" | "Maintenance" | "Inactive";
+export type RacetrackStatus = "Active" | "Maintenance" | "Inactive";
 
 export interface Racetrack {
   id: string;
@@ -485,6 +491,7 @@ export interface AppState {
   ownerRegistrations: OwnerRegistration[];
   spectatorRaces: SpectatorRace[];
   refereeRaces: RefereeRace[];
+  spectatorPoints: SpectatorPointsSummary | null;
 }
 
 // ─── Role config ──────────────────────────────────────────────────────────────
@@ -545,6 +552,8 @@ export interface AppContextValue {
   handleCancelRegistration: (id: string) => Promise<void>;
   handleInviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) => Promise<void>;
   handleGetSpectatorRaceById: (id: string) => Promise<SpectatorRace>;
+  handleCreatePrediction: (raceId: string, horseId: string, riskMultiplier?: number) => Promise<void>;
+  handleTopUpPoints: (points: number) => Promise<void>;
   handleUpdateRegistration: (id: string, status: "Approved" | "Rejected", adminNote?: string) => Promise<void>;
   handleDeleteTournament: (id: string) => Promise<void>;
   handleDeleteRace: (id: string) => Promise<void>;
