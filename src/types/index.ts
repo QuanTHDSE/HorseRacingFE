@@ -553,6 +553,7 @@ export interface AppContextValue {
   handleInviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) => Promise<void>;
   handleGetSpectatorRaceById: (id: string) => Promise<SpectatorRace>;
   handleCreatePrediction: (raceId: string, horseId: string, riskMultiplier?: number) => Promise<void>;
+  handleCancelPrediction: (predictionId: string) => Promise<void>;
   handleTopUpPoints: (points: number) => Promise<void>;
   handleUpdateRegistration: (id: string, status: "Approved" | "Rejected", adminNote?: string) => Promise<void>;
   handleDeleteTournament: (id: string) => Promise<void>;

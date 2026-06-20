@@ -566,6 +566,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ raceId, predictedRanks, riskMultiplier }),
       }),
+    cancelPrediction: (predictionId: string) =>
+      request<{ prediction: ApiPrediction; points: ApiSpectatorPoints }>(
+        `/spectator/predictions/${predictionId}/cancel`,
+        { method: "PATCH" },
+      ),
     getPoints: () => request<{ points: ApiSpectatorPoints }>("/spectator/points"),
     topUpPoints: (points: number) =>
       request<{ payment: ApiPaymentTransaction; points: ApiSpectatorPoints }>("/spectator/top-ups", {

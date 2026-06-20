@@ -342,6 +342,7 @@ function mapPrediction(p: ApiPrediction, spectatorId: string): Prediction {
     partial: "Partial",
     correct: "Won",
     incorrect: "Lost",
+    cancelled: "Cancelled",
   };
   const firstHorse = p.predictedRanks[0]?.horseName ?? "—";
   return {
@@ -1148,6 +1149,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshSpectatorState(user);
   }
 
+  async function handleCancelPrediction(predictionId: string): Promise<void> {
+    if (!user || user.role !== "spectator") return;
+    await api.spectator.cancelPrediction(predictionId);
+    await refreshSpectatorState(user);
+  }
+
   async function handleTopUpPoints(points: number): Promise<void> {
     if (!user || user.role !== "spectator") return;
     const res = await api.spectator.topUpPoints(points);
@@ -1305,6 +1312,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleInviteJockey,
     handleGetSpectatorRaceById,
     handleCreatePrediction,
+    handleCancelPrediction,
     handleTopUpPoints,
     handleUpdateRegistration,
     handleDeleteTournament,

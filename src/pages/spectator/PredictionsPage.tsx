@@ -2,7 +2,7 @@ import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 export default function PredictionsPage() {
-  const { user, appState, handleCreatePrediction } = useApp();
+  const { user, appState, handleCreatePrediction, handleCancelPrediction } = useApp();
   if (!user) return null;
   const myPredictions = appState.predictions.filter((p) => p.spectatorId === user.id);
   const openRaces = appState.spectatorRaces.filter((race) => race.canPredict && !race.hasPrediction);
@@ -45,6 +45,22 @@ export default function PredictionsPage() {
               ),
             },
             { key: "reward", label: "Reward" },
+            {
+              key: "actions",
+              label: "Actions",
+              render: (row) =>
+                row.status === "Open" ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => handleCancelPrediction(row.id)}
+                  >
+                    Cancel
+                  </button>
+                ) : (
+                  "—"
+                ),
+            },
           ]}
           rows={myPredictions}
         />
