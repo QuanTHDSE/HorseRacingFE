@@ -9,7 +9,15 @@ type HealthFilter = "all" | "Fit" | "Injured" | "Retired";
 const HEALTH_TONE: Record<string, string> = { Fit: "success", Injured: "warning", Retired: "neutral" };
 
 const EMPTY_FORM: CreateHorseInput = {
-  name: "", breed: "", age: 0, registrationId: "", weight: undefined, color: "", trainerName: "",
+  name: "",
+  breed: "",
+  age: 0,
+  registrationId: "",
+  weight: undefined,
+  color: "",
+  trainerName: "",
+  profilePdfUrl: "",
+  profilePdfName: "",
 };
 
 function ageNum(s: string): number { return Math.max(1, Math.min(30, parseInt(s, 10) || 1)); }
@@ -65,6 +73,8 @@ export default function HorsesPage() {
         weight:         cForm.weight ? Number(cForm.weight) : undefined,
         color:          cForm.color?.trim() || undefined,
         trainerName:    cForm.trainerName?.trim() || undefined,
+        profilePdfUrl:  cForm.profilePdfUrl?.trim() || undefined,
+        profilePdfName: cForm.profilePdfName?.trim() || undefined,
       });
       setCForm(EMPTY_FORM);
       setCSuccess("Horse registered successfully!");
@@ -82,7 +92,16 @@ export default function HorsesPage() {
   function openEdit(h: Horse) {
     if (editHorse?.id === h.id) { setEditHorse(null); setEMsg(""); return; }
     setEditHorse(h);
-    setEForm({ name: h.name, breed: h.breed, age: h.age, color: h.color, weight: h.weight, trainerName: h.trainerName });
+    setEForm({
+      name: h.name,
+      breed: h.breed,
+      age: h.age,
+      color: h.color,
+      weight: h.weight,
+      trainerName: h.trainerName,
+      profilePdfUrl: h.profilePdfUrl,
+      profilePdfName: h.profilePdfName,
+    });
     setEMsg("");
   }
 
@@ -99,6 +118,8 @@ export default function HorsesPage() {
       if (eForm.color?.trim())       payload.color       = eForm.color.trim();
       if (eForm.weight)              payload.weight      = Number(eForm.weight);
       if (eForm.trainerName?.trim()) payload.trainerName = eForm.trainerName.trim();
+      if (eForm.profilePdfUrl !== undefined)  payload.profilePdfUrl  = eForm.profilePdfUrl.trim();
+      if (eForm.profilePdfName !== undefined) payload.profilePdfName = eForm.profilePdfName.trim();
 
       await handleUpdateHorse(editHorse.id, payload);
       setEMsg("Horse updated!");
@@ -172,6 +193,14 @@ export default function HorsesPage() {
                   <span>Registration ID</span>
                   <input value={cForm.registrationId ?? ""} onChange={(e) => cf("registrationId", e.target.value)} placeholder="Official registration number (optional)" disabled={cLoading} />
                 </label>
+                <label className="field">
+                  <span>Horse PDF URL</span>
+                  <input value={cForm.profilePdfUrl ?? ""} onChange={(e) => cf("profilePdfUrl", e.target.value)} placeholder="https://.../horse-profile.pdf" disabled={cLoading} />
+                </label>
+                <label className="field">
+                  <span>PDF display name</span>
+                  <input value={cForm.profilePdfName ?? ""} onChange={(e) => cf("profilePdfName", e.target.value)} placeholder="Pedigree or health certificate" disabled={cLoading} />
+                </label>
               </div>
               <div className="form-actions">
                 <button type="button" className="secondary-button" disabled={cLoading} onClick={() => { setCForm(EMPTY_FORM); setCErrors([]); }}>Reset</button>
@@ -215,6 +244,15 @@ export default function HorsesPage() {
               key: "jockeyId",
               label: "Jockey",
               render: (row) => row.jockeyName ?? <span style={{ color: "var(--text-muted)" }}>—</span>,
+            },
+            {
+              key: "profilePdfUrl",
+              label: "PDF",
+              render: (row) => row.profilePdfUrl ? (
+                <a className="secondary-button btn-xs" href={row.profilePdfUrl} target="_blank" rel="noreferrer">
+                  View PDF
+                </a>
+              ) : <span style={{ color: "var(--text-muted)" }}>—</span>,
             },
             {
               key: "id",
@@ -272,6 +310,14 @@ export default function HorsesPage() {
               <label className="field">
                 <span>Trainer</span>
                 <input value={eForm.trainerName ?? ""} onChange={(e) => setEForm((p) => ({ ...p, trainerName: e.target.value }))} disabled={eLoading} />
+              </label>
+              <label className="field">
+                <span>Horse PDF URL</span>
+                <input value={eForm.profilePdfUrl ?? ""} onChange={(e) => setEForm((p) => ({ ...p, profilePdfUrl: e.target.value }))} placeholder="https://.../horse-profile.pdf" disabled={eLoading} />
+              </label>
+              <label className="field">
+                <span>PDF display name</span>
+                <input value={eForm.profilePdfName ?? ""} onChange={(e) => setEForm((p) => ({ ...p, profilePdfName: e.target.value }))} disabled={eLoading} />
               </label>
             </div>
             <div className="form-actions">

@@ -9,9 +9,9 @@ interface Props {
 }
 
 const ROLLOVER_OPTIONS: { value: PredictionConfig["rolloverPolicy"]; label: string }[] = [
-  { value: "to_organizer",       label: "Chuyển cho ban tổ chức" },
-  { value: "rollover_next_race", label: "Dồn sang cuộc đua kế tiếp" },
-  { value: "refund",             label: "Hoàn lại người chơi" },
+  { value: "to_organizer",       label: "Transfer to organizer" },
+  { value: "rollover_next_race", label: "Roll over to next race" },
+  { value: "refund",             label: "Refund players" },
 ];
 
 function toLocalInput(iso?: string | null): string {
@@ -24,7 +24,11 @@ function fromLocalInput(v: string): string | null {
   return v ? new Date(v).toISOString() : null;
 }
 function parseList(text: string): number[] {
-  return text.split(",").map((s) => Number(s.trim())).filter((n) => !Number.isNaN(n));
+  return text.split(",").map((s) => Number(s.trim())).filter((n) => Number.isFinite(n));
+}
+
+function uniquePositiveIntegers(values: number[]): number[] {
+  return [...new Set(values.filter((n) => Number.isInteger(n) && n >= 1))].sort((a, b) => a - b);
 }
 
 // ── Small presentational helpers ───────────────────────────────
@@ -107,7 +111,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         setRankText(c ? c.rankRewardRates.join(", ") : "");
         setRiskText(c ? c.quickRiskMultipliers.join(", ") : "");
       })
-      .catch((e: unknown) => alive && setLoadError(e instanceof Error ? e.message : "Không tải được cấu hình"))
+      .catch((e: unknown) => alive && setLoadError(e instanceof Error ? e.message : "Could not load prediction configuration."))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
   }, [tournamentId, handleGetPredictionConfig]);
@@ -117,16 +121,18 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
     setMsg("");
   }
 
-  if (loading) return <p className="pc-section-sub">Đang tải cấu hình dự đoán…</p>;
+  if (loading) return <p className="pc-section-sub">Loading prediction configuration...</p>;
   if (loadError) return <div className="form-banner form-banner-error">{loadError}</div>;
-  if (!cfg) return <p className="pc-section-sub">Không có cấu hình.</p>;
+  if (!cfg) return <p className="pc-section-sub">No prediction configuration found.</p>;
 
   const rankRates = parseList(rankText);
-  const quickRisks = parseList(riskText);
+  const quickRisks = uniquePositiveIntegers(parseList(riskText));
   const poolSum = cfg.organizerFeeRate + cfg.racingRewardRate + cfg.spectatorRewardRate;
-  const splitSum = cfg.ownerShareRate + cfg.jockeyShareRate;
   const rankSum = rankRates.reduce((a, b) => a + b, 0);
-  const valid = poolSum === 100 && splitSum === 100 && rankSum === 100;
+  const riskValid = !cfg.poolEnabled || quickRisks.length > 0;
+  const minRiskMultiplier = quickRisks[0] ?? cfg.minRiskMultiplier;
+  const maxRiskMultiplier = quickRisks[quickRisks.length - 1] ?? cfg.maxRiskMultiplier;
+  const valid = poolSum === 100 && rankSum === 100 && riskValid;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -138,15 +144,17 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         ...cfg,
         rankRewardRates: rankRates,
         quickRiskMultipliers: quickRisks,
+        minRiskMultiplier,
+        maxRiskMultiplier,
       });
       setCfg(updated);
       setRankText(updated.rankRewardRates.join(", "));
       setRiskText(updated.quickRiskMultipliers.join(", "));
       setIsError(false);
-      setMsg("Đã lưu cấu hình dự đoán.");
+      setMsg("Prediction configuration saved.");
     } catch (err: unknown) {
       setIsError(true);
-      setMsg(err instanceof Error ? err.message : "Lưu thất bại.");
+      setMsg(err instanceof Error ? err.message : "Save failed.");
     } finally {
       setSaving(false);
     }
@@ -157,38 +165,38 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
 
   const distTotal = poolSum || 1;
   const distSegs = [
-    { label: "Tổ chức",  val: cfg.organizerFeeRate,   color: "var(--c-warning)" },
-    { label: "Đua",      val: cfg.racingRewardRate,    color: "var(--c-tertiary)" },
-    { label: "Khán giả", val: cfg.spectatorRewardRate, color: "var(--c-primary)" },
+    { label: "Organizer", val: cfg.organizerFeeRate,   color: "var(--c-warning)" },
+    { label: "Racing rewards", val: cfg.racingRewardRate, color: "var(--c-tertiary)" },
+    { label: "Spectator prize pool", val: cfg.spectatorRewardRate, color: "var(--c-primary)" },
   ];
 
   return (
     <form onSubmit={save} className="pc-form">
       {!editable && (
         <div className="form-banner" style={{ background: "var(--c-surf)" }}>
-          Chỉ chỉnh cấu hình khi giải đấu ở trạng thái <strong>Draft</strong> hoặc <strong>Registration</strong>. Đang ở chế độ xem.
+          Prediction settings are editable only while the tournament is in <strong>Draft</strong> or <strong>Registration</strong>. View-only mode is active.
         </div>
       )}
       {msg && <div className={`form-banner ${isError ? "form-banner-error" : "form-banner-success"}`}>{msg}</div>}
 
-      {/* ── 1. Dự đoán cơ bản ── */}
+      {/* ── 1. Basic prediction settings ── */}
       <Section
-        title="Dự đoán cơ bản"
-        sub="Điểm thưởng và khung giờ cho dự đoán thường"
-        right={<Switch checked={cfg.isEnabled} disabled={dis} onChange={(v) => set("isEnabled", v)} label="Bật dự đoán" />}
+        title="Basic Prediction"
+        sub="Base scoring and prediction window"
+        right={<Switch checked={cfg.isEnabled} disabled={dis} onChange={(v) => set("isEnabled", v)} label="Enable prediction" />}
         off={!cfg.isEnabled}
       >
         <div className="form-grid-2">
-          <NumField label="Điểm mỗi dự đoán đúng" value={cfg.pointsPerCorrect} min={0} disabled={dis || !cfg.isEnabled} onChange={(v) => set("pointsPerCorrect", v)} />
-          <NumField label="Điểm thưởng đoán đúng Top 3" value={cfg.bonusPointsTop3} min={0} disabled={dis || !cfg.isEnabled} onChange={(v) => set("bonusPointsTop3", v)} />
-          <NumField label="Số dự đoán tối đa / cuộc đua" value={cfg.maxPredictionsPerRace} min={1} max={5} disabled={dis || !cfg.isEnabled} onChange={(v) => set("maxPredictionsPerRace", v)} />
-          <NumField label="Điểm tối thiểu để chia thưởng" value={cfg.minScoreToShare} min={1} disabled={dis || !cfg.isEnabled} onChange={(v) => set("minScoreToShare", v)} />
+          <NumField label="Points per correct prediction" value={cfg.pointsPerCorrect} min={0} disabled={dis || !cfg.isEnabled} onChange={(v) => set("pointsPerCorrect", v)} />
+          <NumField label="Top 3 bonus points" value={cfg.bonusPointsTop3} min={0} disabled={dis || !cfg.isEnabled} onChange={(v) => set("bonusPointsTop3", v)} />
+          <NumField label="Predictions per race" value={cfg.maxPredictionsPerRace} min={1} max={5} disabled={dis || !cfg.isEnabled} onChange={(v) => set("maxPredictionsPerRace", v)} />
+          <NumField label="Minimum score to share prizes" value={cfg.minScoreToShare} min={1} disabled={dis || !cfg.isEnabled} onChange={(v) => set("minScoreToShare", v)} />
           <label className="field">
-            <span>Mở dự đoán lúc</span>
+            <span>Prediction opens at</span>
             <input type="datetime-local" value={toLocalInput(cfg.predictionOpenAt)} disabled={dis || !cfg.isEnabled} onChange={(e) => set("predictionOpenAt", fromLocalInput(e.target.value))} />
           </label>
           <label className="field">
-            <span>Đóng dự đoán lúc</span>
+            <span>Prediction closes at</span>
             <input type="datetime-local" value={toLocalInput(cfg.predictionCloseAt)} disabled={dis || !cfg.isEnabled} onChange={(e) => set("predictionCloseAt", fromLocalInput(e.target.value))} />
           </label>
         </div>
@@ -196,27 +204,24 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
 
       {/* ── 2. Bounty Pool ── */}
       <Section
-        title="Quỹ thưởng góp · Bounty Pool"
-        sub="Người chơi góp điểm với mức rủi ro, đoán đúng chia lại quỹ"
-        right={<Switch checked={cfg.poolEnabled} disabled={dis} onChange={(v) => set("poolEnabled", v)} label="Bật pool" />}
+        title="Bounty Pool"
+        sub="Players spend points on a permitted risk multiplier; winners share the pool"
+        right={<Switch checked={cfg.poolEnabled} disabled={dis} onChange={(v) => set("poolEnabled", v)} label="Enable pool" />}
       >
         <p className="pc-hint">
-          Điểm góp = <strong>Phí tham gia × Mức rủi ro</strong>. Đoán đúng được hoàn điểm góp và chia thêm từ
-          quỹ theo <strong>điểm có trọng số rủi ro (score = điểm góp × rủi ro)</strong> — dám rủi ro cao mà đúng thì
-          phần thưởng tăng theo bình phương.
+          Contribution = <strong>Entry fee × risk multiplier</strong>. Correct predictions get the contribution back and
+          share extra pool rewards by <strong>risk-weighted score (score = contribution × multiplier)</strong>.
         </p>
         <div className={cn(poolOff && "is-off")} style={poolOff ? { opacity: 0.5, pointerEvents: dis ? "none" : "auto" } : undefined}>
           <div className="form-grid-2">
-            <NumField label="Phí tham gia (điểm)" value={cfg.entryFee} min={0} disabled={dis || poolOff} onChange={(v) => set("entryFee", v)} />
-            <NumField label="Phần trăm phí giữ lại" value={cfg.feePercent} min={0} max={30} unit="%" disabled={dis || poolOff} onChange={(v) => set("feePercent", v)} />
-            <NumField label="Rủi ro tối thiểu" value={cfg.minRiskMultiplier} min={1} unit="×" disabled={dis || poolOff} onChange={(v) => set("minRiskMultiplier", v)} />
-            <NumField label="Rủi ro tối đa" value={cfg.maxRiskMultiplier} min={1} unit="×" disabled={dis || poolOff} onChange={(v) => set("maxRiskMultiplier", v)} />
+            <NumField label="Entry fee (points)" value={cfg.entryFee} min={0} disabled={dis || poolOff} onChange={(v) => set("entryFee", v)} />
+            <NumField label="Platform fee" value={cfg.feePercent} min={0} max={30} unit="%" disabled={dis || poolOff} onChange={(v) => set("feePercent", v)} />
             <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Các mức rủi ro nhanh (số nguyên, cách nhau dấu phẩy)</span>
+              <span>Allowed risk multipliers (positive integers, comma-separated)</span>
               <input value={riskText} disabled={dis || poolOff} onChange={(e) => { setRiskText(e.target.value); setMsg(""); }} placeholder="1, 2, 3, 6" />
             </label>
             <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Chính sách khi quỹ dư (không ai đoán đúng)</span>
+              <span>Unclaimed pool policy</span>
               <select value={cfg.rolloverPolicy} disabled={dis || poolOff} onChange={(e) => set("rolloverPolicy", e.target.value as PredictionConfig["rolloverPolicy"])}>
                 {ROLLOVER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -225,12 +230,12 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         </div>
       </Section>
 
-      {/* ── 3. Phân bổ quỹ thắng ── */}
-      <Section title="Phân bổ quỹ thắng (Win Pool)" sub="Tổng 3 phần phải đúng 100%" right={<SumChip sum={poolSum} />}>
+      {/* ── 3. Pool distribution ── */}
+      <Section title="Pool Distribution" sub="The three shares must add up to 100%" right={<SumChip sum={poolSum} />}>
         <div className="form-grid-2" style={{ gridTemplateColumns: "repeat(3, minmax(0,1fr))" }}>
-          <NumField label="Ban tổ chức" value={cfg.organizerFeeRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("organizerFeeRate", v)} />
-          <NumField label="Thưởng đua (owner+jockey)" value={cfg.racingRewardRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("racingRewardRate", v)} />
-          <NumField label="Thưởng khán giả (prize pool)" value={cfg.spectatorRewardRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("spectatorRewardRate", v)} />
+          <NumField label="Organizer fee" value={cfg.organizerFeeRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("organizerFeeRate", v)} />
+          <NumField label="Racing rewards" value={cfg.racingRewardRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("racingRewardRate", v)} />
+          <NumField label="Spectator prize pool" value={cfg.spectatorRewardRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("spectatorRewardRate", v)} />
         </div>
         <div style={{ marginTop: "14px" }}>
           <div className="pc-dist">
@@ -246,18 +251,10 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         </div>
       </Section>
 
-      {/* ── 4. Chia thưởng phần đua ── */}
-      <Section title="Chia thưởng phần đua" sub="Owner và jockey của ngựa về nhất · tổng 100%" right={<SumChip sum={splitSum} />}>
-        <div className="form-grid-2">
-          <NumField label="Chủ ngựa (owner)" value={cfg.ownerShareRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("ownerShareRate", v)} />
-          <NumField label="Nài ngựa (jockey)" value={cfg.jockeyShareRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("jockeyShareRate", v)} />
-        </div>
-      </Section>
-
-      {/* ── 5. Tỷ lệ theo thứ hạng ── */}
-      <Section title="Tỷ lệ thưởng theo thứ hạng" sub="Dùng cho chế độ điểm thường · tổng 100%" right={<SumChip sum={rankSum} />}>
+      {/* ── 4. Rank reward split ── */}
+      <Section title="Rank Reward Split" sub="Used for racing rewards; the values must add up to 100%" right={<SumChip sum={rankSum} />}>
         <label className="field">
-          <span>Danh sách % theo hạng (cách nhau dấu phẩy)</span>
+          <span>Rank percentages (comma-separated)</span>
           <input value={rankText} disabled={dis} onChange={(e) => { setRankText(e.target.value); setMsg(""); }} placeholder="50, 25, 15, 7, 3" />
         </label>
       </Section>
@@ -266,12 +263,12 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         <>
           {!valid && (
             <p className="pc-section-sub" style={{ color: "var(--c-danger)", fontWeight: 600 }}>
-              ⚠ Mỗi nhóm tỷ lệ (phân bổ quỹ, chia thưởng đua, theo thứ hạng) phải có tổng đúng 100% mới lưu được.
+              Pool distribution and rank reward split must each add up to 100%. Allowed risk multipliers must contain at least one positive integer.
             </p>
           )}
           <div className="form-actions">
             <button type="submit" className="primary-button" disabled={saving || !valid}>
-              {saving ? "Đang lưu…" : "Lưu cấu hình"}
+              {saving ? "Saving..." : "Save configuration"}
             </button>
           </div>
         </>
