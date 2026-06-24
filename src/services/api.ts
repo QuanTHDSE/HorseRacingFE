@@ -185,6 +185,8 @@ export interface ApiHorse {
   weight?: number;
   color?: string;
   trainerName?: string;
+  profilePdfUrl?: string;
+  profilePdfName?: string;
   healthStatus: "fit" | "injured" | "retired";
   currentJockey?: { id: string; fullName: string } | null;
   createdAt?: string;

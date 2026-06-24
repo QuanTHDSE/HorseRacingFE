@@ -209,6 +209,8 @@ function mapHorse(h: ApiHorse, ownerId: string): Horse {
     weight: h.weight,
     trainerName: h.trainerName,
     registrationId: h.registrationId,
+    profilePdfUrl: h.profilePdfUrl,
+    profilePdfName: h.profilePdfName,
   };
 }
 

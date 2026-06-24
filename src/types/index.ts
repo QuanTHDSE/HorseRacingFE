@@ -33,6 +33,8 @@ export interface Horse {
   weight?: number;
   trainerName?: string;
   registrationId?: string;
+  profilePdfUrl?: string;
+  profilePdfName?: string;
   jockeyName?: string;
 }
 
@@ -363,6 +365,8 @@ export interface CreateHorseInput {
   weight?: number;
   color?: string;
   trainerName?: string;
+  profilePdfUrl?: string;
+  profilePdfName?: string;
 }
 
 export interface OwnerRegistration {
