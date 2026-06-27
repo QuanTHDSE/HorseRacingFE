@@ -640,6 +640,7 @@ export interface AppContextValue {
   handleCreatePrediction: (raceId: string, horseId: string, riskMultiplier?: number) => Promise<void>;
   handleCancelPrediction: (predictionId: string) => Promise<void>;
   handleTopUpPoints: (points: number) => Promise<void>;
+  handleCreatePayosTopUp: (points: number) => Promise<string>;
   handleUpdateRegistration: (id: string, status: "Approved" | "Rejected", adminNote?: string) => Promise<void>;
   handleDeleteTournament: (id: string) => Promise<void>;
   handleDeleteRace: (id: string) => Promise<void>;

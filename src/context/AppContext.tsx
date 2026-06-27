@@ -1195,6 +1195,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }
 
+  async function handleCreatePayosTopUp(points: number): Promise<string> {
+    if (!user || user.role !== "spectator") throw new Error("Spectator login is required.");
+    const res = await api.spectator.createPayosTopUp(points);
+    return res.paymentUrl;
+  }
+
   async function handleUpdateRegistration(
     id: string,
     status: "Approved" | "Rejected",
@@ -1379,6 +1385,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCreatePrediction,
     handleCancelPrediction,
     handleTopUpPoints,
+    handleCreatePayosTopUp,
     handleUpdateRegistration,
     handleDeleteTournament,
     handleDeleteRace,
