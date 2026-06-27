@@ -313,6 +313,11 @@ export interface ApiPaymentTransaction {
   createdAt: string;
 }
 
+export interface ApiPayosTopUpResponse {
+  payment: ApiPaymentTransaction;
+  paymentUrl: string;
+}
+
 export interface ApiViewingTicketInfo {
   requiresTicket: boolean;
   hasPass: boolean;
@@ -658,6 +663,11 @@ export const api = {
     getPoints: () => request<{ points: ApiSpectatorPoints }>("/spectator/points"),
     topUpPoints: (points: number) =>
       request<{ payment: ApiPaymentTransaction; points: ApiSpectatorPoints }>("/spectator/top-ups", {
+        method: "POST",
+        body: JSON.stringify({ points }),
+      }),
+    createPayosTopUp: (points: number) =>
+      request<ApiPayosTopUpResponse>("/spectator/top-ups/payos", {
         method: "POST",
         body: JSON.stringify({ points }),
       }),
