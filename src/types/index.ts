@@ -162,6 +162,49 @@ export interface RefereeResultStatus {
   rankingsCount: number;
 }
 
+export interface ViolationRule {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category: string;
+  severity: string;
+  penaltyApplied: string;
+  banDurationDays: number;
+}
+
+export interface RaceViolation {
+  id: string;
+  ruleId: string | null;
+  type: string;
+  description: string;
+  penaltyApplied: string | null;
+  target: "horse" | "jockey" | "both";
+  horseId: string | null;
+  horseName: string | null;
+  jockeyId: string | null;
+  jockeyName: string | null;
+  bannedUntil: string | null;
+  recordedAt: string;
+}
+
+export interface PenalizeInput {
+  ruleId: string;
+  target: "horse" | "jockey" | "both";
+  horseId?: string;
+  jockeyId?: string;
+  notes?: string;
+}
+
+export interface TimePenaltyInput {
+  horseId: string;
+  jockeyId: string;
+  addedTimeSeconds: number;
+  type: string;
+  description: string;
+  ruleId?: string;
+}
+
 export interface RefereeDashboard {
   upcomingRaces: number;
   completedRaces: number;
@@ -175,6 +218,39 @@ export interface ResultRankingInput {
   ownerId: string;
   finishTime?: number;
   prize?: number;
+}
+
+export interface RaceEligibleEntry {
+  registrationId: string;
+  horseId: string;
+  horseName: string;
+  ownerId: string;
+  ownerName: string;
+  jockeyId: string | null;
+  jockeyName: string | null;
+}
+
+export interface RaceSimHorse {
+  horseId: string;
+  horseName: string;
+  jockeyId: string;
+  jockeyName: string;
+  ownerId: string;
+  laneNumber: number;
+  clothNumber: number;
+  rank: number;
+  finishTime: number;
+  prize: number;
+}
+
+export interface RaceSimTimeline {
+  raceId: string;
+  name: string;
+  distance: number;
+  laps: number;
+  trackCondition: string;
+  durationMs: number;
+  horses: RaceSimHorse[];
 }
 
 export interface Tournament {
@@ -253,6 +329,8 @@ export interface Approval {
   horseBreed?: string;
   horseAge?: number;
   horseHealth?: string;
+  horsePdfUrl?: string;
+  horsePdfName?: string;
   raceName?: string;
   raceRound?: number;
   raceDate?: string;
@@ -549,8 +627,11 @@ export interface AppContextValue {
   handleGetJockeyRaceById: (id: string) => Promise<Race>;
   handleGetRaceById: (id: string) => Promise<RaceDetail>;
   handleAddParticipant: (raceId: string, data: AddParticipantInput) => Promise<RaceDetail>;
+  handleGetRaceEligibleEntries: (raceId: string) => Promise<RaceEligibleEntry[]>;
+  handleSimulateRace: (raceId: string) => Promise<RaceSimTimeline>;
   handleUpdateRaceStatus: (raceId: string, status: string) => Promise<RaceDetail>;
   handleCreateHorse: (data: CreateHorseInput) => Promise<void>;
+  handleUploadHorsePdf: (file: File) => Promise<{ url: string; name: string }>;
   handleUpdateHorse: (id: string, data: Partial<CreateHorseInput>) => Promise<void>;
   handleRegisterForRace: (raceId: string, horseId: string) => Promise<void>;
   handleCancelRegistration: (id: string) => Promise<void>;
@@ -569,6 +650,13 @@ export interface AppContextValue {
   handleRefreshRefereeRaces: () => Promise<void>;
   handleGetRefereeChecks: (raceId: string) => Promise<RefereeParticipantCheck[]>;
   handleToggleRefereeCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") => Promise<RefereeParticipantCheck[]>;
+  handleStartRefereeRace: (raceId: string) => Promise<void>;
+  handleSimulateRefereeDraft: (raceId: string) => Promise<void>;
+  handleGetViolationRules: () => Promise<ViolationRule[]>;
+  handleGetRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
+  handlePenalize: (raceId: string, input: PenalizeInput) => Promise<void>;
+  handleApplyTimePenalty: (raceId: string, input: TimePenaltyInput) => Promise<void>;
+  handleRevokePenalty: (raceId: string, violationId: string) => Promise<void>;
   handleGetRaceResult: (raceId: string) => Promise<RefereeResultStatus | null>;
   handleSubmitRaceResult: (raceId: string, rankings: ResultRankingInput[]) => Promise<void>;
   handleConfirmRaceResult: (raceId: string) => Promise<void>;

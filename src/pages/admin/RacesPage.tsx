@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel } from "../../components";
+import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
-import type { AddParticipantInput, Race, RaceDetail } from "../../types";
+import type { AddParticipantInput, Race, RaceDetail, RaceEligibleEntry, RaceSimTimeline } from "../../types";
 import { cn } from "../../utils/cn";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -17,7 +18,6 @@ type NextAction = { apiStatus: string; label: string; danger?: boolean };
 
 const NEXT_ACTIONS: Record<string, NextAction[]> = {
   Upcoming: [
-    { apiStatus: "ongoing",   label: "Start race"   },
     { apiStatus: "cancelled", label: "Cancel race", danger: true },
   ],
   Live: [
@@ -97,6 +97,8 @@ export default function RacesPage() {
     handleCreateRace,
     handleGetRaceById,
     handleAddParticipant,
+    handleGetRaceEligibleEntries,
+    handleSimulateRace,
     handleUpdateRaceStatus,
     handleDeleteRace,
   } = useApp();
@@ -127,11 +129,19 @@ export default function RacesPage() {
   const [pLoading, setPLoading] = useState(false);
   const [pError, setPError] = useState("");
 
+  // Approved registrations eligible to be added (admin picks from these)
+  const [entries, setEntries] = useState<RaceEligibleEntry[]>([]);
+  const [entriesLoading, setEntriesLoading] = useState(false);
+  const [selectedEntryId, setSelectedEntryId] = useState("");
+
+  // ── Start race (live simulation) ─────────────────────────────────────────────
+  const [simTimeline, setSimTimeline] = useState<RaceSimTimeline | null>(null);
+  const [simLoading, setSimLoading] = useState(false);
+
   // ── Derived data ───────────────────────────────────────────────────────────
   const races      = appState.races;
   const tournaments = appState.tournaments;
   const jockeys    = appState.users.filter((u) => u.role === "jockey" && u.status === "Active");
-  const owners     = appState.users.filter((u) => u.role === "owner"  && u.status === "Active");
 
   const filtered = races.filter((r) => {
     if (filterTournament && r.tournamentId !== filterTournament) return false;
@@ -195,6 +205,8 @@ export default function RacesPage() {
     setShowAddForm(false);
     setPForm(EMPTY_PARTICIPANT);
     setPError("");
+    setEntries([]);
+    setSelectedEntryId("");
     try {
       setDetail(await handleGetRaceById(race.id));
     } catch (err: unknown) {
@@ -210,6 +222,42 @@ export default function RacesPage() {
     setDetailError("");
     setStatusMsg("");
     setShowAddForm(false);
+    setEntries([]);
+    setSelectedEntryId("");
+  }
+
+  async function toggleAddForm() {
+    if (showAddForm) {
+      setShowAddForm(false);
+      setPForm(EMPTY_PARTICIPANT);
+      setSelectedEntryId("");
+      setPError("");
+      return;
+    }
+    setShowAddForm(true);
+    setPForm(EMPTY_PARTICIPANT);
+    setSelectedEntryId("");
+    setPError("");
+    if (!detail) return;
+    setEntriesLoading(true);
+    try {
+      setEntries(await handleGetRaceEligibleEntries(detail.id));
+    } catch (err: unknown) {
+      setPError(err instanceof Error ? err.message : "Failed to load approved entries.");
+    } finally {
+      setEntriesLoading(false);
+    }
+  }
+
+  function onSelectEntry(entryId: string) {
+    setSelectedEntryId(entryId);
+    setPError("");
+    const entry = entries.find((e) => e.registrationId === entryId);
+    setPForm(
+      entry
+        ? { horseId: entry.horseId, jockeyId: entry.jockeyId ?? "", ownerId: entry.ownerId, laneNumber: "" }
+        : EMPTY_PARTICIPANT,
+    );
   }
 
   async function doStatusUpdate(apiStatus: string) {
@@ -231,16 +279,15 @@ export default function RacesPage() {
     e.preventDefault();
     if (!detail) return;
     const errs: string[] = [];
-    if (!pForm.horseId.trim()) errs.push("Horse ID is required.");
-    if (!pForm.jockeyId)       errs.push("Please select a jockey.");
-    if (!pForm.ownerId)        errs.push("Please select an owner.");
+    if (!selectedEntryId)  errs.push("Please select an approved entry.");
+    if (!pForm.jockeyId)   errs.push("This entry has no jockey yet — please choose one.");
     if (errs.length) { setPError(errs.join(" ")); return; }
 
     setPLoading(true);
     setPError("");
     try {
       const input: AddParticipantInput = {
-        horseId:    pForm.horseId.trim(),
+        horseId:    pForm.horseId,
         jockeyId:   pForm.jockeyId,
         ownerId:    pForm.ownerId,
         laneNumber: pForm.laneNumber ? Number(pForm.laneNumber) : undefined,
@@ -248,7 +295,9 @@ export default function RacesPage() {
       const updated = await handleAddParticipant(detail.id, input);
       setDetail(updated);
       setPForm(EMPTY_PARTICIPANT);
-      setShowAddForm(false);
+      setSelectedEntryId("");
+      // Bỏ entry vừa thêm khỏi danh sách để có thể thêm tiếp con khác
+      setEntries((prev) => prev.filter((x) => x.registrationId !== selectedEntryId));
     } catch (err: unknown) {
       setPError(err instanceof Error ? err.message : "Failed to add participant.");
     } finally {
@@ -256,10 +305,32 @@ export default function RacesPage() {
     }
   }
 
+  async function doStartRace() {
+    if (!detail) return;
+    setSimLoading(true);
+    setStatusMsg("");
+    try {
+      const timeline = await handleSimulateRace(detail.id);
+      setSimTimeline(timeline);
+    } catch (err: unknown) {
+      setStatusMsg(err instanceof Error ? err.message : "Failed to start race.");
+    } finally {
+      setSimLoading(false);
+    }
+  }
+
+  async function onPlayerClose() {
+    setSimTimeline(null);
+    if (detail) {
+      try { setDetail(await handleGetRaceById(detail.id)); } catch { /* ignore */ }
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="page-stack">
+      {simTimeline && <RaceLivePlayer timeline={simTimeline} onClose={onPlayerClose} />}
 
       {/* ── Metrics ── */}
       <div className="metric-grid four">
@@ -484,7 +555,7 @@ export default function RacesPage() {
                     <button
                       type="button"
                       className="secondary-button btn-xs"
-                      onClick={() => { setShowAddForm((v) => !v); setPError(""); setPForm(EMPTY_PARTICIPANT); }}
+                      onClick={toggleAddForm}
                     >
                       {showAddForm ? "Cancel" : "+ Add participant"}
                     </button>
@@ -499,71 +570,106 @@ export default function RacesPage() {
                     onSubmit={doAddParticipant}
                     style={{ marginTop: "16px", padding: "16px", background: "var(--surface-2)", borderRadius: "10px" }}
                   >
-                    <strong style={{ fontSize: "0.9rem", display: "block", marginBottom: "12px" }}>
+                    <strong style={{ fontSize: "0.9rem", display: "block", marginBottom: "4px" }}>
                       Add participant to race
                     </strong>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "0 0 12px" }}>
+                      Pick from registrations already approved for this race.
+                    </p>
                     {pError && (
                       <div className="form-banner form-banner-error" style={{ marginBottom: "10px" }}>{pError}</div>
                     )}
-                    <div className="form-grid-2">
-                      <label className="field">
-                        <span>Horse ID <span className="required">*</span></span>
-                        <input
-                          value={pForm.horseId}
-                          onChange={(e) => setPForm((p) => ({ ...p, horseId: e.target.value }))}
-                          placeholder="MongoDB ObjectId of horse"
-                          disabled={pLoading}
-                        />
-                      </label>
-                      <label className="field">
-                        <span>Lane number (optional)</span>
-                        <input
-                          type="number" min={1} max={detail.maxParticipants}
-                          value={pForm.laneNumber}
-                          onChange={(e) => setPForm((p) => ({ ...p, laneNumber: e.target.value }))}
-                          placeholder="Auto-assigned if empty"
-                          disabled={pLoading}
-                        />
-                      </label>
-                      <label className="field">
-                        <span>Jockey <span className="required">*</span></span>
-                        <select
-                          value={pForm.jockeyId}
-                          onChange={(e) => setPForm((p) => ({ ...p, jockeyId: e.target.value }))}
-                          disabled={pLoading}
-                        >
-                          <option value="">— Select jockey —</option>
-                          {jockeys.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
-                        </select>
-                      </label>
-                      <label className="field">
-                        <span>Horse owner <span className="required">*</span></span>
-                        <select
-                          value={pForm.ownerId}
-                          onChange={(e) => setPForm((p) => ({ ...p, ownerId: e.target.value }))}
-                          disabled={pLoading}
-                        >
-                          <option value="">— Select owner —</option>
-                          {owners.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                        </select>
-                      </label>
-                    </div>
+
+                    {entriesLoading ? (
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Loading approved entries…</p>
+                    ) : entries.length === 0 ? (
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
+                        No approved entries left to add. Approve registrations in the Approvals page first.
+                      </p>
+                    ) : (
+                      <div className="form-grid-2">
+                        <label className="field" style={{ gridColumn: "1 / -1" }}>
+                          <span>Approved entry <span className="required">*</span></span>
+                          <select value={selectedEntryId} onChange={(e) => onSelectEntry(e.target.value)} disabled={pLoading}>
+                            <option value="">— Select approved horse —</option>
+                            {entries.map((en) => (
+                              <option key={en.registrationId} value={en.registrationId}>
+                                {en.horseName} · owner {en.ownerName}
+                                {en.jockeyName ? ` · jockey ${en.jockeyName}` : " · (no jockey yet)"}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        {selectedEntryId && !entries.find((en) => en.registrationId === selectedEntryId)?.jockeyId && (
+                          <label className="field">
+                            <span>Jockey <span className="required">*</span></span>
+                            <select
+                              value={pForm.jockeyId}
+                              onChange={(e) => setPForm((p) => ({ ...p, jockeyId: e.target.value }))}
+                              disabled={pLoading}
+                            >
+                              <option value="">— Select jockey —</option>
+                              {jockeys.map((j) => <option key={j.id} value={j.id}>{j.name}</option>)}
+                            </select>
+                          </label>
+                        )}
+
+                        <label className="field">
+                          <span>Lane number (optional)</span>
+                          <input
+                            type="number" min={1} max={detail.maxParticipants}
+                            value={pForm.laneNumber}
+                            onChange={(e) => setPForm((p) => ({ ...p, laneNumber: e.target.value }))}
+                            placeholder="Auto-assigned if empty"
+                            disabled={pLoading}
+                          />
+                        </label>
+                      </div>
+                    )}
                     <div className="form-actions" style={{ marginTop: "10px" }}>
                       <button
                         type="button"
                         className="secondary-button"
                         disabled={pLoading}
-                        onClick={() => { setShowAddForm(false); setPForm(EMPTY_PARTICIPANT); setPError(""); }}
+                        onClick={() => { setShowAddForm(false); setPForm(EMPTY_PARTICIPANT); setSelectedEntryId(""); setPError(""); }}
                       >
                         Cancel
                       </button>
-                      <button type="submit" className="primary-button" disabled={pLoading}>
+                      <button type="submit" className="primary-button" disabled={pLoading || !selectedEntryId}>
                         {pLoading ? "Adding…" : "Add participant"}
                       </button>
                     </div>
                   </form>
                 )}
               </div>
+
+              {/* ── Start race (live simulation) ── */}
+              {detail.liveStatus === "Upcoming" && (
+                <div style={{ marginTop: "24px", padding: "16px", background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", borderRadius: "10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                    <div>
+                      <strong style={{ display: "block" }}>▶ Start race</strong>
+                      <span style={{ fontSize: "0.8rem", color: "var(--c-muted)" }}>
+                        Mô phỏng cuộc đua trực tiếp — kết quả tự được công bố và settle dự đoán.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={simLoading || detail.participantCount < 2}
+                      onClick={doStartRace}
+                    >
+                      {simLoading ? "Starting…" : "Start race"}
+                    </button>
+                  </div>
+                  {detail.participantCount < 2 && (
+                    <p style={{ fontSize: "0.78rem", color: "var(--c-muted)", margin: "8px 0 0" }}>
+                      Cần ít nhất 2 ngựa trong đường đua để bắt đầu.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* ── Status transitions ── */}
               {NEXT_ACTIONS[detail.liveStatus] && (

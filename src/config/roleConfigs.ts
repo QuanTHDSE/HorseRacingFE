@@ -32,6 +32,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
     menu: [
       { id: "dashboard", label: "Dashboard", abbr: "DB" },
       { id: "checks", label: "Pre-race Checks", abbr: "PC" },
+      { id: "penalties", label: "Penalties", abbr: "PN" },
       { id: "results", label: "Results", abbr: "RS" },
     ],
   },

@@ -46,9 +46,15 @@ import type {
   RefereeParticipantCheck,
   RefereeRace,
   RefereeResultStatus,
+  ViolationRule,
+  RaceViolation,
+  PenalizeInput,
+  TimePenaltyInput,
   ResultRankingInput,
   Race,
   RaceDetail,
+  RaceEligibleEntry,
+  RaceSimTimeline,
   RaceParticipantDetail,
   Racetrack,
   RegisterForm,
@@ -267,6 +273,8 @@ function mapRegistrationToApproval(r: ApiRegistration) {
     horseBreed: r.horse.breed,
     horseAge: r.horse.age,
     horseHealth: HEALTH[r.horse.healthStatus] ?? r.horse.healthStatus,
+    horsePdfUrl: r.horse.profilePdfUrl,
+    horsePdfName: r.horse.profilePdfName,
     raceName: r.race.name,
     raceRound: r.race.round,
     raceDate: r.race.scheduledAt,
@@ -1044,6 +1052,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }
 
+  async function handleUploadHorsePdf(file: File): Promise<{ url: string; name: string }> {
+    const res = await api.horseOwner.uploadHorsePdf(file);
+    return res.data;
+  }
+
   async function handleUpdateHorse(id: string, data: Partial<CreateHorseInput>): Promise<void> {
     await api.horseOwner.updateHorse(id, data);
     const res = await api.horseOwner.listHorses();
@@ -1090,8 +1103,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function handleAddParticipant(raceId: string, data: AddParticipantInput): Promise<RaceDetail> {
-    const res = await api.races.addParticipant(raceId, data);
+    await api.races.addParticipant(raceId, data);
+    const res = await api.races.getById(raceId);
     return mapRaceDetail(res.race);
+  }
+
+  async function handleGetRaceEligibleEntries(raceId: string): Promise<RaceEligibleEntry[]> {
+    const res = await api.races.listEligibleEntries(raceId);
+    return res.entries;
+  }
+
+  async function handleSimulateRace(raceId: string): Promise<RaceSimTimeline> {
+    const res = await api.races.simulate(raceId);
+    setAppState((prev) => ({
+      ...prev,
+      races: prev.races.map((r) => (r.id === raceId ? { ...r, liveStatus: "Completed" } : r)),
+    }));
+    return res.timeline;
   }
 
   async function handleUpdateRaceStatus(raceId: string, status: string): Promise<RaceDetail> {
@@ -1255,6 +1283,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return res.checks.map(mapRefereeCheck);
   }
 
+  async function handleStartRefereeRace(raceId: string): Promise<void> {
+    await api.referee.startRace(raceId);
+    await handleRefreshRefereeRaces();
+  }
+
+  async function handleSimulateRefereeDraft(raceId: string): Promise<void> {
+    await api.referee.simulateDraft(raceId);
+    await handleRefreshRefereeRaces();
+  }
+
+  async function handleGetViolationRules(): Promise<ViolationRule[]> {
+    const res = await api.referee.listViolationRules();
+    return res.rules;
+  }
+
+  async function handleGetRaceViolations(raceId: string): Promise<RaceViolation[]> {
+    const res = await api.referee.listViolations(raceId);
+    return res.violations;
+  }
+
+  async function handlePenalize(raceId: string, input: PenalizeInput): Promise<void> {
+    await api.referee.penalize(raceId, input);
+  }
+
+  async function handleApplyTimePenalty(raceId: string, input: TimePenaltyInput): Promise<void> {
+    await api.referee.applyTimePenalty(raceId, input);
+  }
+
+  async function handleRevokePenalty(raceId: string, violationId: string): Promise<void> {
+    await api.referee.revokePenalty(raceId, violationId);
+  }
+
   async function handleGetRaceResult(raceId: string): Promise<RefereeResultStatus | null> {
     const res = await api.referee.getResult(raceId);
     return res.result;
@@ -1306,8 +1366,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleGetJockeyRaceById,
     handleGetRaceById,
     handleAddParticipant,
+    handleGetRaceEligibleEntries,
+    handleSimulateRace,
     handleUpdateRaceStatus,
     handleCreateHorse,
+    handleUploadHorsePdf,
     handleUpdateHorse,
     handleRegisterForRace,
     handleCancelRegistration,
@@ -1326,6 +1389,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleRefreshRefereeRaces,
     handleGetRefereeChecks,
     handleToggleRefereeCheck,
+    handleStartRefereeRace,
+    handleSimulateRefereeDraft,
+    handleGetViolationRules,
+    handleGetRaceViolations,
+    handlePenalize,
+    handleApplyTimePenalty,
+    handleRevokePenalty,
     handleGetRaceResult,
     handleSubmitRaceResult,
     handleConfirmRaceResult,

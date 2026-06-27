@@ -90,6 +90,13 @@ export default function ApprovalsPage() {
             { key: "horseName",   label: "Horse",  render: (row) => row.horseName ?? "—" },
             { key: "horseBreed",  label: "Breed",  render: (row) => row.horseBreed ?? "—" },
             { key: "raceName",    label: "Race",   render: (row) => row.raceName ?? "—" },
+            {
+              key: "horsePdfUrl",
+              label: "PDF",
+              render: (row) => row.horsePdfUrl ? (
+                <a className="secondary-button btn-xs" href={row.horsePdfUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>View</a>
+              ) : <span style={{ color: "var(--text-muted)" }}>—</span>,
+            },
             { key: "submittedAt", label: "Submitted", render: (row) => fmtDate(row.submittedAt) },
             {
               key: "id",
@@ -159,6 +166,17 @@ export default function ApprovalsPage() {
                   ? <Badge tone={HEALTH_TONE[selected.horseHealth] as any ?? "neutral"}>{selected.horseHealth}</Badge>
                   : "—"}
               </span>
+            </div>
+
+            <div className="detail-item">
+              <span className="detail-label">Hồ sơ ngựa (PDF)</span>
+              {selected.horsePdfUrl ? (
+                <a className="secondary-button btn-xs" href={selected.horsePdfUrl} target="_blank" rel="noreferrer">
+                  📄 {selected.horsePdfName || "Xem PDF"}
+                </a>
+              ) : (
+                <span style={{ color: "var(--text-muted)" }}>Chưa có</span>
+              )}
             </div>
 
             <div className="detail-item">

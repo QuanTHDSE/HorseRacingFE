@@ -1,8 +1,60 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { CreateHorseInput, Horse } from "../../types";
 import { cn } from "../../utils/cn";
+
+/** Reusable PDF uploader — uploads to BE and reports back { url, name }. */
+function PdfUploadField({
+  url,
+  name,
+  disabled,
+  onUploaded,
+  onClear,
+}: {
+  url?: string;
+  name?: string;
+  disabled?: boolean;
+  onUploaded: (url: string, name: string) => void;
+  onClear: () => void;
+}) {
+  const { handleUploadHorsePdf } = useApp();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // cho phép chọn lại cùng file
+    if (!file) return;
+    if (file.type !== "application/pdf") { setErr("Chỉ chấp nhận file PDF."); return; }
+    setUploading(true);
+    setErr("");
+    try {
+      const res = await handleUploadHorsePdf(file);
+      onUploaded(res.url, res.name);
+    } catch (e2: unknown) {
+      setErr(e2 instanceof Error ? e2.message : "Tải lên thất bại.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <label className="field" style={{ gridColumn: "1 / -1" }}>
+      <span>Hồ sơ ngựa (PDF) — để admin xem &amp; duyệt</span>
+      <input ref={inputRef} type="file" accept="application/pdf" onChange={onPick} disabled={disabled || uploading} />
+      {uploading && <span style={{ fontSize: "0.78rem", color: "var(--c-muted)" }}>Đang tải lên…</span>}
+      {err && <span style={{ fontSize: "0.78rem", color: "var(--c-danger)" }}>{err}</span>}
+      {url && !uploading && (
+        <span style={{ display: "inline-flex", gap: "10px", alignItems: "center", marginTop: "4px" }}>
+          <a className="secondary-button btn-xs" href={url} target="_blank" rel="noreferrer">📄 {name || "Xem PDF"}</a>
+          <button type="button" className="table-button is-danger" disabled={disabled} onClick={onClear}>Gỡ</button>
+        </span>
+      )}
+    </label>
+  );
+}
 
 type HealthFilter = "all" | "Fit" | "Injured" | "Retired";
 
@@ -193,14 +245,13 @@ export default function HorsesPage() {
                   <span>Registration ID</span>
                   <input value={cForm.registrationId ?? ""} onChange={(e) => cf("registrationId", e.target.value)} placeholder="Official registration number (optional)" disabled={cLoading} />
                 </label>
-                <label className="field">
-                  <span>Horse PDF URL</span>
-                  <input value={cForm.profilePdfUrl ?? ""} onChange={(e) => cf("profilePdfUrl", e.target.value)} placeholder="https://.../horse-profile.pdf" disabled={cLoading} />
-                </label>
-                <label className="field">
-                  <span>PDF display name</span>
-                  <input value={cForm.profilePdfName ?? ""} onChange={(e) => cf("profilePdfName", e.target.value)} placeholder="Pedigree or health certificate" disabled={cLoading} />
-                </label>
+                <PdfUploadField
+                  url={cForm.profilePdfUrl}
+                  name={cForm.profilePdfName}
+                  disabled={cLoading}
+                  onUploaded={(url, name) => setCForm((p) => ({ ...p, profilePdfUrl: url, profilePdfName: name }))}
+                  onClear={() => setCForm((p) => ({ ...p, profilePdfUrl: "", profilePdfName: "" }))}
+                />
               </div>
               <div className="form-actions">
                 <button type="button" className="secondary-button" disabled={cLoading} onClick={() => { setCForm(EMPTY_FORM); setCErrors([]); }}>Reset</button>
@@ -311,14 +362,13 @@ export default function HorsesPage() {
                 <span>Trainer</span>
                 <input value={eForm.trainerName ?? ""} onChange={(e) => setEForm((p) => ({ ...p, trainerName: e.target.value }))} disabled={eLoading} />
               </label>
-              <label className="field">
-                <span>Horse PDF URL</span>
-                <input value={eForm.profilePdfUrl ?? ""} onChange={(e) => setEForm((p) => ({ ...p, profilePdfUrl: e.target.value }))} placeholder="https://.../horse-profile.pdf" disabled={eLoading} />
-              </label>
-              <label className="field">
-                <span>PDF display name</span>
-                <input value={eForm.profilePdfName ?? ""} onChange={(e) => setEForm((p) => ({ ...p, profilePdfName: e.target.value }))} disabled={eLoading} />
-              </label>
+              <PdfUploadField
+                url={eForm.profilePdfUrl}
+                name={eForm.profilePdfName}
+                disabled={eLoading}
+                onUploaded={(url, name) => setEForm((p) => ({ ...p, profilePdfUrl: url, profilePdfName: name }))}
+                onClear={() => setEForm((p) => ({ ...p, profilePdfUrl: "", profilePdfName: "" }))}
+              />
             </div>
             <div className="form-actions">
               <button type="button" className="secondary-button" disabled={eLoading} onClick={() => { setEditHorse(null); setEMsg(""); }}>Cancel</button>

@@ -66,7 +66,7 @@ export interface ApiAdminUser {
 export interface ApiRegistration {
   id: string;
   status: "pending" | "approved" | "rejected";
-  horse: { id: string; name: string; healthStatus: string; breed?: string; age?: number };
+  horse: { id: string; name: string; healthStatus: string; breed?: string; age?: number; profilePdfUrl?: string; profilePdfName?: string };
   race: { id: string; name: string; round: number; status: string; scheduledAt?: string };
   owner?: { id: string; fullName: string } | null;
   jockey?: { id: string; fullName: string } | null;
@@ -145,6 +145,32 @@ export interface ApiRefereeResult {
   rankingsCount: number;
 }
 
+export interface ApiViolationRule {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category: string;
+  severity: string;
+  penaltyApplied: string;
+  banDurationDays: number;
+}
+
+export interface ApiRaceViolation {
+  id: string;
+  ruleId: string | null;
+  type: string;
+  description: string;
+  penaltyApplied: string | null;
+  target: "horse" | "jockey" | "both";
+  horseId: string | null;
+  horseName: string | null;
+  jockeyId: string | null;
+  jockeyName: string | null;
+  bannedUntil: string | null;
+  recordedAt: string;
+}
+
 export interface ApiResultRankingInput {
   rank: number;
   horseId: string;
@@ -152,6 +178,39 @@ export interface ApiResultRankingInput {
   ownerId: string;
   finishTime?: number;
   prize?: number;
+}
+
+export interface ApiRaceEligibleEntry {
+  registrationId: string;
+  horseId: string;
+  horseName: string;
+  ownerId: string;
+  ownerName: string;
+  jockeyId: string | null;
+  jockeyName: string | null;
+}
+
+export interface ApiRaceSimHorse {
+  horseId: string;
+  horseName: string;
+  jockeyId: string;
+  jockeyName: string;
+  ownerId: string;
+  laneNumber: number;
+  clothNumber: number;
+  rank: number;
+  finishTime: number;
+  prize: number;
+}
+
+export interface ApiRaceSimTimeline {
+  raceId: string;
+  name: string;
+  distance: number;
+  laps: number;
+  trackCondition: string;
+  durationMs: number;
+  horses: ApiRaceSimHorse[];
 }
 
 export interface ApiTournamentItem {
@@ -457,11 +516,15 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    listEligibleEntries: (raceId: string) =>
+      request<{ entries: ApiRaceEligibleEntry[] }>(`/races/${raceId}/eligible-entries`),
+    simulate: (raceId: string) =>
+      request<{ timeline: ApiRaceSimTimeline }>(`/races/${raceId}/simulate`, { method: "POST" }),
     addParticipant: (
       raceId: string,
       data: { horseId: string; jockeyId: string; ownerId: string; laneNumber?: number },
     ) =>
-      request<{ race: ApiRaceDetail }>(`/races/${raceId}/participants`, {
+      request<{ participants: unknown }>(`/races/${raceId}/participants`, {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -478,6 +541,25 @@ export const api = {
 
   horseOwner: {
     listHorses: () => request<{ success: boolean; data: ApiHorse[] }>("/horse-owner/horses"),
+    uploadHorsePdf: async (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const token = getToken();
+      const res = await fetch(`${BASE_URL}/horse-owner/horses/upload-pdf`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (!res.ok) {
+        let msg = `${res.status} ${res.statusText}`;
+        try {
+          const body = (await res.json()) as { message?: string };
+          if (body?.message) msg = body.message;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      return res.json() as Promise<{ success: boolean; data: { url: string; name: string } }>;
+    },
     createHorse: (data: {
       name: string;
       breed: string;
@@ -605,6 +687,34 @@ export const api = {
       }),
     confirmResult: (raceId: string) =>
       request<{ ok: boolean }>(`/referee/races/${raceId}/result/confirm`, { method: "PATCH" }),
+    startRace: (raceId: string) =>
+      request<{ ok: boolean }>(`/referee/races/${raceId}/start`, { method: "POST" }),
+    simulateDraft: (raceId: string) =>
+      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/start-simulation`, { method: "POST" }),
+    listViolationRules: () =>
+      request<{ rules: ApiViolationRule[] }>("/referee/violation-rules"),
+    listViolations: (raceId: string) =>
+      request<{ violations: ApiRaceViolation[] }>(`/referee/races/${raceId}/violations`),
+    penalize: (
+      raceId: string,
+      body: { ruleId: string; target: "horse" | "jockey" | "both"; horseId?: string; jockeyId?: string; notes?: string },
+    ) =>
+      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalize`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    applyTimePenalty: (
+      raceId: string,
+      body: { horseId: string; jockeyId: string; addedTimeSeconds: number; type: string; description: string; ruleId?: string },
+    ) =>
+      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalties/time`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    revokePenalty: (raceId: string, violationId: string) =>
+      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalties/${violationId}`, {
+        method: "DELETE",
+      }),
     listNotifications: () =>
       request<{ notifications: ApiNotification[] }>("/referee/notifications"),
   },
