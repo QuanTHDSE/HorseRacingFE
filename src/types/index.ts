@@ -546,6 +546,12 @@ export interface SpectatorRace {
   hasPrediction: boolean;
   predictionOpenAt?: string | null;
   predictionCloseAt?: string | null;
+  predictionConfig: {
+    isEnabled: boolean;
+    poolEnabled: boolean;
+    entryFee: number;
+    quickRiskMultipliers: number[];
+  };
   result?: SpectatorRaceResult | null;
 }
 

@@ -355,6 +355,12 @@ export interface ApiSpectatorRace {
   hasPrediction: boolean;
   predictionOpenAt?: string | null;
   predictionCloseAt?: string | null;
+  predictionConfig: {
+    isEnabled: boolean;
+    poolEnabled: boolean;
+    entryFee: number;
+    quickRiskMultipliers: number[];
+  };
   result?: {
     id: string;
     publishedAt: string | null;

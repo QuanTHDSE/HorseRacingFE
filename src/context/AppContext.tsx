@@ -422,6 +422,7 @@ function mapSpectatorRace(r: ApiSpectatorRace): SpectatorRace {
     hasPrediction: r.hasPrediction,
     predictionOpenAt: r.predictionOpenAt,
     predictionCloseAt: r.predictionCloseAt,
+    predictionConfig: r.predictionConfig,
     result: r.result ?? null,
   };
 }
