@@ -3,7 +3,7 @@ import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 export default function RewardsPage() {
-  const { user, appState, handleTopUpPoints } = useApp();
+  const { user, appState, handleTopUpPoints, handleCreatePayosTopUp } = useApp();
   const [topUpPoints, setTopUpPoints] = useState(100);
   const [topUpError, setTopUpError] = useState("");
   const [topUpMessage, setTopUpMessage] = useState("");
@@ -30,9 +30,26 @@ export default function RewardsPage() {
     }
   }
 
+  async function submitPayosTopUp() {
+    setTopUpError("");
+    setTopUpMessage("");
+    if (!Number.isInteger(topUpPoints) || topUpPoints < 100) {
+      setTopUpError("Minimum top-up is 100 points.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const paymentUrl = await handleCreatePayosTopUp(topUpPoints);
+      window.location.href = paymentUrl;
+    } catch (err) {
+      setTopUpError(err instanceof Error ? err.message : "Could not create PayOS payment.");
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="page-stack">
-      <Panel title="Points wallet" subtitle="100 VND = 1 point · minimum top-up 100 points">
+      <Panel title="Points wallet" subtitle="1000 VND = 1 point · minimum top-up 100 points">
         <div className="metric-grid three">
           <div className="metric-card">
             <span>Current balance</span>
@@ -63,7 +80,10 @@ export default function RewardsPage() {
             />
           </label>
           <button className="primary-button" type="submit" disabled={submitting}>
-            {submitting ? "Processing..." : `Top up ${(topUpPoints * 100).toLocaleString()} VND`}
+            {submitting ? "Processing..." : `Top up ${(topUpPoints * 1000).toLocaleString()} VND`}
+          </button>
+          <button className="secondary-button" type="button" disabled={submitting} onClick={submitPayosTopUp}>
+            Pay with PayOS
           </button>
         </form>
         {topUpError ? <div className="form-banner form-banner-error">{topUpError}</div> : null}
