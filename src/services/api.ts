@@ -209,8 +209,20 @@ export interface ApiRaceSimTimeline {
   distance: number;
   laps: number;
   trackCondition: string;
+  trackName: string | null;
+  trackLocation: string | null;
+  surface: string;
   durationMs: number;
   horses: ApiRaceSimHorse[];
+}
+
+export interface ApiTrack {
+  _id: string;
+  name: string;
+  location: string;
+  countryCode: string;
+  surfaceDefault: "turf" | "synthetic" | "dirt";
+  isActive: boolean;
 }
 
 export interface ApiTournamentItem {
@@ -471,6 +483,21 @@ export const api = {
       request<{ ok: boolean }>(`/admin/races/${raceId}/result/publish`, { method: "PATCH" }),
   },
 
+  adminTracks: {
+    list: () => request<{ success: boolean; data: ApiTrack[] }>("/admin/tracks"),
+    create: (data: {
+      name: string;
+      location: string;
+      countryCode: string;
+      surfaceDefault: "turf" | "synthetic" | "dirt";
+      isActive: boolean;
+    }) =>
+      request<{ success: boolean; data: ApiTrack }>("/admin/tracks", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+  },
+
   tournaments: {
     list: (page = 1, limit = 100) =>
       request<{ items: ApiTournamentItem[]; total: number; page: number; pages: number }>(
@@ -532,6 +559,11 @@ export const api = {
       request<{ race: ApiRace }>(`/races/${raceId}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
+      }),
+    assignReferee: (raceId: string, refereeId: string | null) =>
+      request<{ race: unknown }>(`/races/${raceId}/referee`, {
+        method: "PATCH",
+        body: JSON.stringify({ refereeId }),
       }),
     delete: (id: string) =>
       request<{ success: boolean; message: string }>(`/races/${id}`, {
@@ -690,7 +722,7 @@ export const api = {
     startRace: (raceId: string) =>
       request<{ ok: boolean }>(`/referee/races/${raceId}/start`, { method: "POST" }),
     simulateDraft: (raceId: string) =>
-      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/start-simulation`, { method: "POST" }),
+      request<{ success: boolean; message: string; timeline: ApiRaceSimTimeline }>(`/referee/races/${raceId}/start-simulation`, { method: "POST" }),
     listViolationRules: () =>
       request<{ rules: ApiViolationRule[] }>("/referee/violation-rules"),
     listViolations: (raceId: string) =>

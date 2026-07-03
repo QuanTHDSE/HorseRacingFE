@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
-import type { RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
+import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
 
 const DQ_PENALTIES = ["disqualify", "disqualification"];
 
@@ -36,6 +37,7 @@ export default function PenaltiesPage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [simTimeline, setSimTimeline] = useState<RaceSimTimeline | null>(null);
 
   // Conduct penalty form
   const [cHorseId, setCHorseId] = useState("");
@@ -97,15 +99,20 @@ export default function PenaltiesPage() {
     } finally { setBusy(false); }
   }
 
-  async function simulateDraft() {
+  async function runRace() {
     setBusy(true); setError(""); setMsg("");
     try {
-      await handleSimulateRefereeDraft(raceId);
-      await reload(raceId);
-      setMsg("Đã tạo kết quả nháp. Có thể phạt cộng giờ trước khi xác nhận.");
+      const timeline = await handleSimulateRefereeDraft(raceId);
+      setSimTimeline(timeline); // mở màn xem đua trực tiếp
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Mô phỏng thất bại");
+      setError(e instanceof Error ? e.message : "Chạy đua thất bại");
     } finally { setBusy(false); }
+  }
+
+  async function onPlayerClose() {
+    setSimTimeline(null);
+    await reload(raceId);
+    setMsg("Đã chạy đua & tạo kết quả nháp. Có thể phạt cộng giờ, rồi sang trang Results để xác nhận.");
   }
 
   async function applyConduct() {
@@ -165,6 +172,7 @@ export default function PenaltiesPage() {
 
   return (
     <div className="page-stack">
+      {simTimeline && <RaceLivePlayer timeline={simTimeline} onClose={onPlayerClose} />}
       <Panel title="Xử phạt trọng tài" subtitle="Lập biên bản vi phạm, phạt cộng giờ và hoàn tác án phạt">
         <label className="field" style={{ maxWidth: "440px" }}>
           <span>Cuộc đua</span>
@@ -192,16 +200,26 @@ export default function PenaltiesPage() {
           </div>
 
           {/* Lifecycle controls */}
-          <Panel title="Điều hành cuộc đua" subtitle="Trọng tài: bắt đầu đua → xử phạt → mô phỏng kết quả → (sang trang Results để xác nhận)">
+          <Panel title="Điều hành cuộc đua" subtitle="Trọng tài: bắt đầu đua → lập biên bản → chạy đua & xem trực tiếp → (sang trang Results để xác nhận)">
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               {isUpcoming && (
-                <button type="button" className="primary-button" disabled={busy} onClick={startOfficiating}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={busy || (race?.participantCount ?? 0) < 2}
+                  onClick={startOfficiating}
+                >
                   ▶ Bắt đầu điều hành
                 </button>
               )}
+              {isUpcoming && (race?.participantCount ?? 0) < 2 && (
+                <span style={{ color: "var(--c-muted)", fontSize: "0.85rem", alignSelf: "center" }}>
+                  Cần ít nhất 2 ngựa trong đường đua (hiện {race?.participantCount ?? 0}). Admin cần thêm participant trước.
+                </span>
+              )}
               {isLive && (
-                <button type="button" className="secondary-button" disabled={busy} onClick={simulateDraft}>
-                  🎲 Tạo kết quả nháp (mô phỏng)
+                <button type="button" className="primary-button" disabled={busy} onClick={runRace}>
+                  ▶ Chạy đua &amp; xem trực tiếp
                 </button>
               )}
               {!isUpcoming && !isLive && !hasDraft && (
@@ -345,7 +363,7 @@ export default function PenaltiesPage() {
           </Panel>
 
           <div className="form-banner" style={{ background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", color: "var(--c-muted)", fontSize: "0.8rem" }}>
-            Quy trình: <strong>Bắt đầu điều hành</strong> (Live) → lập biên bản vi phạm → <strong>tạo kết quả nháp</strong> → phạt cộng giờ → sang trang <strong>Results</strong> để xác nhận. Hoàn tác án phạt chỉ thực hiện khi cuộc đua còn Live.
+            Quy trình: <strong>Bắt đầu điều hành</strong> (Live) → lập biên bản vi phạm → <strong>Chạy đua &amp; xem trực tiếp</strong> → phạt cộng giờ → sang trang <strong>Results</strong> để xác nhận. Hoàn tác án phạt chỉ thực hiện khi cuộc đua còn Live.
           </div>
         </>
       )}

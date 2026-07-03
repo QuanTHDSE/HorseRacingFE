@@ -60,6 +60,21 @@ type HealthFilter = "all" | "Fit" | "Injured" | "Retired";
 
 const HEALTH_TONE: Record<string, string> = { Fit: "success", Injured: "warning", Retired: "neutral" };
 
+// Các giống ngựa đua phổ biến để owner chọn thay vì tự gõ
+const HORSE_BREEDS = [
+  "Thoroughbred",
+  "Arabian",
+  "Anglo-Arabian",
+  "Quarter Horse",
+  "Standardbred",
+  "Appaloosa",
+  "Akhal-Teke",
+  "Andalusian",
+  "Warmblood",
+  "Mustang",
+  "Other",
+];
+
 const EMPTY_FORM: CreateHorseInput = {
   name: "",
   breed: "",
@@ -223,7 +238,10 @@ export default function HorsesPage() {
                 </label>
                 <label className="field">
                   <span>Breed <span className="required">*</span></span>
-                  <input value={cForm.breed} onChange={(e) => cf("breed", e.target.value)} placeholder="e.g. Thoroughbred" disabled={cLoading} />
+                  <select value={cForm.breed} onChange={(e) => cf("breed", e.target.value)} disabled={cLoading}>
+                    <option value="">— Chọn giống ngựa —</option>
+                    {HORSE_BREEDS.map((b) => <option key={b} value={b}>{b}</option>)}
+                  </select>
                 </label>
                 <label className="field">
                   <span>Age <span className="required">*</span></span>
@@ -344,7 +362,13 @@ export default function HorsesPage() {
               </label>
               <label className="field">
                 <span>Breed</span>
-                <input value={eForm.breed ?? ""} onChange={(e) => setEForm((p) => ({ ...p, breed: e.target.value }))} disabled={eLoading} />
+                <select value={eForm.breed ?? ""} onChange={(e) => setEForm((p) => ({ ...p, breed: e.target.value }))} disabled={eLoading}>
+                  <option value="">— Chọn giống ngựa —</option>
+                  {(eForm.breed && !HORSE_BREEDS.includes(eForm.breed)
+                    ? [eForm.breed, ...HORSE_BREEDS]
+                    : HORSE_BREEDS
+                  ).map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
               </label>
               <label className="field">
                 <span>Age</span>

@@ -29,6 +29,8 @@ const NEXT_ACTIONS: Record<string, NextAction[]> = {
 const EMPTY_FORM = {
   name: "",
   tournamentId: "",
+  racetrackId: "",
+  refereeId: "",
   round: "1",
   date: "",
   distance: "",
@@ -74,15 +76,6 @@ function ParticipantsTable({ participants }: { participants: RaceDetail["partici
             </Badge>
           ),
         },
-        {
-          key: "confirmedAt",
-          label: "Confirmed",
-          render: (row) => (
-            <Badge tone={(row as any).confirmedAt ? "success" : "warning"}>
-              {(row as any).confirmedAt ? "Yes" : "Pending"}
-            </Badge>
-          ),
-        },
       ]}
       rows={participants}
     />
@@ -99,6 +92,7 @@ export default function RacesPage() {
     handleAddParticipant,
     handleGetRaceEligibleEntries,
     handleSimulateRace,
+    handleAssignRaceReferee,
     handleUpdateRaceStatus,
     handleDeleteRace,
   } = useApp();
@@ -138,9 +132,14 @@ export default function RacesPage() {
   const [simTimeline, setSimTimeline] = useState<RaceSimTimeline | null>(null);
   const [simLoading, setSimLoading] = useState(false);
 
+  // ── Assign referee ───────────────────────────────────────────────────────────
+  const [refAssigning, setRefAssigning] = useState(false);
+
   // ── Derived data ───────────────────────────────────────────────────────────
   const races      = appState.races;
   const tournaments = appState.tournaments;
+  const activeTracks = (appState.racetracks ?? []).filter((t) => t.isActive);
+  const referees   = appState.users.filter((u) => u.role === "referee" && u.status === "Active");
   const jockeys    = appState.users.filter((u) => u.role === "jockey" && u.status === "Active");
 
   const filtered = races.filter((r) => {
@@ -175,6 +174,8 @@ export default function RacesPage() {
       handleCreateRace({
         name: form.name.trim(),
         tournamentId: form.tournamentId,
+        racetrackId: form.racetrackId || undefined,
+        refereeId: form.refereeId || undefined,
         date: form.date,
         distance: form.distance.trim(),
         round: form.round || "1",
@@ -326,6 +327,21 @@ export default function RacesPage() {
     }
   }
 
+  async function doAssignReferee(refereeId: string) {
+    if (!detail) return;
+    setRefAssigning(true);
+    setStatusMsg("");
+    try {
+      const updated = await handleAssignRaceReferee(detail.id, refereeId || null);
+      setDetail(updated);
+      setStatusMsg(refereeId ? "Đã gán trọng tài phụ trách." : "Đã bỏ gán trọng tài.");
+    } catch (err: unknown) {
+      setStatusMsg(err instanceof Error ? err.message : "Gán trọng tài thất bại.");
+    } finally {
+      setRefAssigning(false);
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -365,6 +381,24 @@ export default function RacesPage() {
               <select value={form.tournamentId} onChange={(e) => handleField("tournamentId", e.target.value)} disabled={formLoading}>
                 <option value="">— Select tournament —</option>
                 {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Racetrack</span>
+              <select value={form.racetrackId} onChange={(e) => handleField("racetrackId", e.target.value)} disabled={formLoading}>
+                <option value="">— Không gán —</option>
+                {activeTracks.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name} · {t.location} ({t.surface})</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Referee (trọng tài)</span>
+              <select value={form.refereeId} onChange={(e) => handleField("refereeId", e.target.value)} disabled={formLoading}>
+                <option value="">— Chưa gán —</option>
+                {referees.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </label>
 
@@ -642,6 +676,27 @@ export default function RacesPage() {
                     </div>
                   </form>
                 )}
+              </div>
+
+              {/* ── Assign referee ── */}
+              <div style={{ marginTop: "24px", padding: "16px", background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", borderRadius: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                  <div>
+                    <strong style={{ display: "block" }}>Trọng tài phụ trách</strong>
+                    <span style={{ fontSize: "0.8rem", color: "var(--c-muted)" }}>
+                      Trọng tài chỉ thấy cuộc đua này ở các trang của họ khi được gán.
+                    </span>
+                  </div>
+                  <select
+                    value={detail.refereeId ?? ""}
+                    disabled={refAssigning}
+                    onChange={(e) => doAssignReferee(e.target.value)}
+                    style={{ minWidth: "220px" }}
+                  >
+                    <option value="">— Chưa gán —</option>
+                    {referees.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* ── Start race (live simulation) ── */}

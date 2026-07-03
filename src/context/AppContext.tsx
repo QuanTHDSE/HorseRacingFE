@@ -20,6 +20,7 @@ import {
   type ApiRole,
   type ApiSpectatorPoints,
   type ApiSpectatorRace,
+  type ApiTrack,
   type ApiTournamentDto,
   type ApiTournamentItem,
   type ApiUser,
@@ -153,6 +154,17 @@ function mapTournamentItem(t: ApiTournamentItem): Tournament {
     status: TOURNAMENT_STATUS[t.status] ?? t.status,
     prizePool: fmtPrize(t.prizePool),
     races: t.raceCount ?? 0,
+  };
+}
+
+function mapTrack(t: ApiTrack): Racetrack {
+  return {
+    id: t._id,
+    name: t.name,
+    location: t.location,
+    countryCode: t.countryCode,
+    surface: t.surfaceDefault,
+    isActive: t.isActive,
   };
 }
 
@@ -530,6 +542,7 @@ function mapRaceDetail(r: ApiRaceDetail): RaceDetail {
     maxParticipants: r.maxParticipants,
     tournamentId,
     tournamentName,
+    refereeId: typeof r.refereeId === "string" ? r.refereeId : (r.refereeId as any)?._id ?? null,
     participantCount: participants.filter((p) => !p.isScratched).length,
     participants,
   };
@@ -559,12 +572,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const role = account.role;
     try {
       if (role === "admin") {
-        const [usersRes, regsRes, queueRes, tourRes] = await Promise.allSettled([
+        const [usersRes, regsRes, queueRes, tourRes, tracksRes] = await Promise.allSettled([
           api.admin.listUsers(),
           api.admin.listRegistrations(),
           api.admin.listPublishQueue(),
           api.tournaments.list(),
+          api.adminTracks.list(),
         ]);
+
+        const racetracks =
+          tracksRes.status === "fulfilled" ? tracksRes.value.data.map(mapTrack) : [];
 
         const users =
           usersRes.status === "fulfilled"
@@ -640,6 +657,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           publishQueue,
           tournaments,
           races,
+          racetracks,
         }));
       } else if (role === "owner") {
         const [horsesRes, regsRes, tourRes] = await Promise.allSettled([
@@ -962,13 +980,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     doAction().catch((err) => console.error(`handleAction(${type}) failed:`, err));
   }
 
-  // ─── Create racetrack (local, no API) ────────────────────────────────────
+  // ─── Create racetrack via API ─────────────────────────────────────────────
 
-  function handleCreateRacetrack(data: Omit<Racetrack, "id">) {
-    setAppState((prev) => ({
-      ...prev,
-      racetracks: [...prev.racetracks, { ...data, id: `track-${Date.now()}` }],
-    }));
+  async function handleCreateRacetrack(data: Omit<Racetrack, "id">): Promise<void> {
+    await api.adminTracks.create({
+      name: data.name,
+      location: data.location,
+      countryCode: data.countryCode,
+      surfaceDefault: data.surface,
+      isActive: data.isActive,
+    });
+    const res = await api.adminTracks.list();
+    setAppState((prev) => ({ ...prev, racetracks: res.data.map(mapTrack) }));
   }
 
   // ─── Create race via API ──────────────────────────────────────────────────
@@ -978,6 +1001,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await api.races.create({
         tournamentId: data.tournamentId,
         ...(data.racetrackId ? { trackId: data.racetrackId } : {}),
+        ...(data.refereeId ? { refereeId: data.refereeId } : {}),
         name: data.name,
         round: parseInt(data.round, 10) || 1,
         scheduledAt: data.date,
@@ -1120,6 +1144,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       races: prev.races.map((r) => (r.id === raceId ? { ...r, liveStatus: "Completed" } : r)),
     }));
     return res.timeline;
+  }
+
+  async function handleAssignRaceReferee(raceId: string, refereeId: string | null): Promise<RaceDetail> {
+    await api.races.assignReferee(raceId, refereeId);
+    const res = await api.races.getById(raceId);
+    return mapRaceDetail(res.race);
   }
 
   async function handleUpdateRaceStatus(raceId: string, status: string): Promise<RaceDetail> {
@@ -1288,9 +1318,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await handleRefreshRefereeRaces();
   }
 
-  async function handleSimulateRefereeDraft(raceId: string): Promise<void> {
-    await api.referee.simulateDraft(raceId);
+  async function handleSimulateRefereeDraft(raceId: string): Promise<RaceSimTimeline> {
+    const res = await api.referee.simulateDraft(raceId);
     await handleRefreshRefereeRaces();
+    return res.timeline;
   }
 
   async function handleGetViolationRules(): Promise<ViolationRule[]> {
@@ -1368,6 +1399,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleAddParticipant,
     handleGetRaceEligibleEntries,
     handleSimulateRace,
+    handleAssignRaceReferee,
     handleUpdateRaceStatus,
     handleCreateHorse,
     handleUploadHorsePdf,

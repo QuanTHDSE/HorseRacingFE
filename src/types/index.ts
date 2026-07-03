@@ -249,6 +249,9 @@ export interface RaceSimTimeline {
   distance: number;
   laps: number;
   trackCondition: string;
+  trackName: string | null;
+  trackLocation: string | null;
+  surface: string;
   durationMs: number;
   horses: RaceSimHorse[];
 }
@@ -376,17 +379,15 @@ export interface Notification {
   detail: string;
 }
 
-export type RacetrackSurface = "Grass" | "Dirt" | "Synthetic";
-export type RacetrackStatus = "Active" | "Maintenance" | "Inactive";
+export type TrackSurface = "turf" | "synthetic" | "dirt";
 
 export interface Racetrack {
   id: string;
   name: string;
   location: string;
-  surface: RacetrackSurface;
-  length: string;
-  capacity: number;
-  status: RacetrackStatus;
+  countryCode: string;
+  surface: TrackSurface;
+  isActive: boolean;
 }
 
 export interface JockeyApplication {
@@ -431,6 +432,7 @@ export interface RaceDetail {
   maxParticipants: number;
   tournamentId: string;
   tournamentName?: string;
+  refereeId?: string | null;
   participantCount: number;
   participants: RaceParticipantDetail[];
 }
@@ -472,6 +474,7 @@ export interface NewRaceInput {
   name: string;
   tournamentId: string;
   racetrackId?: string;
+  refereeId?: string;
   date: string;
   distance: string;
   round: string;
@@ -618,7 +621,7 @@ export interface AppContextValue {
   handleLoginSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   handleRegisterSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   handleAction: (type: string, id: string, value?: string) => void;
-  handleCreateRacetrack: (data: Omit<Racetrack, "id">) => void;
+  handleCreateRacetrack: (data: Omit<Racetrack, "id">) => Promise<void>;
   handleCreateRace: (data: NewRaceInput) => void;
   handleCreateTournament: (data: CreateTournamentInput) => Promise<void>;
   handleUpdateTournamentStatus: (id: string, status: string) => Promise<void>;
@@ -629,6 +632,7 @@ export interface AppContextValue {
   handleAddParticipant: (raceId: string, data: AddParticipantInput) => Promise<RaceDetail>;
   handleGetRaceEligibleEntries: (raceId: string) => Promise<RaceEligibleEntry[]>;
   handleSimulateRace: (raceId: string) => Promise<RaceSimTimeline>;
+  handleAssignRaceReferee: (raceId: string, refereeId: string | null) => Promise<RaceDetail>;
   handleUpdateRaceStatus: (raceId: string, status: string) => Promise<RaceDetail>;
   handleCreateHorse: (data: CreateHorseInput) => Promise<void>;
   handleUploadHorsePdf: (file: File) => Promise<{ url: string; name: string }>;
@@ -651,7 +655,7 @@ export interface AppContextValue {
   handleGetRefereeChecks: (raceId: string) => Promise<RefereeParticipantCheck[]>;
   handleToggleRefereeCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") => Promise<RefereeParticipantCheck[]>;
   handleStartRefereeRace: (raceId: string) => Promise<void>;
-  handleSimulateRefereeDraft: (raceId: string) => Promise<void>;
+  handleSimulateRefereeDraft: (raceId: string) => Promise<RaceSimTimeline>;
   handleGetViolationRules: () => Promise<ViolationRule[]>;
   handleGetRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
   handlePenalize: (raceId: string, input: PenalizeInput) => Promise<void>;

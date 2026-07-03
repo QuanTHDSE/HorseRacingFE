@@ -4,6 +4,13 @@ import { computeFrame, fmtClock, lengthsBehind, paceWeights, type RaceFrame } fr
 
 const SPEEDS = [1, 2, 4] as const;
 
+// Màu sắc màn đua theo mặt sân của trường đua
+const SURFACE_THEME: Record<string, { field: string; track: string; infield: string; rail: string; label: string }> = {
+  dirt:      { field: "linear-gradient(#5bb24f, #4a9b42)", track: "#c89a5e", infield: "#57aa4c", rail: "#3c7a36", label: "Dirt" },
+  turf:      { field: "linear-gradient(#3f8f4a, #2f7a3c)", track: "#66b357", infield: "#357a3f", rail: "#255a2c", label: "Turf" },
+  synthetic: { field: "linear-gradient(#565d68, #464c56)", track: "#9aa0ab", infield: "#5a616c", rail: "#343a43", label: "Synthetic" },
+};
+
 export default function RaceLivePlayer({
   timeline,
   onClose,
@@ -70,6 +77,7 @@ export default function RaceLivePlayer({
   const leader = frame.leader;
   const distRemaining = Math.max(0, Math.round((1 - frame.leaderProgress) * timeline.distance));
   const cond = timeline.trackCondition.toUpperCase();
+  const theme = SURFACE_THEME[timeline.surface] ?? SURFACE_THEME.turf;
 
   return (
     <div style={S.backdrop} role="dialog" aria-modal="true">
@@ -84,6 +92,13 @@ export default function RaceLivePlayer({
         {/* Header */}
         <div style={S.header}>
           <div style={S.headChip}><span style={S.headLabel}>RACE</span> <b style={{ color: "#ffd24a" }}>{timeline.name}</b></div>
+          {timeline.trackName && (
+            <div style={S.headChip}>
+              <span style={S.headLabel}>🏟</span>
+              <b style={{ color: "#ffd24a" }}>{timeline.trackName}</b>
+              {timeline.trackLocation && <span style={{ color: "#9aa2ad" }}>· {timeline.trackLocation}</span>}
+            </div>
+          )}
           <div style={S.headChip}><span style={S.headLabel}>DIST</span> <b style={{ color: "#ffd24a" }}>{timeline.distance}m</b></div>
           <div style={S.headChip}><span style={S.headLabel}>TIME</span> <b style={{ color: "#ffd24a" }}>{fmtClock(frame.raceTimeSec)}</b></div>
           <div style={S.headChip}><span style={S.headLabel}>LAP</span> <b style={{ color: "#ffd24a" }}>1 / {timeline.laps}</b></div>
@@ -106,9 +121,9 @@ export default function RaceLivePlayer({
               ))}
             </div>
 
-            <div style={S.field}>
-              <div style={S.dirt} />
-              <div style={S.infield} />
+            <div style={{ ...S.field, background: theme.field, borderColor: theme.rail }}>
+              <div style={{ ...S.dirt, background: theme.track }} />
+              <div style={{ ...S.infield, background: theme.infield, boxShadow: `inset 0 0 0 2px ${theme.rail}` }} />
               {/* FINISH line */}
               <div style={S.finishLine} />
               <div style={S.finishFlag}>🏁</div>
@@ -190,6 +205,7 @@ export default function RaceLivePlayer({
           <div style={S.panel}>
             <span style={S.panelLabel}>TRACK CONDITION</span>
             <b style={{ color: "#4ade80", fontSize: "1.2rem" }}>🌱 {cond}</b>
+            <span style={{ fontSize: "0.72rem", color: "#9aa2ad" }}>Mặt sân: {theme.label}</span>
           </div>
         </div>
 
