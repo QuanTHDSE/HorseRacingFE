@@ -30,6 +30,7 @@ export default function RaceLivePlayer({
   const [speed, setSpeed] = useState<number>(1);
   const [done, setDone] = useState(false);
 
+  const wrapRef = useRef<HTMLDivElement>(null);
   const elapsedRef = useRef(0);
   const speedRef = useRef(1);
   const lastTsRef = useRef<number | null>(null);
@@ -37,6 +38,11 @@ export default function RaceLivePlayer({
   const [speedPct, setSpeedPct] = useState(80);
 
   useEffect(() => { speedRef.current = speed; }, [speed]);
+
+  // Cuộn tới màn xem đua khi nó vừa được thêm vào trang
+  useEffect(() => {
+    wrapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   useEffect(() => {
     let raf = 0;
@@ -80,7 +86,7 @@ export default function RaceLivePlayer({
   const theme = SURFACE_THEME[timeline.surface] ?? SURFACE_THEME.turf;
 
   return (
-    <div style={S.backdrop} role="dialog" aria-modal="true">
+    <div style={S.wrap} ref={wrapRef}>
       <style>{`
         @keyframes gallop-bob {
           0%   { transform: translateY(0); }
@@ -239,14 +245,11 @@ export default function RaceLivePlayer({
 }
 
 const S: Record<string, React.CSSProperties> = {
-  backdrop: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000,
-    display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
-  },
+  wrap: { width: "100%" },
   modal: {
-    width: "min(1100px, 96vw)", maxHeight: "94vh", overflow: "auto",
+    width: "100%",
     background: "#1d2530", border: "1px solid #2c3744", borderRadius: 14,
-    boxShadow: "0 24px 60px rgba(0,0,0,0.5)", position: "relative",
+    boxShadow: "0 12px 30px rgba(0,0,0,0.3)", position: "relative", overflow: "hidden",
   },
   header: {
     display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",

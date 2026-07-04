@@ -92,6 +92,7 @@ export default function RacesPage() {
     handleAddParticipant,
     handleGetRaceEligibleEntries,
     handleSimulateRace,
+    handleFinishRace,
     handleAssignRaceReferee,
     handleUpdateRaceStatus,
     handleDeleteRace,
@@ -321,7 +322,12 @@ export default function RacesPage() {
   }
 
   async function onPlayerClose() {
+    const raceId = simTimeline?.raceId ?? detail?.id;
     setSimTimeline(null);
+    // Kết thúc đua khi đóng màn xem: công bố kết quả + giải đấu trở lại Registration
+    if (raceId) {
+      try { await handleFinishRace(raceId); } catch { /* ignore */ }
+    }
     if (detail) {
       try { setDetail(await handleGetRaceById(detail.id)); } catch { /* ignore */ }
     }

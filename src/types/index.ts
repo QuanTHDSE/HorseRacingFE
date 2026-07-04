@@ -256,6 +256,33 @@ export interface RaceSimTimeline {
   horses: RaceSimHorse[];
 }
 
+export interface RaceLeaderboardRow {
+  rank: number;
+  horse: { id: string; name: string };
+  jockey: { id: string; fullName: string };
+  owner: { id: string; fullName: string };
+  finishTime: number | null;
+  marginBehind: number | null;
+  prize: number;
+  isDeadHeat: boolean;
+  isDisqualified: boolean;
+}
+
+export interface RaceLeaderboard {
+  raceId: string;
+  raceName: string;
+  round: number;
+  distance: number | null;
+  tournamentId: string;
+  tournamentName: string | null;
+  raceStatus: string;
+  /** null = role hiện tại chưa được phép xem (chưa publish / chưa confirm). */
+  stage: "published" | "confirmed" | null;
+  publishedAt: string | null;
+  confirmedAt: string | null;
+  rankings: RaceLeaderboardRow[];
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -635,9 +662,11 @@ export interface AppContextValue {
   handleGetJockeyDashboard: () => Promise<JockeyDashboard>;
   handleGetJockeyRaceById: (id: string) => Promise<Race>;
   handleGetRaceById: (id: string) => Promise<RaceDetail>;
+  handleGetRaceLeaderboard: (raceId: string) => Promise<RaceLeaderboard>;
   handleAddParticipant: (raceId: string, data: AddParticipantInput) => Promise<RaceDetail>;
   handleGetRaceEligibleEntries: (raceId: string) => Promise<RaceEligibleEntry[]>;
   handleSimulateRace: (raceId: string) => Promise<RaceSimTimeline>;
+  handleFinishRace: (raceId: string) => Promise<void>;
   handleAssignRaceReferee: (raceId: string, refereeId: string | null) => Promise<RaceDetail>;
   handleUpdateRaceStatus: (raceId: string, status: string) => Promise<RaceDetail>;
   handleCreateHorse: (data: CreateHorseInput) => Promise<void>;

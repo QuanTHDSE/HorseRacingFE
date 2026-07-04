@@ -1,4 +1,4 @@
-import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, DataTable, MetricCard, Panel, RaceLeaderboard } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 function fmtDate(iso?: string): string {
@@ -21,6 +21,16 @@ export default function OwnerResultsPage() {
   const totalApproved  = regs.filter((r) => r.status === "Approved").length;
   const totalCompleted = completedRegs.length;
   const withJockey     = completedRegs.filter((r) => r.jockeyName).length;
+
+  const myHorseIds = horses.map((h) => h.id);
+  // Danh sách race đã hoàn thành (dedup theo raceId) để hiển thị bảng xếp hạng.
+  const rankedRaces = Array.from(
+    new Map(
+      completedRegs
+        .filter((reg) => reg.raceId)
+        .map((reg) => [reg.raceId, { raceId: reg.raceId, raceName: reg.raceName }]),
+    ).values(),
+  );
 
   const resultRows = completedRegs.map((reg) => {
     const race = appState.races.find((r) => r.id === reg.raceId);
@@ -84,6 +94,16 @@ export default function OwnerResultsPage() {
           />
         )}
       </Panel>
+
+      {rankedRaces.length > 0 && (
+        <Panel title="Bảng xếp hạng" subtitle="Kết quả chính thức các cuộc đua ngựa của bạn đã tham gia — ngựa của bạn được tô sáng">
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {rankedRaces.map((r) => (
+              <RaceLeaderboard key={r.raceId} raceId={r.raceId} highlightHorseIds={myHorseIds} />
+            ))}
+          </div>
+        </Panel>
+      )}
 
       {withJockey > 0 && (
         <Panel title="Jockey performance" subtitle="Races where your horse had an assigned jockey">

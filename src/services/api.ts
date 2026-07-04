@@ -390,6 +390,32 @@ export interface ApiRaceResult {
   rankings: ApiRaceRanking[];
 }
 
+export interface ApiLeaderboardRanking {
+  rank: number;
+  horse: { id: string; name: string };
+  jockey: { id: string; fullName: string };
+  owner: { id: string; fullName: string };
+  finishTime: number | null;
+  marginBehind: number | null;
+  prize: number;
+  isDeadHeat: boolean;
+  isDisqualified: boolean;
+}
+
+export interface ApiRaceLeaderboard {
+  raceId: string;
+  raceName: string;
+  round: number;
+  distance: number | null;
+  tournamentId: string;
+  tournamentName: string | null;
+  raceStatus: string;
+  stage: "published" | "confirmed" | null;
+  publishedAt: string | null;
+  confirmedAt: string | null;
+  rankings: ApiLeaderboardRanking[];
+}
+
 export interface ApiJockeyRace {
   id: string;
   name: string;
@@ -558,6 +584,8 @@ export const api = {
       request<{ entries: ApiRaceEligibleEntry[] }>(`/races/${raceId}/eligible-entries`),
     simulate: (raceId: string) =>
       request<{ timeline: ApiRaceSimTimeline }>(`/races/${raceId}/simulate`, { method: "POST" }),
+    finish: (raceId: string) =>
+      request<{ ok: boolean }>(`/races/${raceId}/finish`, { method: "POST" }),
     addParticipant: (
       raceId: string,
       data: { horseId: string; jockeyId: string; ownerId: string; laneNumber?: number },
@@ -765,5 +793,9 @@ export const api = {
       }),
     listNotifications: () =>
       request<{ notifications: ApiNotification[] }>("/referee/notifications"),
+  },
+  leaderboards: {
+    get: (raceId: string) =>
+      request<{ leaderboard: ApiRaceLeaderboard }>(`/leaderboards/${raceId}`),
   },
 };

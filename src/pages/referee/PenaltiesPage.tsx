@@ -54,6 +54,9 @@ export default function PenaltiesPage() {
   const isLive = race?.liveStatus === "Live";
   const isUpcoming = race?.liveStatus === "Upcoming";
   const hasDraft = !!result && !result.confirmedAt;
+  // Có thể lập biên bản khi đang đua (Live) HOẶC khi đã chạy đua xong nhưng
+  // kết quả nháp chưa được xác nhận (còn sửa được).
+  const canPenalize = isLive || hasDraft;
 
   // Load violation rules once
   useEffect(() => {
@@ -233,7 +236,7 @@ export default function PenaltiesPage() {
           {/* Conduct penalty */}
           <Panel
             title="Lập biên bản vi phạm"
-            subtitle={isLive ? "Áp dụng cảnh cáo / tước quyền / cấm thi đấu cho ngựa hoặc nài" : "Chỉ lập được khi cuộc đua đang diễn ra (Live)"}
+            subtitle={canPenalize ? "Áp dụng cảnh cáo / tước quyền / cấm thi đấu cho ngựa hoặc nài" : "Chỉ lập được khi cuộc đua đang diễn ra hoặc còn kết quả nháp chưa xác nhận"}
           >
             {loading ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Đang tải…</p>
@@ -241,7 +244,7 @@ export default function PenaltiesPage() {
               <div className="form-grid-2">
                 <label className="field">
                   <span>Ngựa / Nài <span className="required">*</span></span>
-                  <select value={cHorseId} onChange={(e) => setCHorseId(e.target.value)} disabled={!isLive || busy}>
+                  <select value={cHorseId} onChange={(e) => setCHorseId(e.target.value)} disabled={!canPenalize || busy}>
                     <option value="">— Chọn —</option>
                     {checks.map((c) => (
                       <option key={c.horseId} value={c.horseId}>
@@ -252,7 +255,7 @@ export default function PenaltiesPage() {
                 </label>
                 <label className="field">
                   <span>Luật vi phạm <span className="required">*</span></span>
-                  <select value={cRuleId} onChange={(e) => setCRuleId(e.target.value)} disabled={!isLive || busy}>
+                  <select value={cRuleId} onChange={(e) => setCRuleId(e.target.value)} disabled={!canPenalize || busy}>
                     <option value="">— Chọn luật —</option>
                     {rules.map((r) => (
                       <option key={r.id} value={r.id}>{r.code} · {r.name} ({r.penaltyApplied})</option>
@@ -261,7 +264,7 @@ export default function PenaltiesPage() {
                 </label>
                 <label className="field">
                   <span>Đối tượng chịu phạt</span>
-                  <select value={cTarget} onChange={(e) => setCTarget(e.target.value as typeof cTarget)} disabled={!isLive || busy}>
+                  <select value={cTarget} onChange={(e) => setCTarget(e.target.value as typeof cTarget)} disabled={!canPenalize || busy}>
                     <option value="jockey">Nài ngựa</option>
                     <option value="horse">Ngựa</option>
                     <option value="both">Cả hai</option>
@@ -269,7 +272,7 @@ export default function PenaltiesPage() {
                 </label>
                 <label className="field">
                   <span>Ghi chú</span>
-                  <input value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Diễn giải tình huống…" disabled={!isLive || busy} />
+                  <input value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Diễn giải tình huống…" disabled={!canPenalize || busy} />
                 </label>
               </div>
             )}
@@ -279,7 +282,7 @@ export default function PenaltiesPage() {
               </p>
             )}
             <div className="form-actions" style={{ marginTop: "12px" }}>
-              <button type="button" className="primary-button" disabled={!isLive || busy} onClick={applyConduct}>
+              <button type="button" className="primary-button" disabled={!canPenalize || busy} onClick={applyConduct}>
                 {busy ? "Đang xử lý…" : "Áp dụng án phạt"}
               </button>
             </div>
@@ -348,8 +351,8 @@ export default function PenaltiesPage() {
                     <button
                       type="button"
                       className="table-button is-danger"
-                      disabled={busy || !isLive}
-                      title={!isLive ? "Chỉ hoàn tác được khi cuộc đua đang diễn ra" : undefined}
+                      disabled={busy || !canPenalize}
+                      title={!canPenalize ? "Chỉ hoàn tác khi cuộc đua đang diễn ra hoặc kết quả nháp chưa xác nhận" : undefined}
                       onClick={() => revoke(r.id)}
                     >
                       Hoàn tác
@@ -363,7 +366,7 @@ export default function PenaltiesPage() {
           </Panel>
 
           <div className="form-banner" style={{ background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", color: "var(--c-muted)", fontSize: "0.8rem" }}>
-            Quy trình: <strong>Bắt đầu điều hành</strong> (Live) → lập biên bản vi phạm → <strong>Chạy đua &amp; xem trực tiếp</strong> → phạt cộng giờ → sang trang <strong>Results</strong> để xác nhận. Hoàn tác án phạt chỉ thực hiện khi cuộc đua còn Live.
+            Quy trình: <strong>Bắt đầu điều hành</strong> (Live) → <strong>Chạy đua &amp; xem trực tiếp</strong> → lập biên bản vi phạm / phạt cộng giờ (làm được cả khi đang đua lẫn khi còn kết quả nháp) → sang trang <strong>Results</strong> để xác nhận. Sau khi kết quả đã xác nhận thì không lập/hoàn tác biên bản được nữa.
           </div>
         </>
       )}

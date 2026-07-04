@@ -55,6 +55,7 @@ import type {
   Race,
   RaceDetail,
   RaceEligibleEntry,
+  RaceLeaderboard,
   RaceSimTimeline,
   RaceParticipantDetail,
   Racetrack,
@@ -1127,6 +1128,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapRaceDetail(res.race);
   }
 
+  async function handleGetRaceLeaderboard(raceId: string): Promise<RaceLeaderboard> {
+    const res = await api.leaderboards.get(raceId);
+    return res.leaderboard;
+  }
+
   async function handleAddParticipant(raceId: string, data: AddParticipantInput): Promise<RaceDetail> {
     await api.races.addParticipant(raceId, data);
     const res = await api.races.getById(raceId);
@@ -1138,13 +1144,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return res.entries;
   }
 
+  async function refreshTournaments(): Promise<void> {
+    try {
+      const res = await api.tournaments.list();
+      setAppState((prev) => ({ ...prev, tournaments: res.items.map(mapTournamentItem) }));
+    } catch { /* ignore */ }
+  }
+
   async function handleSimulateRace(raceId: string): Promise<RaceSimTimeline> {
+    // Bắt đầu đua: race -> ongoing (giải đấu -> Live)
     const res = await api.races.simulate(raceId);
+    setAppState((prev) => ({
+      ...prev,
+      races: prev.races.map((r) => (r.id === raceId ? { ...r, liveStatus: "Live" } : r)),
+    }));
+    await refreshTournaments();
+    return res.timeline;
+  }
+
+  async function handleFinishRace(raceId: string): Promise<void> {
+    // Kết thúc đua: race -> completed + công bố (giải đấu -> Registration)
+    await api.races.finish(raceId);
     setAppState((prev) => ({
       ...prev,
       races: prev.races.map((r) => (r.id === raceId ? { ...r, liveStatus: "Completed" } : r)),
     }));
-    return res.timeline;
+    await refreshTournaments();
   }
 
   async function handleAssignRaceReferee(raceId: string, refereeId: string | null): Promise<RaceDetail> {
@@ -1403,9 +1428,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleGetJockeyDashboard,
     handleGetJockeyRaceById,
     handleGetRaceById,
+    handleGetRaceLeaderboard,
     handleAddParticipant,
     handleGetRaceEligibleEntries,
     handleSimulateRace,
+    handleFinishRace,
     handleAssignRaceReferee,
     handleUpdateRaceStatus,
     handleCreateHorse,

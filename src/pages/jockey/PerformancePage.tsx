@@ -1,4 +1,4 @@
-import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, DataTable, MetricCard, Panel, RaceLeaderboard } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 function fmtDate(iso?: string): string {
@@ -27,7 +27,7 @@ function rankLabel(rank?: number): string {
 }
 
 export default function PerformancePage() {
-  const { appState } = useApp();
+  const { appState, user } = useApp();
   const allRaces     = appState.races;
   const completed    = allRaces.filter((r) => r.liveStatus === "Completed");
   const withResult   = completed.filter((r) => r.result?.rank !== undefined);
@@ -100,6 +100,16 @@ export default function PerformancePage() {
           rows={resultRows}
         />
       </Panel>
+
+      {completed.length > 0 && (
+        <Panel title="Bảng xếp hạng đầy đủ" subtitle="Kết quả chính thức từng cuộc đua — lượt của bạn được tô sáng">
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {completed.map((r) => (
+              <RaceLeaderboard key={r.id} raceId={r.id} highlightJockeyId={user?.id} />
+            ))}
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }

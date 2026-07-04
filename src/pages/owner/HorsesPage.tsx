@@ -310,11 +310,6 @@ export default function HorsesPage() {
               render: (row) => <Badge tone={HEALTH_TONE[row.health] as any ?? "neutral"}>{row.health}</Badge>,
             },
             {
-              key: "jockeyId",
-              label: "Jockey",
-              render: (row) => row.jockeyName ?? <span style={{ color: "var(--text-muted)" }}>—</span>,
-            },
-            {
               key: "profilePdfUrl",
               label: "PDF",
               render: (row) => row.profilePdfUrl ? (

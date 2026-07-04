@@ -38,9 +38,6 @@ export default function JockeysPage() {
   // (Owner hires a jockey only after the horse entry is approved.)
   const eligibleRegs = regs.filter((r) => r.status === "Approved" && !r.jockeyId);
 
-  // Registrations that already have a jockey assigned (invitation accepted)
-  const withJockey = regs.filter((r) => r.jockeyName);
-
   const selectedReg = regs.find((r) => r.id === registrationId);
 
   // Debounced jockey search
@@ -270,32 +267,6 @@ export default function JockeysPage() {
             </button>
           </div>
         </form>
-      </Panel>
-
-      {/* ── Assigned jockeys ── */}
-      <Panel
-        title="Assigned jockeys"
-        subtitle="Registrations where a jockey accepted the invitation"
-      >
-        {withJockey.length === 0 ? (
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No jockeys assigned yet.</p>
-        ) : (
-          <DataTable
-            columns={[
-              { key: "raceName",   label: "Race"   },
-              { key: "horseName",  label: "Horse"  },
-              { key: "jockeyName", label: "Jockey", render: (row) => row.jockeyName ?? "—" },
-              {
-                key: "status",
-                label: "Registration",
-                render: (row) => (
-                  <Badge tone={STATUS_TONE[row.status] as any ?? "neutral"}>{row.status}</Badge>
-                ),
-              },
-            ]}
-            rows={withJockey}
-          />
-        )}
       </Panel>
 
       {/* ── All registrations summary ── */}
