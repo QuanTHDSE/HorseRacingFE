@@ -93,6 +93,7 @@ export interface ApiPredictionConfig {
   maxPredictionsPerRace: number;
   poolEnabled: boolean;
   entryFee: number;
+  ticketPrice?: number;
   minRiskMultiplier: number;
   maxRiskMultiplier: number;
   quickRiskMultipliers: number[];
@@ -291,6 +292,10 @@ export interface ApiPrediction {
   tournamentName: string;
   predictedRanks: Array<{ rank: number; horseId: string; horseName?: string }>;
   status: "pending" | "partial" | "correct" | "incorrect";
+  ticketCount: number;
+  riskMultiplier: number;
+  contribution: number;
+  poolShare: number;
   pointsEarned: number;
   bonusPoints: number;
   totalPoints: number;
@@ -350,7 +355,7 @@ export interface ApiSpectatorRace {
   status: "scheduled" | "ongoing" | "completed" | "cancelled";
   distance?: number;
   tournament: { id: string; name: string };
-  participants: Array<{ id: string; name: string; laneNumber: number }>;
+  participants: Array<{ id: string; name: string; laneNumber: number; ticketCount: number }>;
   canPredict: boolean;
   hasPrediction: boolean;
   predictionOpenAt?: string | null;
@@ -359,6 +364,7 @@ export interface ApiSpectatorRace {
     isEnabled: boolean;
     poolEnabled: boolean;
     entryFee: number;
+    ticketPrice: number;
     quickRiskMultipliers: number[];
   };
   result?: {
@@ -715,11 +721,11 @@ export const api = {
     createPrediction: (
       raceId: string,
       predictedRanks: Array<{ rank: number; horseId: string }>,
-      riskMultiplier = 1,
+      ticketCount = 1,
     ) =>
       request<{ prediction: ApiPrediction }>(`/spectator/predictions/${raceId}`, {
         method: "POST",
-        body: JSON.stringify({ raceId, predictedRanks, riskMultiplier }),
+        body: JSON.stringify({ raceId, predictedRanks, ticketCount }),
       }),
     cancelPrediction: (predictionId: string) =>
       request<{ prediction: ApiPrediction; points: ApiSpectatorPoints }>(

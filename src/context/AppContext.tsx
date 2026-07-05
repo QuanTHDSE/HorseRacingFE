@@ -179,6 +179,7 @@ function mapPredictionConfig(c: ApiPredictionConfig): PredictionConfig {
     maxPredictionsPerRace: c.maxPredictionsPerRace,
     poolEnabled: c.poolEnabled,
     entryFee: c.entryFee ?? 0,
+    ticketPrice: c.ticketPrice ?? c.entryFee ?? 0,
     minRiskMultiplier: c.minRiskMultiplier ?? 1,
     maxRiskMultiplier: c.maxRiskMultiplier ?? 10,
     quickRiskMultipliers: c.quickRiskMultipliers ?? [1, 2, 3, 6],
@@ -1228,10 +1229,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function handleCreatePrediction(
     raceId: string,
     horseId: string,
-    riskMultiplier = 1,
+    ticketCount = 1,
   ): Promise<void> {
     if (!user || user.role !== "spectator") return;
-    await api.spectator.createPrediction(raceId, [{ rank: 1, horseId }], riskMultiplier);
+    await api.spectator.createPrediction(raceId, [{ rank: 1, horseId }], ticketCount);
     await refreshSpectatorState(user);
   }
 

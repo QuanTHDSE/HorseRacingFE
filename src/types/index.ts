@@ -544,6 +544,7 @@ export interface SpectatorRaceParticipant {
   id: string;
   name: string;
   laneNumber: number;
+  ticketCount: number;
 }
 
 export interface SpectatorRaceResult {
@@ -577,6 +578,7 @@ export interface SpectatorRace {
     isEnabled: boolean;
     poolEnabled: boolean;
     entryFee: number;
+    ticketPrice: number;
     quickRiskMultipliers: number[];
   };
   result?: SpectatorRaceResult | null;
@@ -676,7 +678,7 @@ export interface AppContextValue {
   handleCancelRegistration: (id: string) => Promise<void>;
   handleInviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) => Promise<void>;
   handleGetSpectatorRaceById: (id: string) => Promise<SpectatorRace>;
-  handleCreatePrediction: (raceId: string, horseId: string, riskMultiplier?: number) => Promise<void>;
+  handleCreatePrediction: (raceId: string, horseId: string, ticketCount?: number) => Promise<void>;
   handleCancelPrediction: (predictionId: string) => Promise<void>;
   handleTopUpPoints: (points: number) => Promise<void>;
   handleCreatePayosTopUp: (points: number) => Promise<string>;
