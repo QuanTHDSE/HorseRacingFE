@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Badge, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
-import type { RefereeResultStatus, ResultRankingInput } from "../../types";
+import type { RaceViolation, RefereeResultStatus, ResultRankingInput } from "../../types";
 
 interface Entry {
   horseId: string;
@@ -9,10 +9,12 @@ interface Entry {
   jockeyId: string;
   jockeyName: string;
   ownerId: string;
+  ownerName?: string;
   laneNumber: number;
-  finishTime: string;
-  prize: string;
+  clothNumber?: number;
 }
+
+const DQ_PENALTIES = ["disqualify", "disqualification"];
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
@@ -22,7 +24,14 @@ function fmtDate(iso?: string | null): string {
 }
 
 export default function ResultsPage() {
-  const { appState, handleGetRefereeChecks, handleGetRaceResult, handleSubmitRaceResult, handleConfirmRaceResult } = useApp();
+  const {
+    appState,
+    handleGetRefereeChecks,
+    handleGetRaceResult,
+    handleGetRaceViolations,
+    handleSubmitRaceResult,
+    handleConfirmRaceResult,
+  } = useApp();
 
   const races = appState.refereeRaces;
   // Result entry needs the race to be ongoing/completed
@@ -30,6 +39,7 @@ export default function ResultsPage() {
 
   const [raceId, setRaceId] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [violations, setViolations] = useState<RaceViolation[]>([]);
   const [status, setStatus] = useState<RefereeResultStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,26 +51,53 @@ export default function ResultsPage() {
   const published = !!status?.publishedAt;
   const confirmed = !!status?.confirmedAt;
   const locked = published || confirmed; // can't edit once confirmed/published
+  const demoteCount = violations.filter((v) => v.penaltyApplied === "demote").length;
+  const disqualifiedCount = violations.filter((v) => v.penaltyApplied && DQ_PENALTIES.includes(v.penaltyApplied)).length;
 
   useEffect(() => {
     if (!raceId) { setEntries([]); setStatus(null); return; }
     let alive = true;
     setLoading(true);
     setError(""); setMsg("");
-    Promise.all([handleGetRefereeChecks(raceId), handleGetRaceResult(raceId)])
-      .then(([checks, st]) => {
+    Promise.all([handleGetRefereeChecks(raceId), handleGetRaceResult(raceId), handleGetRaceViolations(raceId)])
+      .then(([checks, st, raceViolations]) => {
         if (!alive) return;
         setStatus(st);
-        setEntries(
-          checks
-            .slice()
-            .sort((a, b) => a.laneNumber - b.laneNumber)
-            .map((c) => ({
-              horseId: c.horseId, horseName: c.horseName,
-              jockeyId: c.jockeyId, jockeyName: c.jockeyName, ownerId: c.ownerId,
-              laneNumber: c.laneNumber, finishTime: "", prize: "",
-            })),
+        setViolations(raceViolations);
+
+        const disqualifiedHorseIds = new Set(
+          raceViolations
+            .filter((v) => v.horseId && v.penaltyApplied && DQ_PENALTIES.includes(v.penaltyApplied))
+            .map((v) => v.horseId as string),
         );
+
+        const rows = checks
+          .slice()
+          .sort((a, b) => a.laneNumber - b.laneNumber)
+          .filter((c) => !disqualifiedHorseIds.has(c.horseId))
+          .map((c) => ({
+            horseId: c.horseId,
+            horseName: c.horseName,
+            jockeyId: c.jockeyId,
+            jockeyName: c.jockeyName,
+            ownerId: c.ownerId,
+            ownerName: c.ownerName,
+            laneNumber: c.laneNumber,
+            clothNumber: c.clothNumber,
+          }));
+
+        for (const v of raceViolations) {
+          if (v.penaltyApplied !== "demote" || !v.horseId || !v.affectedHorseId) continue;
+          const penalizedIndex = rows.findIndex((e) => e.horseId === v.horseId);
+          const affectedIndex = rows.findIndex((e) => e.horseId === v.affectedHorseId);
+          if (penalizedIndex === -1 || affectedIndex === -1) continue;
+          const [penalized] = rows.splice(penalizedIndex, 1);
+          if (!penalized) continue;
+          const nextAffectedIndex = rows.findIndex((e) => e.horseId === v.affectedHorseId);
+          rows.splice(nextAffectedIndex + 1, 0, penalized);
+        }
+
+        setEntries(rows);
       })
       .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : "Không tải được dữ liệu"))
       .finally(() => alive && setLoading(false));
@@ -78,11 +115,6 @@ export default function ResultsPage() {
     setMsg("");
   }
 
-  function setField(idx: number, key: "finishTime" | "prize", value: string) {
-    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, [key]: value } : e)));
-    setMsg("");
-  }
-
   async function submit() {
     if (!entries.length) return;
     setSubmitting(true); setError(""); setMsg("");
@@ -92,8 +124,6 @@ export default function ResultsPage() {
         horseId: e.horseId,
         jockeyId: e.jockeyId,
         ownerId: e.ownerId,
-        finishTime: e.finishTime ? Number(e.finishTime) : undefined,
-        prize: e.prize ? Number(e.prize) : undefined,
       }));
       await handleSubmitRaceResult(raceId, rankings);
       const st = await handleGetRaceResult(raceId);
@@ -180,19 +210,9 @@ export default function ResultsPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <strong>{e.horseName}</strong>
                       <span style={{ marginLeft: "8px", fontSize: "0.82rem", color: "var(--c-muted)" }}>
-                        Lane {e.laneNumber} · {e.jockeyName}
+                        Lane {e.laneNumber} · Áo {e.clothNumber ?? "—"} · {e.jockeyName} · Owner {e.ownerName ?? "—"}
                       </span>
                     </div>
-                    <input
-                      type="number" min={0} placeholder="Time (s)" value={e.finishTime} disabled={locked}
-                      onChange={(ev) => setField(i, "finishTime", ev.target.value)}
-                      style={{ width: "100px" }}
-                    />
-                    <input
-                      type="number" min={0} placeholder="Prize" value={e.prize} disabled={locked}
-                      onChange={(ev) => setField(i, "prize", ev.target.value)}
-                      style={{ width: "100px" }}
-                    />
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button type="button" className="table-button" disabled={locked || i === 0} onClick={() => move(i, -1)}>↑</button>
                       <button type="button" className="table-button" disabled={locked || i === entries.length - 1} onClick={() => move(i, 1)}>↓</button>
@@ -200,6 +220,12 @@ export default function ResultsPage() {
                   </div>
                 ))}
               </div>
+            )}
+
+            {(demoteCount > 0 || disqualifiedCount > 0) && (
+              <p className="pc-hint" style={{ marginTop: "12px" }}>
+                Đã áp dụng {demoteCount} án tụt hạng và {disqualifiedCount} án tước quyền từ biên bản xử phạt. Không cập nhật thời gian phạt ở bước này.
+              </p>
             )}
 
             {!locked && entries.length > 0 && (

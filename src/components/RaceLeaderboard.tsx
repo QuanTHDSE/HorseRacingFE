@@ -53,6 +53,16 @@ export default function RaceLeaderboard({ raceId, highlightHorseIds, highlightJo
     );
   }
 
+  const visibleRankings = data.rankings.filter((r) => !r.isDisqualified);
+
+  if (visibleRankings.length === 0) {
+    return (
+      <p style={{ color: "var(--c-muted)", fontSize: "0.85rem", margin: 0 }}>
+        KhÃ´ng cÃ²n ngá»±a há»£p lá»‡ trong báº£ng xáº¿p háº¡ng sau khi xá»­ pháº¡t.
+      </p>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {!hideHeader && (
@@ -83,29 +93,28 @@ export default function RaceLeaderboard({ raceId, highlightHorseIds, highlightJo
             </tr>
           </thead>
           <tbody>
-            {data.rankings.map((r) => {
+            {visibleRankings.map((r, index) => {
+              const displayRank = index + 1;
               const highlighted = hlHorses.has(r.horse.id) || (highlightJockeyId && r.jockey.id === highlightJockeyId);
               return (
                 <tr
-                  key={`${r.horse.id}-${r.rank}`}
+                  key={`${r.horse.id}-${displayRank}`}
                   style={{
                     background: highlighted ? "color-mix(in srgb, var(--c-accent) 14%, transparent)" : undefined,
-                    opacity: r.isDisqualified ? 0.6 : 1,
                   }}
                 >
                   <td style={{ fontWeight: 600 }}>
-                    {MEDAL[r.rank] ?? ""} {r.rank}
+                    {MEDAL[displayRank] ?? ""} {displayRank}
                     {r.isDeadHeat && <span title="Đồng hạng" style={{ color: "var(--c-muted)" }}> =</span>}
                   </td>
-                  <td style={{ textDecoration: r.isDisqualified ? "line-through" : undefined }}>
+                  <td>
                     {r.horse.name}
                     {highlighted && <Badge tone="accent">của bạn</Badge>}
-                    {r.isDisqualified && <Badge tone="danger">DQ</Badge>}
                   </td>
                   <td>{r.jockey.fullName}</td>
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtTime(r.finishTime)}</td>
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--c-muted)" }}>
-                    {r.rank === 1 ? "—" : r.marginBehind != null ? `+${r.marginBehind.toFixed(2)}s` : "—"}
+                    {displayRank === 1 ? "—" : r.marginBehind != null ? `+${r.marginBehind.toFixed(2)}s` : "—"}
                   </td>
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {r.prize > 0 ? r.prize.toLocaleString("vi-VN") : "—"}
