@@ -162,6 +162,7 @@ export interface RefereeResultStatus {
   confirmedAt: string | null;
   publishedAt: string | null;
   rankingsCount: number;
+  rankings?: ResultRankingInput[];
 }
 
 export interface ViolationRule {

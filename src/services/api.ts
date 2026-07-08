@@ -146,6 +146,7 @@ export interface ApiRefereeResult {
   confirmedAt: string | null;
   publishedAt: string | null;
   rankingsCount: number;
+  rankings?: ApiResultRankingInput[];
 }
 
 export interface ApiViolationRule {

@@ -121,6 +121,11 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
     setMsg("");
   }
 
+  function setRankRates(next: number[]) {
+    setRankText(next.join(", "));
+    setMsg("");
+  }
+
   if (loading) return <p className="pc-section-sub">Loading prediction configuration...</p>;
   if (loadError) return <div className="form-banner form-banner-error">{loadError}</div>;
   if (!cfg) return <p className="pc-section-sub">No prediction configuration found.</p>;
@@ -128,11 +133,12 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
   const rankRates = parseList(rankText);
   const quickRisks = uniquePositiveIntegers(parseList(riskText));
   const poolSum = cfg.organizerFeeRate + cfg.racingRewardRate + cfg.spectatorRewardRate;
+  const roleSplitSum = cfg.ownerShareRate + cfg.jockeyShareRate;
   const rankSum = rankRates.reduce((a, b) => a + b, 0);
   const riskValid = !cfg.poolEnabled || quickRisks.length > 0;
   const minRiskMultiplier = quickRisks[0] ?? cfg.minRiskMultiplier;
   const maxRiskMultiplier = quickRisks[quickRisks.length - 1] ?? cfg.maxRiskMultiplier;
-  const valid = poolSum === 100 && rankSum === 100 && riskValid;
+  const valid = poolSum === 100 && roleSplitSum === 100 && rankSum === 100 && riskValid;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -205,19 +211,19 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
       {/* ── 2. Bounty Pool ── */}
       <Section
         title="Bounty Pool"
-        sub="Players spend points on a permitted risk multiplier; winners share the pool"
+        sub="Players buy prediction tickets; winners share the pool"
         right={<Switch checked={cfg.poolEnabled} disabled={dis} onChange={(v) => set("poolEnabled", v)} label="Enable pool" />}
       >
         <p className="pc-hint">
-          Contribution = <strong>Entry fee × risk multiplier</strong>. Correct predictions get the contribution back and
-          share extra pool rewards by <strong>risk-weighted score (score = contribution × multiplier)</strong>.
+          Cost = <strong>ticket price × ticket count</strong>. Correct predictions get their ticket cost back and
+          share the spectator prize pool by <strong>ticket count</strong>.
         </p>
         <div className={cn(poolOff && "is-off")} style={poolOff ? { opacity: 0.5, pointerEvents: dis ? "none" : "auto" } : undefined}>
           <div className="form-grid-2">
-            <NumField label="Entry fee (points)" value={cfg.entryFee} min={0} disabled={dis || poolOff} onChange={(v) => set("entryFee", v)} />
+            <NumField label="Ticket price (points)" value={cfg.entryFee} min={0} disabled={dis || poolOff} onChange={(v) => set("entryFee", v)} />
             <NumField label="Platform fee" value={cfg.feePercent} min={0} max={30} unit="%" disabled={dis || poolOff} onChange={(v) => set("feePercent", v)} />
             <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Allowed risk multipliers (positive integers, comma-separated)</span>
+              <span>Ticket count presets (positive integers, comma-separated)</span>
               <input value={riskText} disabled={dis || poolOff} onChange={(e) => { setRiskText(e.target.value); setMsg(""); }} placeholder="1, 2, 3, 6" />
             </label>
             <label className="field" style={{ gridColumn: "1 / -1" }}>
@@ -251,19 +257,82 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         </div>
       </Section>
 
-      {/* ── 4. Rank reward split ── */}
-      <Section title="Rank Reward Split" sub="Used for racing rewards; the values must add up to 100%" right={<SumChip sum={rankSum} />}>
-        <label className="field">
-          <span>Rank percentages (comma-separated)</span>
-          <input value={rankText} disabled={dis} onChange={(e) => { setRankText(e.target.value); setMsg(""); }} placeholder="50, 25, 15, 7, 3" />
-        </label>
+      {/* ── 4. Owner/Jockey split ── */}
+      <Section
+        title="Owner / Jockey Split"
+        sub="Applied to both fixed race prizes and bounty racing rewards"
+        right={<SumChip sum={roleSplitSum} />}
+      >
+        <div className="form-grid-2">
+          <NumField label="Horse owner share" value={cfg.ownerShareRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("ownerShareRate", v)} />
+          <NumField label="Jockey share" value={cfg.jockeyShareRate} min={0} max={100} unit="%" disabled={dis} onChange={(v) => set("jockeyShareRate", v)} />
+        </div>
+      </Section>
+
+      {/* ── 5. Rank reward split ── */}
+      <Section
+        title="Rank Reward Split"
+        sub="Used for racing rewards and displayed as a rank table; the values must add up to 100%"
+        right={<SumChip sum={rankSum} />}
+      >
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Rank share</th>
+                <th>Owner share</th>
+                <th>Jockey share</th>
+                <th>Preview</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rankRates.map((rate, idx) => {
+                const ownerPreview = Math.floor((rate * cfg.ownerShareRate) / 100);
+                const jockeyPreview = rate - ownerPreview;
+                return (
+                  <tr key={idx}>
+                    <td>Rank {idx + 1}</td>
+                    <td>
+                      <span className="pc-unit" data-unit="%">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={rate}
+                          disabled={dis}
+                          onChange={(e) => {
+                            const next = rankRates.slice();
+                            next[idx] = Number(e.target.value);
+                            setRankRates(next);
+                          }}
+                        />
+                      </span>
+                    </td>
+                    <td>{cfg.ownerShareRate}%</td>
+                    <td>{cfg.jockeyShareRate}%</td>
+                    <td>{ownerPreview}% owner / {jockeyPreview}% jockey</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="form-actions" style={{ marginTop: "12px" }}>
+          <button type="button" className="table-button" disabled={dis} onClick={() => setRankRates([...rankRates, 0])}>
+            Add rank
+          </button>
+          <button type="button" className="table-button" disabled={dis || rankRates.length <= 1} onClick={() => setRankRates(rankRates.slice(0, -1))}>
+            Remove last rank
+          </button>
+        </div>
       </Section>
 
       {editable && (
         <>
           {!valid && (
             <p className="pc-section-sub" style={{ color: "var(--c-danger)", fontWeight: 600 }}>
-              Pool distribution and rank reward split must each add up to 100%. Allowed risk multipliers must contain at least one positive integer.
+              Pool distribution, owner/jockey split, and rank reward split must each add up to 100%. Ticket count presets must contain at least one positive integer.
             </p>
           )}
           <div className="form-actions">

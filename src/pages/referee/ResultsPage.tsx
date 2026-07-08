@@ -12,6 +12,8 @@ interface Entry {
   ownerName?: string;
   laneNumber: number;
   clothNumber?: number;
+  finishTime?: number | "";
+  prize?: number | "";
 }
 
 const DQ_PENALTIES = ["disqualify", "disqualification"];
@@ -97,7 +99,26 @@ export default function ResultsPage() {
           rows.splice(nextAffectedIndex + 1, 0, penalized);
         }
 
-        setEntries(rows);
+        if (st?.rankings?.length) {
+          const byHorseId = new Map(rows.map((row) => [row.horseId, row]));
+          const orderedRows = st.rankings
+            .slice()
+            .sort((a, b) => a.rank - b.rank)
+            .map((ranking) => {
+              const row = byHorseId.get(ranking.horseId);
+              if (!row) return null;
+              byHorseId.delete(ranking.horseId);
+              return {
+                ...row,
+                finishTime: ranking.finishTime ?? "",
+                prize: ranking.prize ?? 0,
+              };
+            })
+            .filter((row): row is Entry => !!row);
+          setEntries([...orderedRows, ...byHorseId.values()]);
+        } else {
+          setEntries(rows);
+        }
       })
       .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : "Không tải được dữ liệu"))
       .finally(() => alive && setLoading(false));
@@ -115,6 +136,16 @@ export default function ResultsPage() {
     setMsg("");
   }
 
+  function updateEntry(idx: number, patch: Partial<Pick<Entry, "finishTime" | "prize">>) {
+    setEntries((prev) => prev.map((entry, i) => (i === idx ? { ...entry, ...patch } : entry)));
+    setMsg("");
+  }
+
+  function optionalNumber(value: number | "" | undefined): number | undefined {
+    if (value === "" || value === undefined) return undefined;
+    return Number.isFinite(value) ? value : undefined;
+  }
+
   async function submit() {
     if (!entries.length) return;
     setSubmitting(true); setError(""); setMsg("");
@@ -124,6 +155,8 @@ export default function ResultsPage() {
         horseId: e.horseId,
         jockeyId: e.jockeyId,
         ownerId: e.ownerId,
+        finishTime: optionalNumber(e.finishTime),
+        prize: optionalNumber(e.prize) ?? 0,
       }));
       await handleSubmitRaceResult(raceId, rankings);
       const st = await handleGetRaceResult(raceId);
@@ -194,31 +227,62 @@ export default function ResultsPage() {
             ) : entries.length === 0 ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Cuộc đua chưa có ngựa tham gia.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 84 }}>Rank</th>
+                      <th>Horse</th>
+                      <th style={{ width: 150 }}>Finish time</th>
+                      <th style={{ width: 160 }}>Fixed prize</th>
+                      <th style={{ width: 92 }}>Move</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                 {entries.map((e, i) => (
-                  <div
-                    key={e.horseId}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "12px",
-                      padding: "10px 14px", background: "var(--c-surf-low)",
-                      border: "1px solid var(--c-outline-var)", borderRadius: "var(--r-lg)",
-                    }}
-                  >
-                    <Badge tone={i === 0 ? "success" : i <= 2 ? "accent" : "neutral"}>
-                      {i === 0 ? "🥇 1" : i === 1 ? "🥈 2" : i === 2 ? "🥉 3" : `#${i + 1}`}
-                    </Badge>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <tr key={e.horseId}>
+                    <td>
+                      <Badge tone={i === 0 ? "success" : i <= 2 ? "accent" : "neutral"}>
+                        {i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `#${i + 1}`}
+                      </Badge>
+                    </td>
+                    <td>
                       <strong>{e.horseName}</strong>
-                      <span style={{ marginLeft: "8px", fontSize: "0.82rem", color: "var(--c-muted)" }}>
-                        Lane {e.laneNumber} · Áo {e.clothNumber ?? "—"} · {e.jockeyName} · Owner {e.ownerName ?? "—"}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", gap: "4px" }}>
-                      <button type="button" className="table-button" disabled={locked || i === 0} onClick={() => move(i, -1)}>↑</button>
-                      <button type="button" className="table-button" disabled={locked || i === entries.length - 1} onClick={() => move(i, 1)}>↓</button>
-                    </div>
-                  </div>
+                      <div style={{ fontSize: "0.82rem", color: "var(--c-muted)" }}>
+                        Lane {e.laneNumber} · Cloth {e.clothNumber ?? "—"} · {e.jockeyName} · Owner {e.ownerName ?? "—"}
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={e.finishTime ?? ""}
+                        disabled={locked}
+                        onChange={(event) => updateEntry(i, { finishTime: event.target.value === "" ? "" : Number(event.target.value) })}
+                        placeholder="seconds"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        value={e.prize ?? ""}
+                        disabled={locked}
+                        onChange={(event) => updateEntry(i, { prize: event.target.value === "" ? "" : Number(event.target.value) })}
+                        placeholder="points"
+                      />
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button type="button" className="table-button" disabled={locked || i === 0} onClick={() => move(i, -1)}>↑</button>
+                        <button type="button" className="table-button" disabled={locked || i === entries.length - 1} onClick={() => move(i, 1)}>↓</button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
