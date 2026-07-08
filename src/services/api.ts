@@ -134,7 +134,9 @@ export interface ApiRefereeCheck {
   jockeyId: string;
   jockeyName: string;
   ownerId: string;
+  ownerName?: string;
   laneNumber: number;
+  clothNumber?: number;
   vetApproved: boolean;
   confirmed: boolean;
 }
@@ -166,6 +168,8 @@ export interface ApiRaceViolation {
   target: "horse" | "jockey" | "both";
   horseId: string | null;
   horseName: string | null;
+  affectedHorseId: string | null;
+  affectedHorseName: string | null;
   jockeyId: string | null;
   jockeyName: string | null;
   bannedUntil: string | null;
@@ -779,17 +783,9 @@ export const api = {
       request<{ violations: ApiRaceViolation[] }>(`/referee/races/${raceId}/violations`),
     penalize: (
       raceId: string,
-      body: { ruleId: string; target: "horse" | "jockey" | "both"; horseId?: string; jockeyId?: string; notes?: string },
+      body: { ruleId: string; target: "horse" | "jockey" | "both"; horseId?: string; jockeyId?: string; affectedHorseId?: string; notes?: string },
     ) =>
       request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalize`, {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-    applyTimePenalty: (
-      raceId: string,
-      body: { horseId: string; jockeyId: string; addedTimeSeconds: number; type: string; description: string; ruleId?: string },
-    ) =>
-      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalties/time`, {
         method: "POST",
         body: JSON.stringify(body),
       }),

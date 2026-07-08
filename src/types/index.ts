@@ -150,7 +150,9 @@ export interface RefereeParticipantCheck {
   jockeyId: string;
   jockeyName: string;
   ownerId: string;
+  ownerName?: string;
   laneNumber: number;
+  clothNumber?: number;
   vetApproved: boolean;
   confirmed: boolean;
 }
@@ -182,6 +184,8 @@ export interface RaceViolation {
   target: "horse" | "jockey" | "both";
   horseId: string | null;
   horseName: string | null;
+  affectedHorseId: string | null;
+  affectedHorseName: string | null;
   jockeyId: string | null;
   jockeyName: string | null;
   bannedUntil: string | null;
@@ -193,16 +197,8 @@ export interface PenalizeInput {
   target: "horse" | "jockey" | "both";
   horseId?: string;
   jockeyId?: string;
+  affectedHorseId?: string;
   notes?: string;
-}
-
-export interface TimePenaltyInput {
-  horseId: string;
-  jockeyId: string;
-  addedTimeSeconds: number;
-  type: string;
-  description: string;
-  ruleId?: string;
 }
 
 export interface RefereeDashboard {
@@ -443,6 +439,7 @@ export interface RaceParticipantDetail {
   ownerId: string;
   ownerName: string;
   laneNumber: number;
+  clothNumber?: number;
   isScratched: boolean;
   confirmedAt?: string | null;
 }
@@ -697,7 +694,6 @@ export interface AppContextValue {
   handleGetViolationRules: () => Promise<ViolationRule[]>;
   handleGetRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
   handlePenalize: (raceId: string, input: PenalizeInput) => Promise<void>;
-  handleApplyTimePenalty: (raceId: string, input: TimePenaltyInput) => Promise<void>;
   handleRevokePenalty: (raceId: string, violationId: string) => Promise<void>;
   handleGetRaceResult: (raceId: string) => Promise<RefereeResultStatus | null>;
   handleSubmitRaceResult: (raceId: string, rankings: ResultRankingInput[]) => Promise<void>;

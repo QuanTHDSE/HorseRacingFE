@@ -81,8 +81,10 @@ export default function ChecksPage() {
               <DataTable
                 columns={[
                   { key: "laneNumber", label: "Lane", render: (r) => `#${r.laneNumber}` },
+                  { key: "clothNumber", label: "Áo số", render: (r) => r.clothNumber ? `#${r.clothNumber}` : "—" },
                   { key: "horseName", label: "Ngựa" },
                   { key: "jockeyName", label: "Nài ngựa" },
+                  { key: "ownerName", label: "Chủ ngựa", render: (r) => r.ownerName ?? "—" },
                   {
                     key: "vetApproved",
                     label: "Thú y",

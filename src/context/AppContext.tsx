@@ -50,7 +50,6 @@ import type {
   ViolationRule,
   RaceViolation,
   PenalizeInput,
-  TimePenaltyInput,
   ResultRankingInput,
   Race,
   RaceDetail,
@@ -459,7 +458,9 @@ function mapRefereeCheck(c: ApiRefereeCheck): RefereeParticipantCheck {
     jockeyId: c.jockeyId,
     jockeyName: c.jockeyName,
     ownerId: c.ownerId,
+    ownerName: c.ownerName,
     laneNumber: c.laneNumber,
+    clothNumber: c.clothNumber,
     vetApproved: c.vetApproved,
     confirmed: c.confirmed,
   };
@@ -528,6 +529,7 @@ function mapRaceDetail(r: ApiRaceDetail): RaceDetail {
       ownerId: typeof owner === "string" ? owner : owner?._id ?? "",
       ownerName: typeof owner === "object" ? owner?.fullName ?? "—" : "—",
       laneNumber: p.laneNumber,
+      clothNumber: p.clothNumber,
       isScratched: !!p.scratchedAt,
       confirmedAt: p.confirmedAt,
     };
@@ -1131,7 +1133,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function handleGetRaceLeaderboard(raceId: string): Promise<RaceLeaderboard> {
     const res = await api.leaderboards.get(raceId);
-    return res.leaderboard;
+    return {
+      ...res.leaderboard,
+      rankings: res.leaderboard.rankings.filter((r) => !r.isDisqualified),
+    };
   }
 
   async function handleAddParticipant(raceId: string, data: AddParticipantInput): Promise<RaceDetail> {
@@ -1332,8 +1337,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function handleGetRefereeChecks(raceId: string): Promise<RefereeParticipantCheck[]> {
-    const res = await api.referee.listChecks(raceId);
-    return res.checks.map(mapRefereeCheck);
+    const [checksResult, detailResult] = await Promise.allSettled([
+      api.referee.listChecks(raceId),
+      api.races.getById(raceId),
+    ]);
+
+    if (checksResult.status === "rejected") throw checksResult.reason;
+
+    const detailByHorse =
+      detailResult.status === "fulfilled"
+        ? new Map(mapRaceDetail(detailResult.value.race).participants.map((p) => [p.horseId, p]))
+        : new Map<string, RaceParticipantDetail>();
+
+    return checksResult.value.checks.map((check) => {
+      const row = mapRefereeCheck(check);
+      const participant = detailByHorse.get(row.horseId);
+      return participant
+        ? {
+          ...row,
+          ownerName: participant.ownerName,
+          clothNumber: participant.clothNumber,
+        }
+        : row;
+    });
   }
 
   async function handleToggleRefereeCheck(
@@ -1342,8 +1368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     field: "vetApprovedAt" | "confirmedAt",
   ): Promise<RefereeParticipantCheck[]> {
     await api.referee.toggleCheck(raceId, horseId, field);
-    const res = await api.referee.listChecks(raceId);
-    return res.checks.map(mapRefereeCheck);
+    return handleGetRefereeChecks(raceId);
   }
 
   async function handleStartRefereeRace(raceId: string): Promise<void> {
@@ -1369,10 +1394,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function handlePenalize(raceId: string, input: PenalizeInput): Promise<void> {
     await api.referee.penalize(raceId, input);
-  }
-
-  async function handleApplyTimePenalty(raceId: string, input: TimePenaltyInput): Promise<void> {
-    await api.referee.applyTimePenalty(raceId, input);
   }
 
   async function handleRevokePenalty(raceId: string, violationId: string): Promise<void> {
@@ -1462,7 +1483,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleGetViolationRules,
     handleGetRaceViolations,
     handlePenalize,
-    handleApplyTimePenalty,
     handleRevokePenalty,
     handleGetRaceResult,
     handleSubmitRaceResult,

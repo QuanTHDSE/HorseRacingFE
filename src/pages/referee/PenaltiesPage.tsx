@@ -11,6 +11,12 @@ function fmtDate(iso?: string | null): string {
   return new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+function participantLabel(p: RefereeParticipantCheck): string {
+  const cloth = p.clothNumber ? `áo #${p.clothNumber}` : "áo —";
+  const owner = p.ownerName ? ` · owner ${p.ownerName}` : "";
+  return `${p.horseName} · ${p.jockeyName}${owner} · lane ${p.laneNumber} · ${cloth}`;
+}
+
 export default function PenaltiesPage() {
   const {
     appState,
@@ -20,7 +26,6 @@ export default function PenaltiesPage() {
     handleGetViolationRules,
     handleGetRaceViolations,
     handlePenalize,
-    handleApplyTimePenalty,
     handleRevokePenalty,
     handleGetRaceResult,
   } = useApp();
@@ -43,13 +48,8 @@ export default function PenaltiesPage() {
   const [cHorseId, setCHorseId] = useState("");
   const [cRuleId, setCRuleId] = useState("");
   const [cTarget, setCTarget] = useState<"horse" | "jockey" | "both">("jockey");
+  const [cAffectedHorseId, setCAffectedHorseId] = useState("");
   const [cNotes, setCNotes] = useState("");
-
-  // Time penalty form
-  const [tHorseId, setTHorseId] = useState("");
-  const [tSeconds, setTSeconds] = useState("");
-  const [tType, setTType] = useState("");
-  const [tDesc, setTDesc] = useState("");
 
   const isLive = race?.liveStatus === "Live";
   const isUpcoming = race?.liveStatus === "Upcoming";
@@ -57,6 +57,11 @@ export default function PenaltiesPage() {
   // Có thể lập biên bản khi đang đua (Live) HOẶC khi đã chạy đua xong nhưng
   // kết quả nháp chưa được xác nhận (còn sửa được).
   const canPenalize = isLive || hasDraft;
+  const selectedRule = rules.find((r) => r.id === cRuleId) ?? null;
+  const isDemote = selectedRule?.penaltyApplied === "demote";
+  const isDisqualification = DQ_PENALTIES.includes(selectedRule?.penaltyApplied ?? "");
+  const violatingParticipant = participantOf(cHorseId);
+  const affectedParticipant = participantOf(cAffectedHorseId);
 
   // Load violation rules once
   useEffect(() => {
@@ -115,13 +120,14 @@ export default function PenaltiesPage() {
   async function onPlayerClose() {
     setSimTimeline(null);
     await reload(raceId);
-    setMsg("Đã chạy đua & tạo kết quả nháp. Có thể phạt cộng giờ, rồi sang trang Results để xác nhận.");
+    setMsg("Đã chạy đua & tạo kết quả nháp. Có thể lập biên bản, rồi sang trang Results để xác nhận.");
   }
 
   async function applyConduct() {
     const p = participantOf(cHorseId);
     if (!p) { setError("Chọn ngựa/nài cần xử phạt."); return; }
     if (!cRuleId) { setError("Chọn luật vi phạm."); return; }
+    if (isDemote && !cAffectedHorseId) { setError("Chọn ngựa bị ảnh hưởng để áp dụng hình phạt tụt hạng."); return; }
     setBusy(true); setError(""); setMsg("");
     try {
       await handlePenalize(raceId, {
@@ -129,36 +135,14 @@ export default function PenaltiesPage() {
         target: cTarget,
         horseId: p.horseId,
         jockeyId: p.jockeyId,
+        affectedHorseId: isDemote ? cAffectedHorseId : undefined,
         notes: cNotes.trim() || undefined,
       });
       setMsg(`Đã lập biên bản với ${p.horseName} / ${p.jockeyName}.`);
-      setCRuleId(""); setCNotes("");
+      setCRuleId(""); setCAffectedHorseId(""); setCNotes("");
       await reload(raceId);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Lập biên bản thất bại");
-    } finally { setBusy(false); }
-  }
-
-  async function applyTime() {
-    const p = participantOf(tHorseId);
-    if (!p) { setError("Chọn ngựa cần phạt giờ."); return; }
-    const secs = Number(tSeconds);
-    if (!secs || secs <= 0) { setError("Số giây phạt phải lớn hơn 0."); return; }
-    if (!tType.trim() || !tDesc.trim()) { setError("Nhập loại lỗi và mô tả."); return; }
-    setBusy(true); setError(""); setMsg("");
-    try {
-      await handleApplyTimePenalty(raceId, {
-        horseId: p.horseId,
-        jockeyId: p.jockeyId,
-        addedTimeSeconds: secs,
-        type: tType.trim(),
-        description: tDesc.trim(),
-      });
-      setMsg(`Đã cộng ${secs}s cho ${p.horseName}. Bảng xếp hạng đã cập nhật.`);
-      setTSeconds(""); setTType(""); setTDesc("");
-      await reload(raceId);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Phạt giờ thất bại");
     } finally { setBusy(false); }
   }
 
@@ -176,7 +160,7 @@ export default function PenaltiesPage() {
   return (
     <div className="page-stack">
       {simTimeline && <RaceLivePlayer timeline={simTimeline} onClose={onPlayerClose} />}
-      <Panel title="Xử phạt trọng tài" subtitle="Lập biên bản vi phạm, phạt cộng giờ và hoàn tác án phạt">
+      <Panel title="Xử phạt trọng tài" subtitle="Lập biên bản vi phạm, áp dụng án phạt theo luật và hoàn tác khi kết quả chưa khóa">
         <label className="field" style={{ maxWidth: "440px" }}>
           <span>Cuộc đua</span>
           <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
@@ -236,26 +220,30 @@ export default function PenaltiesPage() {
           {/* Conduct penalty */}
           <Panel
             title="Lập biên bản vi phạm"
-            subtitle={canPenalize ? "Áp dụng cảnh cáo / tước quyền / cấm thi đấu cho ngựa hoặc nài" : "Chỉ lập được khi cuộc đua đang diễn ra hoặc còn kết quả nháp chưa xác nhận"}
+            subtitle={canPenalize ? "Áp dụng cảnh cáo / tụt hạng / tước quyền / cấm thi đấu theo luật BE" : "Chỉ lập được khi cuộc đua đang diễn ra hoặc còn kết quả nháp chưa xác nhận"}
           >
             {loading ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Đang tải…</p>
             ) : (
               <div className="form-grid-2">
                 <label className="field">
-                  <span>Ngựa / Nài <span className="required">*</span></span>
-                  <select value={cHorseId} onChange={(e) => setCHorseId(e.target.value)} disabled={!canPenalize || busy}>
-                    <option value="">— Chọn —</option>
+                  <span>Ngựa vi phạm / Nài liên quan <span className="required">*</span></span>
+                  <select value={cHorseId} onChange={(e) => { setCHorseId(e.target.value); setCAffectedHorseId(""); }} disabled={!canPenalize || busy}>
+                    <option value="">— Chọn ngựa / nài vi phạm —</option>
                     {checks.map((c) => (
                       <option key={c.horseId} value={c.horseId}>
-                        {c.horseName} · {c.jockeyName} (lane {c.laneNumber})
+                        {participantLabel(c)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="field">
                   <span>Luật vi phạm <span className="required">*</span></span>
-                  <select value={cRuleId} onChange={(e) => setCRuleId(e.target.value)} disabled={!canPenalize || busy}>
+                  <select
+                    value={cRuleId}
+                    onChange={(e) => { setCRuleId(e.target.value); setCAffectedHorseId(""); }}
+                    disabled={!canPenalize || busy}
+                  >
                     <option value="">— Chọn luật —</option>
                     {rules.map((r) => (
                       <option key={r.id} value={r.id}>{r.code} · {r.name} ({r.penaltyApplied})</option>
@@ -270,55 +258,49 @@ export default function PenaltiesPage() {
                     <option value="both">Cả hai</option>
                   </select>
                 </label>
+                {isDemote && (
+                  <label className="field">
+                    <span>Ngựa bị ảnh hưởng / mốc xếp sau <span className="required">*</span></span>
+                    <select value={cAffectedHorseId} onChange={(e) => setCAffectedHorseId(e.target.value)} disabled={!canPenalize || busy}>
+                      <option value="">— Chọn ngựa bị chèn ép / bị làm chậm —</option>
+                      {checks
+                        .filter((c) => c.horseId !== cHorseId)
+                        .map((c) => (
+                          <option key={c.horseId} value={c.horseId}>
+                            {participantLabel(c)}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                )}
                 <label className="field">
                   <span>Ghi chú</span>
                   <input value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Diễn giải tình huống…" disabled={!canPenalize || busy} />
                 </label>
               </div>
             )}
-            {cRuleId && DQ_PENALTIES.includes(rules.find((r) => r.id === cRuleId)?.penaltyApplied ?? "") && (
+            {isDisqualification && (
               <p style={{ color: "var(--c-danger)", fontSize: "0.8rem", marginTop: "8px" }}>
                 ⚠️ Luật này sẽ <strong>tước quyền</strong> — ngựa bị loại khỏi bảng xếp hạng.
               </p>
             )}
+            {isDemote && (
+              <div className="pc-hint" style={{ marginTop: "12px" }}>
+                <strong>Phán quyết tụt hạng:</strong>{" "}
+                {violatingParticipant && affectedParticipant ? (
+                  <>
+                    {violatingParticipant.horseName} sẽ bị hạ xuống đứng ngay sau {affectedParticipant.horseName}.
+                    Nếu {violatingParticipant.horseName} về trước nhờ lấn làn/chèn ép {affectedParticipant.horseName},
+                    backend sẽ sắp lại kết quả nháp theo mốc này trước khi trọng tài xác nhận.
+                  </>
+                ) : (
+                  "Chọn ngựa vi phạm và ngựa bị ảnh hưởng. Backend sẽ hạ ngựa vi phạm xuống đứng sau ngựa bị ảnh hưởng trong kết quả nháp."
+                )}
+              </div>
+            )}
             <div className="form-actions" style={{ marginTop: "12px" }}>
               <button type="button" className="primary-button" disabled={!canPenalize || busy} onClick={applyConduct}>
                 {busy ? "Đang xử lý…" : "Áp dụng án phạt"}
-              </button>
-            </div>
-          </Panel>
-
-          {/* Time penalty */}
-          <Panel
-            title="Phạt cộng giờ"
-            subtitle={hasDraft ? "Cộng giây vào thời gian về đích — bảng xếp hạng tự sắp lại" : "Cần có kết quả nháp chưa xác nhận để phạt giờ"}
-          >
-            <div className="form-grid-2">
-              <label className="field">
-                <span>Ngựa <span className="required">*</span></span>
-                <select value={tHorseId} onChange={(e) => setTHorseId(e.target.value)} disabled={!hasDraft || busy}>
-                  <option value="">— Chọn ngựa —</option>
-                  {checks.map((c) => (
-                    <option key={c.horseId} value={c.horseId}>{c.horseName} · {c.jockeyName}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span>Số giây cộng thêm <span className="required">*</span></span>
-                <input type="number" min={0.1} step="0.1" value={tSeconds} onChange={(e) => setTSeconds(e.target.value)} placeholder="vd: 3" disabled={!hasDraft || busy} />
-              </label>
-              <label className="field">
-                <span>Loại lỗi <span className="required">*</span></span>
-                <input value={tType} onChange={(e) => setTType(e.target.value)} placeholder="vd: Cản trở" disabled={!hasDraft || busy} />
-              </label>
-              <label className="field">
-                <span>Mô tả <span className="required">*</span></span>
-                <input value={tDesc} onChange={(e) => setTDesc(e.target.value)} placeholder="Diễn giải…" disabled={!hasDraft || busy} />
-              </label>
-            </div>
-            <div className="form-actions" style={{ marginTop: "12px" }}>
-              <button type="button" className="primary-button" disabled={!hasDraft || busy} onClick={applyTime}>
-                {busy ? "Đang xử lý…" : "Cộng giờ phạt"}
               </button>
             </div>
           </Panel>
@@ -336,6 +318,11 @@ export default function PenaltiesPage() {
                       <span style={{ color: "var(--c-muted)", fontSize: "0.75rem" }}> ({r.target})</span>
                     </span>
                   ),
+                },
+                {
+                  key: "affectedHorseName",
+                  label: "Bị ảnh hưởng",
+                  render: (r) => r.affectedHorseName ?? "—",
                 },
                 { key: "type", label: "Lỗi" },
                 {
@@ -366,7 +353,7 @@ export default function PenaltiesPage() {
           </Panel>
 
           <div className="form-banner" style={{ background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", color: "var(--c-muted)", fontSize: "0.8rem" }}>
-            Quy trình: <strong>Bắt đầu điều hành</strong> (Live) → <strong>Chạy đua &amp; xem trực tiếp</strong> → lập biên bản vi phạm / phạt cộng giờ (làm được cả khi đang đua lẫn khi còn kết quả nháp) → sang trang <strong>Results</strong> để xác nhận. Sau khi kết quả đã xác nhận thì không lập/hoàn tác biên bản được nữa.
+            Quy trình: <strong>Bắt đầu điều hành</strong> (Live) → <strong>Chạy đua &amp; xem trực tiếp</strong> → lập biên bản vi phạm theo luật, gồm cảnh cáo / tụt hạng / tước quyền / cấm thi đấu → sang trang <strong>Results</strong> để xác nhận. Sau khi kết quả đã xác nhận thì không lập/hoàn tác biên bản được nữa.
           </div>
         </>
       )}
