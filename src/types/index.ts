@@ -171,6 +171,7 @@ export interface ViolationRule {
   severity: string;
   penaltyApplied: string;
   banDurationDays: number;
+  appliesTo: "horse" | "jockey" | "both";
 }
 
 export interface RaceViolation {
@@ -190,19 +191,10 @@ export interface RaceViolation {
 
 export interface PenalizeInput {
   ruleId: string;
-  target: "horse" | "jockey" | "both";
+  target: "horse" | "jockey";
   horseId?: string;
   jockeyId?: string;
   notes?: string;
-}
-
-export interface TimePenaltyInput {
-  horseId: string;
-  jockeyId: string;
-  addedTimeSeconds: number;
-  type: string;
-  description: string;
-  ruleId?: string;
 }
 
 export interface RefereeDashboard {
@@ -526,6 +518,8 @@ export interface PredictionConfig {
   maxPredictionsPerRace: number;
   poolEnabled: boolean;
   entryFee: number;
+  /** Giá vé dự đoán (điểm) — fallback về entryFee nếu BE chưa trả. */
+  ticketPrice: number;
   minRiskMultiplier: number;
   maxRiskMultiplier: number;
   quickRiskMultipliers: number[];
@@ -697,7 +691,6 @@ export interface AppContextValue {
   handleGetViolationRules: () => Promise<ViolationRule[]>;
   handleGetRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
   handlePenalize: (raceId: string, input: PenalizeInput) => Promise<void>;
-  handleApplyTimePenalty: (raceId: string, input: TimePenaltyInput) => Promise<void>;
   handleRevokePenalty: (raceId: string, violationId: string) => Promise<void>;
   handleGetRaceResult: (raceId: string) => Promise<RefereeResultStatus | null>;
   handleSubmitRaceResult: (raceId: string, rankings: ResultRankingInput[]) => Promise<void>;

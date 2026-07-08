@@ -50,7 +50,6 @@ import type {
   ViolationRule,
   RaceViolation,
   PenalizeInput,
-  TimePenaltyInput,
   ResultRankingInput,
   Race,
   RaceDetail,
@@ -348,6 +347,8 @@ const NOTIFY_TONE: Record<string, Tone> = {
   registration_approved: "success",
   registration_rejected: "danger",
   participant_scratched: "warning",
+  penalty_issued: "danger",
+  penalty_revoked: "success",
 };
 
 function mapNotification(n: ApiNotification, userId: string): Notification {
@@ -663,11 +664,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           racetracks,
         }));
       } else if (role === "owner") {
-        const [horsesRes, regsRes, tourRes] = await Promise.allSettled([
+        const [horsesRes, regsRes, tourRes, notiRes] = await Promise.allSettled([
           api.horseOwner.listHorses(),
           api.horseOwner.listRegistrations(),
           api.horseOwner.listTournaments(),
+          api.horseOwner.listNotifications(),
         ]);
+
+        const notifications =
+          notiRes.status === "fulfilled"
+            ? notiRes.value.notifications.map((n) => mapNotification(n, account.id))
+            : [];
 
         const horses =
           horsesRes.status === "fulfilled"
@@ -710,7 +717,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        setAppState((prev) => ({ ...prev, horses, ownerRegistrations, tournaments, races }));
+        setAppState((prev) => ({ ...prev, horses, ownerRegistrations, tournaments, races, notifications }));
       } else if (role === "jockey") {
         const [invRes, racesRes, notiRes] = await Promise.allSettled([
           api.jockey.listInvitations(),
@@ -1371,10 +1378,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await api.referee.penalize(raceId, input);
   }
 
-  async function handleApplyTimePenalty(raceId: string, input: TimePenaltyInput): Promise<void> {
-    await api.referee.applyTimePenalty(raceId, input);
-  }
-
   async function handleRevokePenalty(raceId: string, violationId: string): Promise<void> {
     await api.referee.revokePenalty(raceId, violationId);
   }
@@ -1462,7 +1465,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleGetViolationRules,
     handleGetRaceViolations,
     handlePenalize,
-    handleApplyTimePenalty,
     handleRevokePenalty,
     handleGetRaceResult,
     handleSubmitRaceResult,

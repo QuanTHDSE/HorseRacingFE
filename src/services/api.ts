@@ -155,6 +155,7 @@ export interface ApiViolationRule {
   severity: string;
   penaltyApplied: string;
   banDurationDays: number;
+  appliesTo: "horse" | "jockey" | "both";
 }
 
 export interface ApiRaceViolation {
@@ -618,6 +619,8 @@ export const api = {
 
   horseOwner: {
     listHorses: () => request<{ success: boolean; data: ApiHorse[] }>("/horse-owner/horses"),
+    listNotifications: () =>
+      request<{ notifications: ApiNotification[] }>("/horse-owner/notifications"),
     uploadHorsePdf: async (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
@@ -779,17 +782,9 @@ export const api = {
       request<{ violations: ApiRaceViolation[] }>(`/referee/races/${raceId}/violations`),
     penalize: (
       raceId: string,
-      body: { ruleId: string; target: "horse" | "jockey" | "both"; horseId?: string; jockeyId?: string; notes?: string },
+      body: { ruleId: string; target: "horse" | "jockey"; horseId?: string; jockeyId?: string; notes?: string },
     ) =>
       request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalize`, {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-    applyTimePenalty: (
-      raceId: string,
-      body: { horseId: string; jockeyId: string; addedTimeSeconds: number; type: string; description: string; ruleId?: string },
-    ) =>
-      request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalties/time`, {
         method: "POST",
         body: JSON.stringify(body),
       }),
