@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Badge, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
-import type { RefereeResultStatus, ResultRankingInput } from "../../types";
+import type { RaceViolation, RefereeResultStatus, ResultRankingInput } from "../../types";
 
 interface Entry {
   horseId: string;
@@ -9,10 +9,14 @@ interface Entry {
   jockeyId: string;
   jockeyName: string;
   ownerId: string;
+  ownerName?: string;
   laneNumber: number;
-  finishTime: string;
-  prize: string;
+  clothNumber?: number;
+  finishTime?: number | "";
+  prize?: number | "";
 }
+
+const DQ_PENALTIES = ["disqualify", "disqualification"];
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
@@ -22,7 +26,14 @@ function fmtDate(iso?: string | null): string {
 }
 
 export default function ResultsPage() {
-  const { appState, handleGetRefereeChecks, handleGetRaceResult, handleSubmitRaceResult, handleConfirmRaceResult } = useApp();
+  const {
+    appState,
+    handleGetRefereeChecks,
+    handleGetRaceResult,
+    handleGetRaceViolations,
+    handleSubmitRaceResult,
+    handleConfirmRaceResult,
+  } = useApp();
 
   const races = appState.refereeRaces;
   // Result entry needs the race to be ongoing/completed
@@ -30,6 +41,7 @@ export default function ResultsPage() {
 
   const [raceId, setRaceId] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [violations, setViolations] = useState<RaceViolation[]>([]);
   const [status, setStatus] = useState<RefereeResultStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,26 +53,72 @@ export default function ResultsPage() {
   const published = !!status?.publishedAt;
   const confirmed = !!status?.confirmedAt;
   const locked = published || confirmed; // can't edit once confirmed/published
+  const demoteCount = violations.filter((v) => v.penaltyApplied === "demote").length;
+  const disqualifiedCount = violations.filter((v) => v.penaltyApplied && DQ_PENALTIES.includes(v.penaltyApplied)).length;
 
   useEffect(() => {
     if (!raceId) { setEntries([]); setStatus(null); return; }
     let alive = true;
     setLoading(true);
     setError(""); setMsg("");
-    Promise.all([handleGetRefereeChecks(raceId), handleGetRaceResult(raceId)])
-      .then(([checks, st]) => {
+    Promise.all([handleGetRefereeChecks(raceId), handleGetRaceResult(raceId), handleGetRaceViolations(raceId)])
+      .then(([checks, st, raceViolations]) => {
         if (!alive) return;
         setStatus(st);
-        setEntries(
-          checks
-            .slice()
-            .sort((a, b) => a.laneNumber - b.laneNumber)
-            .map((c) => ({
-              horseId: c.horseId, horseName: c.horseName,
-              jockeyId: c.jockeyId, jockeyName: c.jockeyName, ownerId: c.ownerId,
-              laneNumber: c.laneNumber, finishTime: "", prize: "",
-            })),
+        setViolations(raceViolations);
+
+        const disqualifiedHorseIds = new Set(
+          raceViolations
+            .filter((v) => v.horseId && v.penaltyApplied && DQ_PENALTIES.includes(v.penaltyApplied))
+            .map((v) => v.horseId as string),
         );
+
+        const rows = checks
+          .slice()
+          .sort((a, b) => a.laneNumber - b.laneNumber)
+          .filter((c) => !disqualifiedHorseIds.has(c.horseId))
+          .map((c) => ({
+            horseId: c.horseId,
+            horseName: c.horseName,
+            jockeyId: c.jockeyId,
+            jockeyName: c.jockeyName,
+            ownerId: c.ownerId,
+            ownerName: c.ownerName,
+            laneNumber: c.laneNumber,
+            clothNumber: c.clothNumber,
+          }));
+
+        for (const v of raceViolations) {
+          if (v.penaltyApplied !== "demote" || !v.horseId || !v.affectedHorseId) continue;
+          const penalizedIndex = rows.findIndex((e) => e.horseId === v.horseId);
+          const affectedIndex = rows.findIndex((e) => e.horseId === v.affectedHorseId);
+          if (penalizedIndex === -1 || affectedIndex === -1) continue;
+          const [penalized] = rows.splice(penalizedIndex, 1);
+          if (!penalized) continue;
+          const nextAffectedIndex = rows.findIndex((e) => e.horseId === v.affectedHorseId);
+          rows.splice(nextAffectedIndex + 1, 0, penalized);
+        }
+
+        if (st?.rankings?.length) {
+          const byHorseId = new Map(rows.map((row) => [row.horseId, row]));
+          const orderedRows = st.rankings
+            .slice()
+            .sort((a, b) => a.rank - b.rank)
+            .map((ranking) => {
+              const row = byHorseId.get(ranking.horseId);
+              if (!row) return null;
+              byHorseId.delete(ranking.horseId);
+              return {
+                ...row,
+                finishTime: ranking.finishTime ?? "",
+                prize: ranking.prize ?? 0,
+              };
+            })
+            .filter((row): row is Entry => !!row);
+          setEntries([...orderedRows, ...byHorseId.values()]);
+        } else {
+          setEntries(rows);
+        }
       })
       .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : "Không tải được dữ liệu"))
       .finally(() => alive && setLoading(false));
@@ -78,9 +136,14 @@ export default function ResultsPage() {
     setMsg("");
   }
 
-  function setField(idx: number, key: "finishTime" | "prize", value: string) {
-    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, [key]: value } : e)));
+  function updateEntry(idx: number, patch: Partial<Pick<Entry, "finishTime" | "prize">>) {
+    setEntries((prev) => prev.map((entry, i) => (i === idx ? { ...entry, ...patch } : entry)));
     setMsg("");
+  }
+
+  function optionalNumber(value: number | "" | undefined): number | undefined {
+    if (value === "" || value === undefined) return undefined;
+    return Number.isFinite(value) ? value : undefined;
   }
 
   async function submit() {
@@ -92,8 +155,8 @@ export default function ResultsPage() {
         horseId: e.horseId,
         jockeyId: e.jockeyId,
         ownerId: e.ownerId,
-        finishTime: e.finishTime ? Number(e.finishTime) : undefined,
-        prize: e.prize ? Number(e.prize) : undefined,
+        finishTime: optionalNumber(e.finishTime),
+        prize: optionalNumber(e.prize) ?? 0,
       }));
       await handleSubmitRaceResult(raceId, rankings);
       const st = await handleGetRaceResult(raceId);
@@ -164,42 +227,69 @@ export default function ResultsPage() {
             ) : entries.length === 0 ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Cuộc đua chưa có ngựa tham gia.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 84 }}>Rank</th>
+                      <th>Horse</th>
+                      <th style={{ width: 150 }}>Finish time</th>
+                      <th style={{ width: 160 }}>Fixed prize</th>
+                      <th style={{ width: 92 }}>Move</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                 {entries.map((e, i) => (
-                  <div
-                    key={e.horseId}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "12px",
-                      padding: "10px 14px", background: "var(--c-surf-low)",
-                      border: "1px solid var(--c-outline-var)", borderRadius: "var(--r-lg)",
-                    }}
-                  >
-                    <Badge tone={i === 0 ? "success" : i <= 2 ? "accent" : "neutral"}>
-                      {i === 0 ? "🥇 1" : i === 1 ? "🥈 2" : i === 2 ? "🥉 3" : `#${i + 1}`}
-                    </Badge>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <tr key={e.horseId}>
+                    <td>
+                      <Badge tone={i === 0 ? "success" : i <= 2 ? "accent" : "neutral"}>
+                        {i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `#${i + 1}`}
+                      </Badge>
+                    </td>
+                    <td>
                       <strong>{e.horseName}</strong>
-                      <span style={{ marginLeft: "8px", fontSize: "0.82rem", color: "var(--c-muted)" }}>
-                        Lane {e.laneNumber} · {e.jockeyName}
-                      </span>
-                    </div>
-                    <input
-                      type="number" min={0} placeholder="Time (s)" value={e.finishTime} disabled={locked}
-                      onChange={(ev) => setField(i, "finishTime", ev.target.value)}
-                      style={{ width: "100px" }}
-                    />
-                    <input
-                      type="number" min={0} placeholder="Prize" value={e.prize} disabled={locked}
-                      onChange={(ev) => setField(i, "prize", ev.target.value)}
-                      style={{ width: "100px" }}
-                    />
-                    <div style={{ display: "flex", gap: "4px" }}>
-                      <button type="button" className="table-button" disabled={locked || i === 0} onClick={() => move(i, -1)}>↑</button>
-                      <button type="button" className="table-button" disabled={locked || i === entries.length - 1} onClick={() => move(i, 1)}>↓</button>
-                    </div>
-                  </div>
+                      <div style={{ fontSize: "0.82rem", color: "var(--c-muted)" }}>
+                        Lane {e.laneNumber} · Cloth {e.clothNumber ?? "—"} · {e.jockeyName} · Owner {e.ownerName ?? "—"}
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={e.finishTime ?? ""}
+                        disabled={locked}
+                        onChange={(event) => updateEntry(i, { finishTime: event.target.value === "" ? "" : Number(event.target.value) })}
+                        placeholder="seconds"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        value={e.prize ?? ""}
+                        disabled={locked}
+                        onChange={(event) => updateEntry(i, { prize: event.target.value === "" ? "" : Number(event.target.value) })}
+                        placeholder="points"
+                      />
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button type="button" className="table-button" disabled={locked || i === 0} onClick={() => move(i, -1)}>↑</button>
+                        <button type="button" className="table-button" disabled={locked || i === entries.length - 1} onClick={() => move(i, 1)}>↓</button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
+                  </tbody>
+                </table>
               </div>
+            )}
+
+            {(demoteCount > 0 || disqualifiedCount > 0) && (
+              <p className="pc-hint" style={{ marginTop: "12px" }}>
+                Đã áp dụng {demoteCount} án tụt hạng và {disqualifiedCount} án tước quyền từ biên bản xử phạt. Không cập nhật thời gian phạt ở bước này.
+              </p>
             )}
 
             {!locked && entries.length > 0 && (

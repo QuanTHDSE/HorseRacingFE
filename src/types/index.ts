@@ -150,7 +150,9 @@ export interface RefereeParticipantCheck {
   jockeyId: string;
   jockeyName: string;
   ownerId: string;
+  ownerName?: string;
   laneNumber: number;
+  clothNumber?: number;
   vetApproved: boolean;
   confirmed: boolean;
 }
@@ -160,6 +162,7 @@ export interface RefereeResultStatus {
   confirmedAt: string | null;
   publishedAt: string | null;
   rankingsCount: number;
+  rankings?: ResultRankingInput[];
 }
 
 export interface ViolationRule {
@@ -183,6 +186,8 @@ export interface RaceViolation {
   target: "horse" | "jockey" | "both";
   horseId: string | null;
   horseName: string | null;
+  affectedHorseId: string | null;
+  affectedHorseName: string | null;
   jockeyId: string | null;
   jockeyName: string | null;
   bannedUntil: string | null;
@@ -194,6 +199,7 @@ export interface PenalizeInput {
   target: "horse" | "jockey";
   horseId?: string;
   jockeyId?: string;
+  affectedHorseId?: string;
   notes?: string;
 }
 
@@ -435,6 +441,7 @@ export interface RaceParticipantDetail {
   ownerId: string;
   ownerName: string;
   laneNumber: number;
+  clothNumber?: number;
   isScratched: boolean;
   confirmedAt?: string | null;
 }

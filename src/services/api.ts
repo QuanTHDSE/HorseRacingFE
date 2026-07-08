@@ -134,7 +134,9 @@ export interface ApiRefereeCheck {
   jockeyId: string;
   jockeyName: string;
   ownerId: string;
+  ownerName?: string;
   laneNumber: number;
+  clothNumber?: number;
   vetApproved: boolean;
   confirmed: boolean;
 }
@@ -144,6 +146,7 @@ export interface ApiRefereeResult {
   confirmedAt: string | null;
   publishedAt: string | null;
   rankingsCount: number;
+  rankings?: ApiResultRankingInput[];
 }
 
 export interface ApiViolationRule {
@@ -167,6 +170,8 @@ export interface ApiRaceViolation {
   target: "horse" | "jockey" | "both";
   horseId: string | null;
   horseName: string | null;
+  affectedHorseId: string | null;
+  affectedHorseName: string | null;
   jockeyId: string | null;
   jockeyName: string | null;
   bannedUntil: string | null;
@@ -782,7 +787,7 @@ export const api = {
       request<{ violations: ApiRaceViolation[] }>(`/referee/races/${raceId}/violations`),
     penalize: (
       raceId: string,
-      body: { ruleId: string; target: "horse" | "jockey"; horseId?: string; jockeyId?: string; notes?: string },
+      body: { ruleId: string; target: "horse" | "jockey" | "both"; horseId?: string; jockeyId?: string; affectedHorseId?: string; notes?: string },
     ) =>
       request<{ success: boolean; message: string }>(`/referee/races/${raceId}/penalize`, {
         method: "POST",
