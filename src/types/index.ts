@@ -695,6 +695,7 @@ export interface AppContextValue {
   handleToggleRefereeCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") => Promise<RefereeParticipantCheck[]>;
   handleStartRefereeRace: (raceId: string) => Promise<void>;
   handleSimulateRefereeDraft: (raceId: string) => Promise<RaceSimTimeline>;
+  handleFinishRefereeRace: (raceId: string) => Promise<void>;
   handleGetViolationRules: () => Promise<ViolationRule[]>;
   handleGetRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
   handlePenalize: (raceId: string, input: PenalizeInput) => Promise<void>;

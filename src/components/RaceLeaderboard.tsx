@@ -58,7 +58,7 @@ export default function RaceLeaderboard({ raceId, highlightHorseIds, highlightJo
   if (visibleRankings.length === 0) {
     return (
       <p style={{ color: "var(--c-muted)", fontSize: "0.85rem", margin: 0 }}>
-        KhÃ´ng cÃ²n ngá»±a há»£p lá»‡ trong báº£ng xáº¿p háº¡ng sau khi xá»­ pháº¡t.
+        Không còn ngựa hợp lệ trong bảng xếp hạng sau khi xử phạt.
       </p>
     );
   }

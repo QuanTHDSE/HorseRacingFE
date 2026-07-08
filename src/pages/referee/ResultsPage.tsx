@@ -114,7 +114,7 @@ export default function ResultsPage() {
                 prize: ranking.prize ?? 0,
               };
             })
-            .filter((row): row is Entry => !!row);
+            .filter((row): row is NonNullable<typeof row> => row !== null);
           setEntries([...orderedRows, ...byHorseId.values()]);
         } else {
           setEntries(rows);

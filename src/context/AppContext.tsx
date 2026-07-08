@@ -246,7 +246,7 @@ function mapOwnerRegistration(r: ApiRegistration): OwnerRegistration {
     raceId: r.race.id,
     raceName: r.race.name,
     raceDate: r.race.scheduledAt,
-    raceStatus: ({ scheduled: "Upcoming", ongoing: "Live", completed: "Completed", cancelled: "Cancelled" } as Record<string, string>)[r.race.status] ?? r.race.status,
+    raceStatus: ({ scheduled: "Upcoming", ready: "Ready", ongoing: "Live", completed: "Completed", cancelled: "Cancelled" } as Record<string, string>)[r.race.status] ?? r.race.status,
     jockeyId: r.jockey?.id,
     jockeyName: r.jockey?.fullName,
     status: statusMap[r.status] ?? r.status,
@@ -272,6 +272,7 @@ function mapRegistrationToApproval(r: ApiRegistration) {
   };
   const raceStatusMap: Record<string, string> = {
     scheduled: "Upcoming",
+    ready: "Ready",
     ongoing: "Live",
     completed: "Completed",
     cancelled: "Cancelled",
@@ -349,6 +350,8 @@ const NOTIFY_TONE: Record<string, Tone> = {
   participant_scratched: "warning",
   penalty_issued: "danger",
   penalty_revoked: "success",
+  jockey_penalty: "danger",
+  disqualification_notice: "danger",
 };
 
 function mapNotification(n: ApiNotification, userId: string): Notification {
@@ -406,6 +409,7 @@ function mapPointsSummary(pts: ApiSpectatorPoints): SpectatorPointsSummary {
 function mapSpectatorRace(r: ApiSpectatorRace): SpectatorRace {
   const statusMap: Record<string, string> = {
     scheduled: "Upcoming",
+    ready: "Ready",
     ongoing: "Live",
     completed: "Completed",
     cancelled: "Cancelled",
@@ -433,6 +437,7 @@ function mapSpectatorRace(r: ApiSpectatorRace): SpectatorRace {
 function mapRefereeRace(r: ApiRefereeRace): RefereeRace {
   const statusMap: Record<string, string> = {
     scheduled: "Upcoming",
+    ready: "Ready",
     ongoing: "Live",
     completed: "Completed",
     cancelled: "Cancelled",
@@ -470,6 +475,7 @@ function mapRefereeCheck(c: ApiRefereeCheck): RefereeParticipantCheck {
 
 const RACE_STATUS: Record<string, string> = {
   scheduled: "Upcoming",
+  ready: "Ready",
   ongoing: "Live",
   completed: "Completed",
   cancelled: "Cancelled",
@@ -1386,8 +1392,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function handleSimulateRefereeDraft(raceId: string): Promise<RaceSimTimeline> {
     const res = await api.referee.simulateDraft(raceId);
+    // Race giờ ở 'ongoing' (Live) trong lúc xem → cập nhật cả danh sách đua lẫn giải.
     await handleRefreshRefereeRaces();
+    await refreshTournaments();
     return res.timeline;
+  }
+
+  async function handleFinishRefereeRace(raceId: string): Promise<void> {
+    await api.referee.finishRace(raceId);
+    await handleRefreshRefereeRaces();
+    await refreshTournaments();
   }
 
   async function handleGetViolationRules(): Promise<ViolationRule[]> {
@@ -1488,6 +1502,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleToggleRefereeCheck,
     handleStartRefereeRace,
     handleSimulateRefereeDraft,
+    handleFinishRefereeRace,
     handleGetViolationRules,
     handleGetRaceViolations,
     handlePenalize,
