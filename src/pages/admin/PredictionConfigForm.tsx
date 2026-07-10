@@ -186,18 +186,15 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
       )}
       {msg && <div className={`form-banner ${isError ? "form-banner-error" : "form-banner-success"}`}>{msg}</div>}
 
-      {/* ── 1. Basic prediction settings ── */}
+      {/* ── 1. Prediction availability ── */}
       <Section
-        title="Basic Prediction"
-        sub="Base scoring and prediction window"
+        title="Prediction Availability"
+        sub="Open or close predictions for this tournament"
         right={<Switch checked={cfg.isEnabled} disabled={dis} onChange={(v) => set("isEnabled", v)} label="Enable prediction" />}
         off={!cfg.isEnabled}
       >
         <div className="form-grid-2">
-          <NumField label="Points per correct prediction" value={cfg.pointsPerCorrect} min={0} disabled={dis || !cfg.isEnabled} onChange={(v) => set("pointsPerCorrect", v)} />
-          <NumField label="Top 3 bonus points" value={cfg.bonusPointsTop3} min={0} disabled={dis || !cfg.isEnabled} onChange={(v) => set("bonusPointsTop3", v)} />
           <NumField label="Predictions per race" value={cfg.maxPredictionsPerRace} min={1} max={5} disabled={dis || !cfg.isEnabled} onChange={(v) => set("maxPredictionsPerRace", v)} />
-          <NumField label="Minimum score to share prizes" value={cfg.minScoreToShare} min={1} disabled={dis || !cfg.isEnabled} onChange={(v) => set("minScoreToShare", v)} />
           <label className="field">
             <span>Prediction opens at</span>
             <input type="datetime-local" value={toLocalInput(cfg.predictionOpenAt)} disabled={dis || !cfg.isEnabled} onChange={(e) => set("predictionOpenAt", fromLocalInput(e.target.value))} />
@@ -222,7 +219,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         <div className={cn(poolOff && "is-off")} style={poolOff ? { opacity: 0.5, pointerEvents: dis ? "none" : "auto" } : undefined}>
           <div className="form-grid-2">
             <NumField label="Ticket price (points)" value={cfg.ticketPrice} min={0} disabled={dis || poolOff} onChange={(v) => set("ticketPrice", v)} />
-            <NumField label="Platform fee" value={cfg.feePercent} min={0} max={30} unit="%" disabled={dis || poolOff} onChange={(v) => set("feePercent", v)} />
+            <NumField label="Minimum winning tickets to share" value={cfg.minScoreToShare} min={1} disabled={dis || poolOff} onChange={(v) => set("minScoreToShare", v)} />
             <label className="field" style={{ gridColumn: "1 / -1" }}>
               <span>Ticket count presets (positive integers, comma-separated)</span>
               <input value={ticketPresetText} disabled={dis || poolOff} onChange={(e) => { setTicketPresetText(e.target.value); setMsg(""); }} placeholder="1, 2, 3, 6" />
