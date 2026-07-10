@@ -5,6 +5,8 @@ import {
   clearToken,
   getToken,
   setToken,
+  type ApiAdminCreateUserInput,
+  type ApiAdminUpdateUserInput,
   type ApiAdminUser,
   type ApiHorse,
   type ApiInvitation,
@@ -258,6 +260,7 @@ function mapAdminUser(u: ApiAdminUser): SystemUser {
   return {
     id: u.id,
     name: u.fullName,
+    email: u.email,
     role: mapRole(u.role),
     status: u.isActive ? "Active" : "Inactive",
     lastSeen: fmtDate(u.createdAt),
@@ -1291,6 +1294,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }
 
+  async function refreshAdminUsers(): Promise<void> {
+    const res = await api.admin.listUsers();
+    setAppState((prev) => ({
+      ...prev,
+      users: res.users.map(mapAdminUser),
+    }));
+  }
+
+  async function handleCreateAdminUser(data: ApiAdminCreateUserInput): Promise<void> {
+    await api.admin.createUser(data);
+    await refreshAdminUsers();
+  }
+
+  async function handleUpdateAdminUser(id: string, data: ApiAdminUpdateUserInput): Promise<void> {
+    await api.admin.updateUser(id, data);
+    await refreshAdminUsers();
+  }
+
   // ─── Deletes ──────────────────────────────────────────────────────────────
 
   async function handleDeleteTournament(id: string): Promise<void> {
@@ -1491,6 +1512,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleTopUpPoints,
     handleCreatePayosTopUp,
     handleUpdateRegistration,
+    handleCreateAdminUser,
+    handleUpdateAdminUser,
     handleDeleteTournament,
     handleDeleteRace,
     handleDeleteHorse,

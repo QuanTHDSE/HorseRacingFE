@@ -63,6 +63,28 @@ export interface ApiAdminUser {
   createdAt: string;
 }
 
+export interface ApiAdminCreateUserInput {
+  email: string;
+  password: string;
+  fullName: string;
+  role: Exclude<ApiRole, "admin">;
+  phone?: string;
+  licenseNumber?: string;
+  licenseExpiry?: string | null;
+  certificationId?: string;
+}
+
+export interface ApiAdminUpdateUserInput {
+  fullName?: string;
+  phone?: string | null;
+  role?: ApiRole;
+  isActive?: boolean;
+  password?: string;
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  certificationId?: string | null;
+}
+
 export interface ApiRegistration {
   id: string;
   status: "pending" | "approved" | "rejected";
@@ -517,6 +539,16 @@ export const api = {
 
   admin: {
     listUsers: () => request<{ users: ApiAdminUser[] }>("/admin/users"),
+    createUser: (data: ApiAdminCreateUserInput) =>
+      request<{ user: ApiAdminUser }>("/admin/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateUser: (id: string, data: ApiAdminUpdateUserInput) =>
+      request<{ user: ApiAdminUser }>(`/admin/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
     listRegistrations: (status?: string) =>
       request<{ registrations: ApiRegistration[] }>(
         `/admin/registrations${status ? `?status=${status}` : ""}`,

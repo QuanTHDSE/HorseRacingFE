@@ -374,6 +374,7 @@ export interface Approval {
 export interface SystemUser {
   id: string;
   name: string;
+  email: string;
   role: string;
   status: string;
   lastSeen: string;
@@ -684,6 +685,26 @@ export interface AppContextValue {
   handleTopUpPoints: (points: number) => Promise<void>;
   handleCreatePayosTopUp: (points: number) => Promise<string>;
   handleUpdateRegistration: (id: string, status: "Approved" | "Rejected", adminNote?: string) => Promise<void>;
+  handleCreateAdminUser: (data: {
+    email: string;
+    password: string;
+    fullName: string;
+    role: "horse_owner" | "jockey" | "referee" | "spectator";
+    phone?: string;
+    licenseNumber?: string;
+    licenseExpiry?: string | null;
+    certificationId?: string;
+  }) => Promise<void>;
+  handleUpdateAdminUser: (id: string, data: {
+    fullName?: string;
+    phone?: string | null;
+    role?: "horse_owner" | "jockey" | "referee" | "spectator" | "admin";
+    isActive?: boolean;
+    password?: string;
+    licenseNumber?: string | null;
+    licenseExpiry?: string | null;
+    certificationId?: string | null;
+  }) => Promise<void>;
   handleDeleteTournament: (id: string) => Promise<void>;
   handleDeleteRace: (id: string) => Promise<void>;
   handleDeleteHorse: (id: string) => Promise<void>;
