@@ -171,6 +171,7 @@ function mapTrack(t: ApiTrack): Racetrack {
 }
 
 function mapPredictionConfig(c: ApiPredictionConfig): PredictionConfig {
+  const ticketPrice = c.ticketPrice ?? c.entryFee ?? 0;
   return {
     isEnabled: c.isEnabled,
     pointsPerCorrect: c.pointsPerCorrect,
@@ -179,8 +180,8 @@ function mapPredictionConfig(c: ApiPredictionConfig): PredictionConfig {
     predictionCloseAt: c.predictionCloseAt ?? null,
     maxPredictionsPerRace: c.maxPredictionsPerRace,
     poolEnabled: c.poolEnabled,
-    entryFee: c.entryFee ?? 0,
-    ticketPrice: c.ticketPrice ?? c.entryFee ?? 0,
+    entryFee: ticketPrice,
+    ticketPrice,
     minRiskMultiplier: c.minRiskMultiplier ?? 1,
     maxRiskMultiplier: c.maxRiskMultiplier ?? 10,
     quickRiskMultipliers: c.quickRiskMultipliers ?? [1, 2, 3, 6],
@@ -381,7 +382,8 @@ function mapPrediction(p: ApiPrediction, spectatorId: string): Prediction {
     spectatorId,
     raceId: p.raceId,
     horse: firstHorse,
-    odds: "—",
+    tickets: `${p.ticketCount ?? 1}`,
+    cost: `${p.contribution ?? 0} pts`,
     status: statusMap[p.status] ?? p.status,
     reward: p.totalPoints > 0 ? `${p.totalPoints} pts` : "—",
   };
@@ -967,7 +969,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               spectatorId: user.id,
               raceId: prev.liveBoard.raceId,
               horse: id,
-              odds: "—",
+              tickets: "1",
+              cost: "—",
               status: "Open",
               reward: "—",
             },

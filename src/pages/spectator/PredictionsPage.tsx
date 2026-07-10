@@ -18,24 +18,24 @@ export default function PredictionsPage() {
         ) : (
           <div className="prediction-actions">
             {openRaces.slice(0, 3).flatMap((race) => {
-              const entryFee = race.predictionConfig.poolEnabled ? race.predictionConfig.entryFee : 0;
-              const multipliers = race.predictionConfig.quickRiskMultipliers.length
+              const ticketPrice = race.predictionConfig.poolEnabled ? race.predictionConfig.ticketPrice : 0;
+              const ticketCounts = race.predictionConfig.quickRiskMultipliers.length
                 ? race.predictionConfig.quickRiskMultipliers
                 : [1];
               return race.participants.slice(0, 4).flatMap((horse) =>
-                multipliers.map((risk) => {
-                  const cost = entryFee * risk;
+                ticketCounts.map((ticketCount) => {
+                  const cost = ticketPrice * ticketCount;
                   const disabled = cost > balance;
                   return (
                     <button
-                      key={`${race.id}-${horse.id}-${risk}`}
+                      key={`${race.id}-${horse.id}-${ticketCount}`}
                       className="secondary-button"
                       type="button"
                       disabled={disabled}
                       title={disabled ? "Not enough points" : undefined}
-                      onClick={() => handleCreatePrediction(race.id, horse.id, risk)}
+                      onClick={() => handleCreatePrediction(race.id, horse.id, ticketCount)}
                     >
-                      Predict {horse.name} · {risk}x · {cost} pts
+                      Predict {horse.name} · {ticketCount} ticket{ticketCount > 1 ? "s" : ""} · {cost} pts
                     </button>
                   );
                 }),
@@ -47,7 +47,8 @@ export default function PredictionsPage() {
           columns={[
             { key: "raceId", label: "Race"     },
             { key: "horse",  label: "Your pick" },
-            { key: "odds",   label: "Odds"     },
+            { key: "tickets", label: "Tickets" },
+            { key: "cost", label: "Cost" },
             {
               key: "status",
               label: "Status",

@@ -92,7 +92,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
 
   const [cfg, setCfg] = useState<PredictionConfig | null>(null);
   const [rankText, setRankText] = useState("");
-  const [riskText, setRiskText] = useState("");
+  const [ticketPresetText, setTicketPresetText] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -109,7 +109,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         if (!alive) return;
         setCfg(c);
         setRankText(c ? c.rankRewardRates.join(", ") : "");
-        setRiskText(c ? c.quickRiskMultipliers.join(", ") : "");
+        setTicketPresetText(c ? c.quickRiskMultipliers.join(", ") : "");
       })
       .catch((e: unknown) => alive && setLoadError(e instanceof Error ? e.message : "Could not load prediction configuration."))
       .finally(() => alive && setLoading(false));
@@ -131,14 +131,14 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
   if (!cfg) return <p className="pc-section-sub">No prediction configuration found.</p>;
 
   const rankRates = parseList(rankText);
-  const quickRisks = uniquePositiveIntegers(parseList(riskText));
+  const ticketPresets = uniquePositiveIntegers(parseList(ticketPresetText));
   const poolSum = cfg.organizerFeeRate + cfg.racingRewardRate + cfg.spectatorRewardRate;
   const roleSplitSum = cfg.ownerShareRate + cfg.jockeyShareRate;
   const rankSum = rankRates.reduce((a, b) => a + b, 0);
-  const riskValid = !cfg.poolEnabled || quickRisks.length > 0;
-  const minRiskMultiplier = quickRisks[0] ?? cfg.minRiskMultiplier;
-  const maxRiskMultiplier = quickRisks[quickRisks.length - 1] ?? cfg.maxRiskMultiplier;
-  const valid = poolSum === 100 && roleSplitSum === 100 && rankSum === 100 && riskValid;
+  const ticketPresetsValid = !cfg.poolEnabled || ticketPresets.length > 0;
+  const minTicketCount = ticketPresets[0] ?? cfg.minRiskMultiplier;
+  const maxTicketCount = ticketPresets[ticketPresets.length - 1] ?? cfg.maxRiskMultiplier;
+  const valid = poolSum === 100 && roleSplitSum === 100 && rankSum === 100 && ticketPresetsValid;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -148,14 +148,15 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
     try {
       const updated = await handleUpdatePredictionConfig(tournamentId, {
         ...cfg,
+        entryFee: cfg.ticketPrice,
         rankRewardRates: rankRates,
-        quickRiskMultipliers: quickRisks,
-        minRiskMultiplier,
-        maxRiskMultiplier,
+        quickRiskMultipliers: ticketPresets,
+        minRiskMultiplier: minTicketCount,
+        maxRiskMultiplier: maxTicketCount,
       });
       setCfg(updated);
       setRankText(updated.rankRewardRates.join(", "));
-      setRiskText(updated.quickRiskMultipliers.join(", "));
+      setTicketPresetText(updated.quickRiskMultipliers.join(", "));
       setIsError(false);
       setMsg("Prediction configuration saved.");
     } catch (err: unknown) {
@@ -220,11 +221,11 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         </p>
         <div className={cn(poolOff && "is-off")} style={poolOff ? { opacity: 0.5, pointerEvents: dis ? "none" : "auto" } : undefined}>
           <div className="form-grid-2">
-            <NumField label="Ticket price (points)" value={cfg.entryFee} min={0} disabled={dis || poolOff} onChange={(v) => set("entryFee", v)} />
+            <NumField label="Ticket price (points)" value={cfg.ticketPrice} min={0} disabled={dis || poolOff} onChange={(v) => set("ticketPrice", v)} />
             <NumField label="Platform fee" value={cfg.feePercent} min={0} max={30} unit="%" disabled={dis || poolOff} onChange={(v) => set("feePercent", v)} />
             <label className="field" style={{ gridColumn: "1 / -1" }}>
               <span>Ticket count presets (positive integers, comma-separated)</span>
-              <input value={riskText} disabled={dis || poolOff} onChange={(e) => { setRiskText(e.target.value); setMsg(""); }} placeholder="1, 2, 3, 6" />
+              <input value={ticketPresetText} disabled={dis || poolOff} onChange={(e) => { setTicketPresetText(e.target.value); setMsg(""); }} placeholder="1, 2, 3, 6" />
             </label>
             <label className="field" style={{ gridColumn: "1 / -1" }}>
               <span>Unclaimed pool policy</span>

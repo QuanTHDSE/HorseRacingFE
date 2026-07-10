@@ -327,7 +327,8 @@ export interface Prediction {
   spectatorId: string;
   raceId: string;
   horse: string;
-  odds: string;
+  tickets: string;
+  cost: string;
   status: string;
   reward: string;
 }
