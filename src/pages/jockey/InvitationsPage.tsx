@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Panel } from "../../components";
+import { Badge, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { cn } from "../../utils/cn";
 
@@ -41,6 +41,7 @@ export default function InvitationsPage() {
 
   return (
     <div className="page-stack">
+      <SuspensionBanner />
       <Panel
         title="Ride invitations"
         subtitle={`${filtered.length} invitation${filtered.length !== 1 ? "s" : ""}`}

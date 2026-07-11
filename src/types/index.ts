@@ -6,6 +6,29 @@ export type AuthMode = "login" | "register";
 
 // ─── Auth / Account ───────────────────────────────────────────────────────────
 
+export interface PenaltyStatus {
+  isBanned: boolean;
+  bannedUntil: string | null;
+  reason: string | null;
+}
+
+export interface PenaltyDetail {
+  target: "horse" | "jockey" | "both";
+  description: string;
+  penaltyApplied: string | null;
+  recordedAt: string;
+  bannedUntil: string | null;
+  rule: {
+    code: string;
+    name: string;
+    description: string;
+    category: string;
+    severity: string;
+    banDurationDays: number;
+  } | null;
+  race: { id: string; name: string; scheduledAt: string } | null;
+}
+
 export interface Account {
   id: string;
   role: Role;
@@ -13,6 +36,7 @@ export interface Account {
   organization: string;
   email: string;
   badge: string;
+  penaltyStatus?: PenaltyStatus | null;
 }
 
 // ─── App entities ─────────────────────────────────────────────────────────────
@@ -666,6 +690,7 @@ export interface AppContextValue {
   handleGetTournamentById: (id: string) => Promise<Tournament & { raceCount?: number }>;
   handleGetJockeyDashboard: () => Promise<JockeyDashboard>;
   handleGetJockeyRaceById: (id: string) => Promise<Race>;
+  handleGetJockeyPenaltyDetail: () => Promise<PenaltyDetail | null>;
   handleGetRaceById: (id: string) => Promise<RaceDetail>;
   handleGetRaceLeaderboard: (raceId: string) => Promise<RaceLeaderboard>;
   handleAddParticipant: (raceId: string, data: AddParticipantInput) => Promise<RaceDetail>;

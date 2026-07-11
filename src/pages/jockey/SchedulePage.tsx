@@ -1,4 +1,4 @@
-import { Badge, Panel } from "../../components";
+import { Badge, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 
@@ -55,6 +55,7 @@ export default function JockeySchedulePage() {
 
   return (
     <div className="page-stack">
+      <SuspensionBanner />
       {GROUPS.map(({ key, label, tone }) => {
         const group = races.filter((r) => r.liveStatus === key);
         if (group.length === 0) return null;

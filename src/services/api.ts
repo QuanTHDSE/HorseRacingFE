@@ -40,6 +40,29 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export type ApiRole = "horse_owner" | "jockey" | "referee" | "spectator" | "admin";
 
+export interface ApiPenaltyStatus {
+  isBanned: boolean;
+  bannedUntil: string | null;
+  reason: string | null;
+}
+
+export interface ApiPenaltyDetail {
+  target: "horse" | "jockey" | "both";
+  description: string;
+  penaltyApplied: string | null;
+  recordedAt: string;
+  bannedUntil: string | null;
+  rule: {
+    code: string;
+    name: string;
+    description: string;
+    category: string;
+    severity: string;
+    banDurationDays: number;
+  } | null;
+  race: { id: string; name: string; scheduledAt: string } | null;
+}
+
 export interface ApiUser {
   id: string;
   email: string;
@@ -47,6 +70,7 @@ export interface ApiUser {
   fullName: string;
   phone?: string;
   avatarUrl?: string;
+  penaltyStatus?: ApiPenaltyStatus;
 }
 
 export interface ApiAuthResponse {
@@ -747,6 +771,8 @@ export const api = {
     getRaceById: (id: string) => request<{ race: ApiJockeyRace }>(`/jockey/races/${id}`),
     listNotifications: () =>
       request<{ notifications: ApiNotification[] }>("/jockey/notifications"),
+    getPenaltyDetail: () =>
+      request<{ penalty: ApiPenaltyDetail }>("/jockey/penalty-detail"),
   },
 
   spectator: {

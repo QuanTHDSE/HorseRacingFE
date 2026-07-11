@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, MetricCard, Panel } from "../../components";
+import { Badge, MetricCard, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { JockeyDashboard } from "../../types";
 
@@ -29,6 +29,7 @@ export default function JockeyDashboardPage() {
 
   return (
     <div className="page-stack">
+      <SuspensionBanner />
       <section className="hero-card">
         <div>
           <Badge tone="accent">Jockey dashboard</Badge>
