@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
-import type { SpectatorRace } from "../../types";
+import RaceLivePlayer from "../../components/RaceLivePlayer";
+import type { RaceSimTimeline, SpectatorRace } from "../../types";
 import { cn } from "../../utils/cn";
+
+const REPLAY_POLL_MS = 3000;
 
 type RaceFilter = "all" | "upcoming" | "live" | "completed";
 
@@ -27,21 +30,103 @@ const STATUS_TONE: Record<string, string> = {
   Cancelled: "danger",
 };
 
+const PENALTY_LABEL: Record<string, string> = {
+  warning: "Warning",
+  demote: "Demotion",
+  disqualify: "Disqualification",
+  disqualification: "Disqualification",
+  restart: "Race restart",
+  time_ban: "Time-boxed ban",
+  permanent_ban: "Permanent ban",
+};
+
 function RankBadge({ rank }: { rank: number }) {
   const tone = rank === 1 ? "success" : rank <= 3 ? "accent" : "neutral";
   const label = rank === 1 ? "🥇 1st" : rank === 2 ? "🥈 2nd" : rank === 3 ? "🥉 3rd" : `#${rank}`;
   return <Badge tone={tone as any}>{label}</Badge>;
 }
 
+function LiveRaceWatcher({ race, onClose }: { race: SpectatorRace; onClose: () => void }) {
+  const { handleGetSpectatorRaceReplay } = useApp();
+  const [timeline, setTimeline] = useState<RaceSimTimeline | null>(null);
+  const [resultPublished, setResultPublished] = useState(false);
+  const stoppedRef = useRef(false);
+
+  useEffect(() => {
+    stoppedRef.current = false;
+    let interval: ReturnType<typeof setInterval> | null = null;
+    async function poll() {
+      try {
+        const res = await handleGetSpectatorRaceReplay(race.id);
+        if (stoppedRef.current) return;
+        if (res.available && res.timeline) {
+          setTimeline(res.timeline);
+          setResultPublished(res.resultPublished);
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+        }
+      } catch {
+        // ignore transient errors, keep polling
+      }
+    }
+    poll();
+    interval = setInterval(poll, REPLAY_POLL_MS);
+    return () => {
+      stoppedRef.current = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [race.id, handleGetSpectatorRaceReplay]);
+
+  if (!timeline) {
+    const waitingForStart = race.liveStatus !== "Live" && race.liveStatus !== "Completed";
+    return (
+      <Panel title={race.name} subtitle="Watching race" action={
+        <button type="button" className="secondary-button btn-xs" onClick={onClose}>Close</button>
+      }>
+        <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          {waitingForStart ? "Waiting for the race to start…" : "Loading race data…"}
+        </p>
+      </Panel>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: "8px" }}>
+        <Badge tone={resultPublished ? "success" : "warning"}>
+          {resultPublished ? "Official result" : "Provisional — pending referee confirmation"}
+        </Badge>
+      </div>
+      <RaceLivePlayer timeline={timeline} onClose={onClose} />
+    </div>
+  );
+}
+
 function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () => void }) {
+  const [watching, setWatching] = useState(false);
+  const canWatch = race.liveStatus === "Live" || race.liveStatus === "Completed";
+
+  if (watching) {
+    return <LiveRaceWatcher race={race} onClose={() => setWatching(false)} />;
+  }
+
   return (
     <Panel
       title={race.name}
       subtitle={`Round ${race.round} · ${race.tournamentName}`}
       action={
-        <button type="button" className="secondary-button btn-xs" onClick={onClose}>
-          Close
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          {canWatch && (
+            <button type="button" className="secondary-button btn-xs" onClick={() => setWatching(true)}>
+              {race.liveStatus === "Live" ? "Watch live" : "Watch replay"}
+            </button>
+          )}
+          <button type="button" className="secondary-button btn-xs" onClick={onClose}>
+            Close
+          </button>
+        </div>
       }
     >
       {/* Info grid */}
@@ -139,6 +224,9 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                   <span style={{ marginLeft: "8px", fontSize: "0.82rem", color: "var(--text-muted)" }}>
                     {rk.jockey.fullName}
                   </span>
+                  {rk.isDisqualified && (
+                    <Badge tone="danger">Disqualified</Badge>
+                  )}
                 </div>
                 <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
                   {fmtTime(rk.finishTime)}
@@ -151,6 +239,33 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
               </div>
             ))}
           </div>
+
+          {race.result.violations && race.result.violations.length > 0 && (
+            <div style={{ marginTop: "16px" }}>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 600 }}>Violations</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {race.result.violations.map((v, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: "8px 14px",
+                      background: "var(--c-danger-c)",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                    }}
+                  >
+                    <strong>{v.horseName ?? "Unknown"}</strong>
+                    <span style={{ marginLeft: "8px", color: "var(--text-muted)" }}>{v.description}</span>
+                    {v.penaltyApplied && (
+                      <span style={{ marginLeft: "8px", fontWeight: 600, color: "var(--danger, #dc2626)" }}>
+                        {PENALTY_LABEL[v.penaltyApplied] ?? v.penaltyApplied}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Panel>

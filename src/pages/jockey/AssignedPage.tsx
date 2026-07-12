@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Panel } from "../../components";
+import { Badge, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 
@@ -89,6 +89,7 @@ export default function AssignedPage() {
 
   return (
     <div className="page-stack">
+      <SuspensionBanner />
       <Panel
         title="Assigned races"
         subtitle={`${races.length} race${races.length !== 1 ? "s" : ""} assigned`}

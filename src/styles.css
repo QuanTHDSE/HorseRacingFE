@@ -1481,6 +1481,14 @@ a { color: inherit; text-decoration: none; }
 .notification-info    { background: var(--c-info-c);    border-color: rgba(26,95,168,.15); }
 .notification-danger  { background: var(--c-danger-c);  border-color: rgba(180,43,30,.15); }
 
+/* ── Suspension banner ────────────────────────────────────────── */
+
+.suspension-banner { display: grid; gap: 10px; }
+.suspension-banner-row { display: flex; align-items: flex-start; gap: 10px; }
+.suspension-banner-icon { font-size: 1rem; line-height: 1.4; flex-shrink: 0; }
+.suspension-banner-text { margin: 0; font-size: .875rem; line-height: 1.5; font-weight: 600; color: var(--c-danger); }
+.suspension-detail { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(180,43,30,.15); font-size: .875rem; }
+
 /* ── Compact list / Leaderboard ───────────────────────────────── */
 
 .compact-list { display: grid; gap: 0; }

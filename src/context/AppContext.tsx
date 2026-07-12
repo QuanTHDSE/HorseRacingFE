@@ -42,6 +42,7 @@ import type {
   NewRaceInput,
   Notification,
   OwnerRegistration,
+  PenaltyDetail,
   Prediction,
   PredictionConfig,
   PublishItem,
@@ -123,6 +124,7 @@ function mapApiUserToAccount(u: ApiUser): Account {
     organization: "—",
     email: u.email,
     badge: BADGE[u.role] ?? "?",
+    penaltyStatus: u.penaltyStatus ?? null,
   };
 }
 
@@ -381,6 +383,7 @@ function mapPrediction(p: ApiPrediction, spectatorId: string): Prediction {
     id: p.id,
     spectatorId,
     raceId: p.raceId,
+    raceName: p.raceName,
     horse: firstHorse,
     tickets: `${p.ticketCount ?? 1}`,
     cost: `${p.contribution ?? 0} pts`,
@@ -845,6 +848,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── Poll penalty status for jockeys (live suspension banner) ─────────────
+
+  useEffect(() => {
+    if (!user || user.role !== "jockey") return;
+    const interval = setInterval(() => {
+      api.auth
+        .me()
+        .then(({ user: apiUser }) => {
+          setUser((prev) =>
+            prev ? { ...prev, penaltyStatus: apiUser.penaltyStatus ?? null } : prev,
+          );
+        })
+        .catch(() => { /* ignore */ });
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [user?.id, user?.role]);
+
   // ─── Login ────────────────────────────────────────────────────────────────
 
   async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -968,6 +988,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               id: `pred-${Date.now()}`,
               spectatorId: user.id,
               raceId: prev.liveBoard.raceId,
+              raceName: prev.liveBoard.title || "—",
               horse: id,
               tickets: "1",
               cost: "—",
@@ -1230,9 +1251,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapJockeyRace(res.race);
   }
 
+  async function handleGetJockeyPenaltyDetail(): Promise<PenaltyDetail | null> {
+    try {
+      const res = await api.jockey.getPenaltyDetail();
+      return res.penalty;
+    } catch {
+      return null; // 404 khi jockey không có án phạt nào đang áp dụng
+    }
+  }
+
   async function handleGetSpectatorRaceById(id: string): Promise<SpectatorRace> {
     const res = await api.spectator.getRaceById(id);
     return mapSpectatorRace(res.race);
+  }
+
+  async function handleGetSpectatorRaceReplay(
+    id: string,
+  ): Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }> {
+    return api.spectator.getReplay(id);
   }
 
   async function refreshSpectatorState(account: Account): Promise<void> {
@@ -1495,6 +1531,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleGetTournamentById,
     handleGetJockeyDashboard,
     handleGetJockeyRaceById,
+    handleGetJockeyPenaltyDetail,
     handleGetRaceById,
     handleGetRaceLeaderboard,
     handleAddParticipant,
@@ -1510,6 +1547,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCancelRegistration,
     handleInviteJockey,
     handleGetSpectatorRaceById,
+    handleGetSpectatorRaceReplay,
     handleCreatePrediction,
     handleCancelPrediction,
     handleTopUpPoints,

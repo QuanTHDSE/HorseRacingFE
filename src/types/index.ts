@@ -6,6 +6,29 @@ export type AuthMode = "login" | "register";
 
 // ─── Auth / Account ───────────────────────────────────────────────────────────
 
+export interface PenaltyStatus {
+  isBanned: boolean;
+  bannedUntil: string | null;
+  reason: string | null;
+}
+
+export interface PenaltyDetail {
+  target: "horse" | "jockey" | "both";
+  description: string;
+  penaltyApplied: string | null;
+  recordedAt: string;
+  bannedUntil: string | null;
+  rule: {
+    code: string;
+    name: string;
+    description: string;
+    category: string;
+    severity: string;
+    banDurationDays: number;
+  } | null;
+  race: { id: string; name: string; scheduledAt: string } | null;
+}
+
 export interface Account {
   id: string;
   role: Role;
@@ -13,6 +36,7 @@ export interface Account {
   organization: string;
   email: string;
   badge: string;
+  penaltyStatus?: PenaltyStatus | null;
 }
 
 // ─── App entities ─────────────────────────────────────────────────────────────
@@ -326,6 +350,7 @@ export interface Prediction {
   id: string;
   spectatorId: string;
   raceId: string;
+  raceName: string;
   horse: string;
   tickets: string;
   cost: string;
@@ -559,6 +584,14 @@ export interface SpectatorRaceResult {
     jockey: { id: string; fullName: string };
     finishTime?: number;
     prize: number;
+    isDisqualified?: boolean;
+  }>;
+  violations?: Array<{
+    horseId: string | null;
+    horseName: string | null;
+    type: string;
+    description: string;
+    penaltyApplied: string | null;
   }>;
 }
 
@@ -666,6 +699,7 @@ export interface AppContextValue {
   handleGetTournamentById: (id: string) => Promise<Tournament & { raceCount?: number }>;
   handleGetJockeyDashboard: () => Promise<JockeyDashboard>;
   handleGetJockeyRaceById: (id: string) => Promise<Race>;
+  handleGetJockeyPenaltyDetail: () => Promise<PenaltyDetail | null>;
   handleGetRaceById: (id: string) => Promise<RaceDetail>;
   handleGetRaceLeaderboard: (raceId: string) => Promise<RaceLeaderboard>;
   handleAddParticipant: (raceId: string, data: AddParticipantInput) => Promise<RaceDetail>;
@@ -681,6 +715,7 @@ export interface AppContextValue {
   handleCancelRegistration: (id: string) => Promise<void>;
   handleInviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) => Promise<void>;
   handleGetSpectatorRaceById: (id: string) => Promise<SpectatorRace>;
+  handleGetSpectatorRaceReplay: (id: string) => Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }>;
   handleCreatePrediction: (raceId: string, horseId: string, ticketCount?: number) => Promise<void>;
   handleCancelPrediction: (predictionId: string) => Promise<void>;
   handleTopUpPoints: (points: number) => Promise<void>;
