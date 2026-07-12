@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Badge, Panel } from "../components";
+import { Badge, NotificationBell, Panel } from "../components";
 import { roleConfigs } from "../config/roleConfigs";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
@@ -116,6 +116,7 @@ export default function AppShell() {
           <div className="topbar-actions">
             <Badge tone="accent">{role.menu.find((item) => item.id === activePage)?.label}</Badge>
             <Badge tone="neutral">Active session</Badge>
+            <NotificationBell notifications={notifications} />
           </div>
         </header>
 
@@ -125,17 +126,6 @@ export default function AppShell() {
           </main>
 
           <aside className="workspace-side">
-            <Panel title="Notification Center" subtitle="Filtered by your current role">
-              <div className="notification-list">
-                {notifications.map((item) => (
-                  <article key={item.id} className={cn("notification-card", `notification-${item.tone}`)}>
-                    <strong>{item.title}</strong>
-                    <p>{item.detail}</p>
-                  </article>
-                ))}
-              </div>
-            </Panel>
-
             <Panel title="Featured Tournaments" subtitle="Active tournaments and upcoming races">
               <div className="compact-list">
                 {appState.tournaments.map((t) => (

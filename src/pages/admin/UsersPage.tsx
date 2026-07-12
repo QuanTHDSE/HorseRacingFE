@@ -178,7 +178,7 @@ export default function UsersPage() {
                 <select
                   value={DISPLAY_TO_API_ROLE[row.role] ?? row.role}
                   disabled={busy === row.id || row.id === user?.id}
-                  onChange={(e) => updateRole(row.id, e.target.value)}
+                  onChange={(e) => updateRole(row.id, e.target.value as Parameters<typeof updateRole>[1])}
                 >
                   {ROLE_OPTIONS.map((role) => (
                     <option key={role.value} value={role.value}>{role.label}</option>

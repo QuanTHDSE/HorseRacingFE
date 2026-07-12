@@ -1481,6 +1481,90 @@ a { color: inherit; text-decoration: none; }
 .notification-info    { background: var(--c-info-c);    border-color: rgba(26,95,168,.15); }
 .notification-danger  { background: var(--c-danger-c);  border-color: rgba(180,43,30,.15); }
 
+/* ── Notification bell (topbar) ───────────────────────────────── */
+
+.notif-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--c-outline-var);
+  background: var(--c-surface);
+  cursor: pointer;
+  font-size: 1.05rem;
+  line-height: 1;
+  transition: background .15s ease;
+}
+.notif-bell:hover { background: var(--c-surf-low); }
+
+.notif-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--c-danger);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 340px;
+  max-width: 92vw;
+  max-height: 440px;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-xl);
+  box-shadow: 0 12px 32px rgba(0,0,0,.18);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--c-outline-var);
+  font-size: .9rem;
+}
+.notif-panel-head span { color: var(--c-muted); font-size: .78rem; }
+
+.notif-panel-list {
+  padding: 10px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.notif-empty {
+  color: var(--c-muted);
+  font-size: .85rem;
+  text-align: center;
+  padding: 22px 0;
+  margin: 0;
+}
+
 /* ── Compact list / Leaderboard ───────────────────────────────── */
 
 .compact-list { display: grid; gap: 0; }
