@@ -350,6 +350,7 @@ export interface Prediction {
   id: string;
   spectatorId: string;
   raceId: string;
+  raceName: string;
   horse: string;
   tickets: string;
   cost: string;
@@ -583,6 +584,14 @@ export interface SpectatorRaceResult {
     jockey: { id: string; fullName: string };
     finishTime?: number;
     prize: number;
+    isDisqualified?: boolean;
+  }>;
+  violations?: Array<{
+    horseId: string | null;
+    horseName: string | null;
+    type: string;
+    description: string;
+    penaltyApplied: string | null;
   }>;
 }
 
@@ -706,6 +715,7 @@ export interface AppContextValue {
   handleCancelRegistration: (id: string) => Promise<void>;
   handleInviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) => Promise<void>;
   handleGetSpectatorRaceById: (id: string) => Promise<SpectatorRace>;
+  handleGetSpectatorRaceReplay: (id: string) => Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }>;
   handleCreatePrediction: (raceId: string, horseId: string, ticketCount?: number) => Promise<void>;
   handleCancelPrediction: (predictionId: string) => Promise<void>;
   handleTopUpPoints: (points: number) => Promise<void>;

@@ -269,6 +269,12 @@ export interface ApiRaceSimTimeline {
   horses: ApiRaceSimHorse[];
 }
 
+export interface ApiRaceReplayResponse {
+  available: boolean;
+  resultPublished: boolean;
+  timeline: ApiRaceSimTimeline | null;
+}
+
 export interface ApiTrack {
   _id: string;
   name: string;
@@ -428,6 +434,14 @@ export interface ApiSpectatorRace {
       jockey: { id: string; fullName: string };
       finishTime?: number;
       prize: number;
+      isDisqualified?: boolean;
+    }>;
+    violations?: Array<{
+      horseId: string | null;
+      horseName: string | null;
+      type: string;
+      description: string;
+      penaltyApplied: string | null;
     }>;
   } | null;
   viewingTicket: ApiViewingTicketInfo;
@@ -782,6 +796,8 @@ export const api = {
       request<{ races: ApiSpectatorRace[] }>(`/spectator/races${filter ? `?filter=${filter}` : ""}`),
     getRaceById: (id: string) =>
       request<{ race: ApiSpectatorRace }>(`/spectator/races/${id}`),
+    getReplay: (id: string) =>
+      request<ApiRaceReplayResponse>(`/spectator/races/${id}/replay`),
     listPredictions: (userId: string) =>
       request<{ predictions: ApiPrediction[] }>(`/spectator/predictions/${userId}`),
     createPrediction: (

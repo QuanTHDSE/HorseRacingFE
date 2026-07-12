@@ -383,6 +383,7 @@ function mapPrediction(p: ApiPrediction, spectatorId: string): Prediction {
     id: p.id,
     spectatorId,
     raceId: p.raceId,
+    raceName: p.raceName,
     horse: firstHorse,
     tickets: `${p.ticketCount ?? 1}`,
     cost: `${p.contribution ?? 0} pts`,
@@ -987,6 +988,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               id: `pred-${Date.now()}`,
               spectatorId: user.id,
               raceId: prev.liveBoard.raceId,
+              raceName: prev.liveBoard.title || "—",
               horse: id,
               tickets: "1",
               cost: "—",
@@ -1261,6 +1263,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function handleGetSpectatorRaceById(id: string): Promise<SpectatorRace> {
     const res = await api.spectator.getRaceById(id);
     return mapSpectatorRace(res.race);
+  }
+
+  async function handleGetSpectatorRaceReplay(
+    id: string,
+  ): Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }> {
+    return api.spectator.getReplay(id);
   }
 
   async function refreshSpectatorState(account: Account): Promise<void> {
@@ -1539,6 +1547,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCancelRegistration,
     handleInviteJockey,
     handleGetSpectatorRaceById,
+    handleGetSpectatorRaceReplay,
     handleCreatePrediction,
     handleCancelPrediction,
     handleTopUpPoints,
