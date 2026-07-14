@@ -40,6 +40,29 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export type ApiRole = "horse_owner" | "jockey" | "referee" | "spectator" | "admin";
 
+export interface ApiPenaltyStatus {
+  isBanned: boolean;
+  bannedUntil: string | null;
+  reason: string | null;
+}
+
+export interface ApiPenaltyDetail {
+  target: "horse" | "jockey" | "both";
+  description: string;
+  penaltyApplied: string | null;
+  recordedAt: string;
+  bannedUntil: string | null;
+  rule: {
+    code: string;
+    name: string;
+    description: string;
+    category: string;
+    severity: string;
+    banDurationDays: number;
+  } | null;
+  race: { id: string; name: string; scheduledAt: string } | null;
+}
+
 export interface ApiUser {
   id: string;
   email: string;
@@ -47,6 +70,7 @@ export interface ApiUser {
   fullName: string;
   phone?: string;
   avatarUrl?: string;
+  penaltyStatus?: ApiPenaltyStatus;
 }
 
 export interface ApiAuthResponse {
@@ -245,6 +269,12 @@ export interface ApiRaceSimTimeline {
   horses: ApiRaceSimHorse[];
 }
 
+export interface ApiRaceReplayResponse {
+  available: boolean;
+  resultPublished: boolean;
+  timeline: ApiRaceSimTimeline | null;
+}
+
 export interface ApiTrack {
   _id: string;
   name: string;
@@ -404,6 +434,14 @@ export interface ApiSpectatorRace {
       jockey: { id: string; fullName: string };
       finishTime?: number;
       prize: number;
+      isDisqualified?: boolean;
+    }>;
+    violations?: Array<{
+      horseId: string | null;
+      horseName: string | null;
+      type: string;
+      description: string;
+      penaltyApplied: string | null;
     }>;
   } | null;
   viewingTicket: ApiViewingTicketInfo;
@@ -747,6 +785,8 @@ export const api = {
     getRaceById: (id: string) => request<{ race: ApiJockeyRace }>(`/jockey/races/${id}`),
     listNotifications: () =>
       request<{ notifications: ApiNotification[] }>("/jockey/notifications"),
+    getPenaltyDetail: () =>
+      request<{ penalty: ApiPenaltyDetail }>("/jockey/penalty-detail"),
   },
 
   spectator: {
@@ -756,6 +796,8 @@ export const api = {
       request<{ races: ApiSpectatorRace[] }>(`/spectator/races${filter ? `?filter=${filter}` : ""}`),
     getRaceById: (id: string) =>
       request<{ race: ApiSpectatorRace }>(`/spectator/races/${id}`),
+    getReplay: (id: string) =>
+      request<ApiRaceReplayResponse>(`/spectator/races/${id}/replay`),
     listPredictions: (userId: string) =>
       request<{ predictions: ApiPrediction[] }>(`/spectator/predictions/${userId}`),
     createPrediction: (
