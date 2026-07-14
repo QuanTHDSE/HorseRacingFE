@@ -150,6 +150,8 @@ export interface ApiPredictionConfig {
   ownerShareRate: number;
   jockeyShareRate: number;
   rankRewardRates: number[];
+  fixedPrizeTopCount: 4 | 5;
+  fixedPrizeRankRates: number[];
   rolloverPolicy: "refund" | "rollover_next_race" | "to_organizer";
   minScoreToShare: number;
 }
@@ -640,6 +642,11 @@ export const api = {
       request<{ tournament: ApiTournamentItem }>(`/tournaments/${id}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
+      }),
+    updatePrizePool: (id: string, prizePool: number) =>
+      request<{ tournament: ApiTournamentItem }>(`/tournaments/${id}/prize-pool`, {
+        method: "PATCH",
+        body: JSON.stringify({ prizePool }),
       }),
     delete: (id: string) =>
       request<{ success: boolean; message: string }>(`/tournaments/${id}`, {
