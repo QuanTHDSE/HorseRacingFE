@@ -314,6 +314,7 @@ export interface Tournament {
   endDate: string;
   status: string;
   prizePool: string;
+  prizePoolValue?: number;
   races: number;
 }
 
@@ -564,6 +565,8 @@ export interface PredictionConfig {
   ownerShareRate: number;
   jockeyShareRate: number;
   rankRewardRates: number[];
+  fixedPrizeTopCount: 4 | 5;
+  fixedPrizeRankRates: number[];
   rolloverPolicy: "refund" | "rollover_next_race" | "to_organizer";
   minScoreToShare: number;
 }
@@ -696,6 +699,7 @@ export interface AppContextValue {
   handleCreateRace: (data: NewRaceInput) => void;
   handleCreateTournament: (data: CreateTournamentInput) => Promise<void>;
   handleUpdateTournamentStatus: (id: string, status: string) => Promise<void>;
+  handleUpdateTournamentPrizePool: (id: string, prizePool: number) => Promise<Tournament>;
   handleGetTournamentById: (id: string) => Promise<Tournament & { raceCount?: number }>;
   handleGetJockeyDashboard: () => Promise<JockeyDashboard>;
   handleGetJockeyRaceById: (id: string) => Promise<Race>;

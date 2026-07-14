@@ -92,6 +92,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
 
   const [cfg, setCfg] = useState<PredictionConfig | null>(null);
   const [rankText, setRankText] = useState("");
+  const [fixedPrizeText, setFixedPrizeText] = useState("");
   const [ticketPresetText, setTicketPresetText] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -109,6 +110,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         if (!alive) return;
         setCfg(c);
         setRankText(c ? c.rankRewardRates.join(", ") : "");
+        setFixedPrizeText(c ? c.fixedPrizeRankRates.join(", ") : "");
         setTicketPresetText(c ? c.quickRiskMultipliers.join(", ") : "");
       })
       .catch((e: unknown) => alive && setLoadError(e instanceof Error ? e.message : "Could not load prediction configuration."))
@@ -126,19 +128,27 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
     setMsg("");
   }
 
+  function setFixedPrizeRates(next: number[]) {
+    setFixedPrizeText(next.join(", "));
+    setMsg("");
+  }
+
   if (loading) return <p className="pc-section-sub">Loading prediction configuration...</p>;
   if (loadError) return <div className="form-banner form-banner-error">{loadError}</div>;
   if (!cfg) return <p className="pc-section-sub">No prediction configuration found.</p>;
 
   const rankRates = parseList(rankText);
+  const fixedPrizeRates = parseList(fixedPrizeText);
   const ticketPresets = uniquePositiveIntegers(parseList(ticketPresetText));
   const poolSum = cfg.organizerFeeRate + cfg.racingRewardRate + cfg.spectatorRewardRate;
   const roleSplitSum = cfg.ownerShareRate + cfg.jockeyShareRate;
   const rankSum = rankRates.reduce((a, b) => a + b, 0);
+  const fixedPrizeSum = fixedPrizeRates.reduce((a, b) => a + b, 0);
+  const fixedPrizeValid = fixedPrizeRates.length === cfg.fixedPrizeTopCount && fixedPrizeSum === 100;
   const ticketPresetsValid = !cfg.poolEnabled || ticketPresets.length > 0;
   const minTicketCount = ticketPresets[0] ?? cfg.minRiskMultiplier;
   const maxTicketCount = ticketPresets[ticketPresets.length - 1] ?? cfg.maxRiskMultiplier;
-  const valid = poolSum === 100 && roleSplitSum === 100 && rankSum === 100 && ticketPresetsValid;
+  const valid = poolSum === 100 && roleSplitSum === 100 && rankSum === 100 && fixedPrizeValid && ticketPresetsValid;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -150,12 +160,14 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         ...cfg,
         entryFee: cfg.ticketPrice,
         rankRewardRates: rankRates,
+        fixedPrizeRankRates: fixedPrizeRates,
         quickRiskMultipliers: ticketPresets,
         minRiskMultiplier: minTicketCount,
         maxRiskMultiplier: maxTicketCount,
       });
       setCfg(updated);
       setRankText(updated.rankRewardRates.join(", "));
+      setFixedPrizeText(updated.fixedPrizeRankRates.join(", "));
       setTicketPresetText(updated.quickRiskMultipliers.join(", "));
       setIsError(false);
       setMsg("Prediction configuration saved.");
@@ -257,6 +269,66 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
 
       {/* ── 4. Owner/Jockey split ── */}
       <Section
+        title="Fixed Race Prize"
+        sub="Tournament prize pool is paid only to top 4 or top 5 eligible horses; disqualified horses receive 0"
+        right={<SumChip sum={fixedPrizeSum} />}
+      >
+        <div className="form-grid-2">
+          <label className="field">
+            <span>Paid ranks</span>
+            <select
+              value={cfg.fixedPrizeTopCount}
+              disabled={dis}
+              onChange={(e) => {
+                const topCount = Number(e.target.value) as 4 | 5;
+                set("fixedPrizeTopCount", topCount);
+                setFixedPrizeRates(topCount === 4 ? [55, 25, 12, 8] : [50, 25, 12, 8, 5]);
+              }}
+            >
+              <option value={4}>Top 4</option>
+              <option value={5}>Top 5</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>Fixed prize rates</span>
+            <input
+              value={fixedPrizeText}
+              disabled={dis}
+              onChange={(e) => { setFixedPrizeText(e.target.value); setMsg(""); }}
+              placeholder={cfg.fixedPrizeTopCount === 4 ? "55, 25, 12, 8" : "50, 25, 12, 8, 5"}
+            />
+          </label>
+        </div>
+        <div style={{ overflowX: "auto", marginTop: "12px" }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Prize share</th>
+                <th>Owner preview</th>
+                <th>Jockey preview</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fixedPrizeRates.map((rate, idx) => {
+                const ownerPreview = Math.floor((rate * cfg.ownerShareRate) / 100);
+                const jockeyPreview = rate - ownerPreview;
+                return (
+                  <tr key={idx}>
+                    <td>Rank {idx + 1}</td>
+                    <td>{rate}%</td>
+                    <td>{ownerPreview}%</td>
+                    <td>{jockeyPreview}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      {/* ── 5. Owner/Jockey split ── */}
+      <Section
         title="Owner / Jockey Split"
         sub="Applied to both fixed race prizes and bounty racing rewards"
         right={<SumChip sum={roleSplitSum} />}
@@ -267,7 +339,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         </div>
       </Section>
 
-      {/* ── 5. Rank reward split ── */}
+      {/* ── 6. Rank reward split ── */}
       <Section
         title="Rank Reward Split"
         sub="Used for racing rewards and displayed as a rank table; the values must add up to 100%"
@@ -330,7 +402,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         <>
           {!valid && (
             <p className="pc-section-sub" style={{ color: "var(--c-danger)", fontWeight: 600 }}>
-              Pool distribution, owner/jockey split, and rank reward split must each add up to 100%. Ticket count presets must contain at least one positive integer.
+              Pool distribution, fixed prize split, owner/jockey split, and rank reward split must each add up to 100%. Ticket count presets must contain at least one positive integer.
             </p>
           )}
           <div className="form-actions">

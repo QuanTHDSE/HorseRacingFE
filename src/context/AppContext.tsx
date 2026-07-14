@@ -157,6 +157,7 @@ function mapTournamentItem(t: ApiTournamentItem): Tournament {
     endDate: t.endDate,
     status: TOURNAMENT_STATUS[t.status] ?? t.status,
     prizePool: fmtPrize(t.prizePool),
+    prizePoolValue: t.prizePool ?? 0,
     races: t.raceCount ?? 0,
   };
 }
@@ -194,6 +195,8 @@ function mapPredictionConfig(c: ApiPredictionConfig): PredictionConfig {
     ownerShareRate: c.ownerShareRate,
     jockeyShareRate: c.jockeyShareRate,
     rankRewardRates: c.rankRewardRates ?? [],
+    fixedPrizeTopCount: c.fixedPrizeTopCount ?? 5,
+    fixedPrizeRankRates: c.fixedPrizeRankRates ?? [50, 25, 12, 8, 5],
     rolloverPolicy: c.rolloverPolicy,
     minScoreToShare: c.minScoreToShare,
   };
@@ -1104,6 +1107,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }
 
+  async function handleUpdateTournamentPrizePool(id: string, prizePool: number): Promise<Tournament> {
+    const res = await api.tournaments.updatePrizePool(id, prizePool);
+    const updated = mapTournamentItem(res.tournament);
+    setAppState((prev) => ({
+      ...prev,
+      tournaments: prev.tournaments.map((t) => (t.id === id ? updated : t)),
+    }));
+    return updated;
+  }
+
   async function handleGetTournamentById(id: string): Promise<Tournament & { raceCount?: number }> {
     const res = await api.tournaments.getById(id);
     const t = res.tournament;
@@ -1528,6 +1541,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCreateRace,
     handleCreateTournament,
     handleUpdateTournamentStatus,
+    handleUpdateTournamentPrizePool,
     handleGetTournamentById,
     handleGetJockeyDashboard,
     handleGetJockeyRaceById,

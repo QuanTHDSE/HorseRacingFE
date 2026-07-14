@@ -49,7 +49,7 @@ const EMPTY_FORM = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminTournamentsPage() {
-  const { appState, handleCreateTournament, handleUpdateTournamentStatus, handleGetTournamentById, handleDeleteTournament } =
+  const { appState, handleCreateTournament, handleUpdateTournamentStatus, handleUpdateTournamentPrizePool, handleGetTournamentById, handleDeleteTournament } =
     useApp();
 
   // Form state
@@ -69,6 +69,8 @@ export default function AdminTournamentsPage() {
   // Status update
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
+  const [prizePoolInput, setPrizePoolInput] = useState("");
+  const [prizePoolSaving, setPrizePoolSaving] = useState(false);
 
   // Prediction config panel
   const [showPredConfig, setShowPredConfig] = useState(false);
@@ -141,6 +143,7 @@ export default function AdminTournamentsPage() {
     try {
       const detail = await handleGetTournamentById(t.id);
       setSelected(detail);
+      setPrizePoolInput(String(detail.prizePoolValue ?? 0));
     } catch (err: unknown) {
       setDetailError(err instanceof Error ? err.message : "Failed to load tournament.");
       setSelected(t);
@@ -161,11 +164,35 @@ export default function AdminTournamentsPage() {
       // Refresh detail
       const updated = await handleGetTournamentById(selected.id);
       setSelected(updated);
+      setPrizePoolInput(String(updated.prizePoolValue ?? 0));
       setStatusMsg(`Status updated to "${nextStatus}".`);
     } catch (err: unknown) {
       setStatusMsg(err instanceof Error ? err.message : "Status update failed.");
     } finally {
       setStatusLoading(false);
+    }
+  }
+
+  async function handlePrizePoolSave() {
+    if (!selected) return;
+    const nextPrizePool = Number(prizePoolInput);
+    if (!Number.isFinite(nextPrizePool) || nextPrizePool < 0) {
+      setStatusMsg("Prize pool must be a non-negative number.");
+      return;
+    }
+
+    setPrizePoolSaving(true);
+    setStatusMsg("");
+    try {
+      const updated = await handleUpdateTournamentPrizePool(selected.id, nextPrizePool);
+      const detail = await handleGetTournamentById(updated.id);
+      setSelected(detail);
+      setPrizePoolInput(String(detail.prizePoolValue ?? 0));
+      setStatusMsg("Initial prize pool updated.");
+    } catch (err: unknown) {
+      setStatusMsg(err instanceof Error ? err.message : "Prize pool update failed.");
+    } finally {
+      setPrizePoolSaving(false);
     }
   }
 
@@ -214,13 +241,13 @@ export default function AdminTournamentsPage() {
             </label>
 
             <label className="field">
-              <span>Prize pool (VND)</span>
+              <span>Initial prize pool (points)</span>
               <input
                 type="number"
                 min={0}
                 value={form.prizePool}
                 onChange={(e) => handleField("prizePool", e.target.value)}
-                placeholder="e.g. 3200000000"
+                placeholder="e.g. 50000000"
                 disabled={formLoading}
               />
             </label>
@@ -378,6 +405,31 @@ export default function AdminTournamentsPage() {
                   <Badge tone={STATUS_TONE[selected.status] as any}>{selected.status}</Badge>
                 </div>
               </div>
+
+              {(selected.status === "Draft" || selected.status === "Registration") && (
+                <div className="detail-actions" style={{ marginTop: "12px" }}>
+                  <div className="form-grid-2" style={{ alignItems: "end" }}>
+                    <label className="field">
+                      <span>Initial prize pool (points)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={prizePoolInput}
+                        onChange={(e) => setPrizePoolInput(e.target.value)}
+                        disabled={prizePoolSaving}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={prizePoolSaving}
+                      onClick={handlePrizePoolSave}
+                    >
+                      {prizePoolSaving ? "Saving..." : "Save prize pool"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Status transition */}
               {NEXT_STATUS[selected.status] && (() => {
