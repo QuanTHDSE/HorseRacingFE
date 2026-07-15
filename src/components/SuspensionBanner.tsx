@@ -8,33 +8,33 @@ function fmtDate(iso: string): string {
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
-  race_conduct: "Race conduct",
-  medical: "Medical",
-  equipment: "Equipment",
-  administrative: "Administrative",
+  race_conduct: "Ứng xử thi đấu",
+  medical: "Y tế",
+  equipment: "Trang bị",
+  administrative: "Hành chính",
 };
 
 const SEVERITY_LABEL: Record<string, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  critical: "Critical",
+  low: "Nhẹ",
+  medium: "Trung bình",
+  high: "Nặng",
+  critical: "Rất nặng",
 };
 
 const TARGET_LABEL: Record<string, string> = {
-  horse: "Horse",
-  jockey: "Jockey",
-  both: "Horse & jockey",
+  horse: "Ngựa",
+  jockey: "Nài ngựa",
+  both: "Ngựa & nài",
 };
 
 const PENALTY_APPLIED_LABEL: Record<string, string> = {
-  warning: "Warning",
-  demote: "Demotion",
-  disqualify: "Disqualification",
-  disqualification: "Disqualification",
-  restart: "Race restart",
-  time_ban: "Time-boxed ban",
-  permanent_ban: "Permanent ban",
+  warning: "Cảnh cáo",
+  demote: "Tụt hạng",
+  disqualify: "Tước quyền",
+  disqualification: "Tước quyền",
+  restart: "Chạy lại",
+  time_ban: "Cấm có thời hạn",
+  permanent_ban: "Cấm vĩnh viễn",
 };
 
 export default function SuspensionBanner() {
@@ -47,8 +47,8 @@ export default function SuspensionBanner() {
   if (!penalty?.isBanned) return null;
 
   const label = penalty.bannedUntil
-    ? `You are suspended from racing until ${fmtDate(penalty.bannedUntil)}.`
-    : "You are suspended from racing indefinitely by the organizer.";
+    ? `Bạn bị cấm thi đấu đến hết ${fmtDate(penalty.bannedUntil)}.`
+    : "Bạn bị ban tổ chức cấm thi đấu vô thời hạn.";
 
   async function toggle() {
     const next = !expanded;
@@ -69,41 +69,41 @@ export default function SuspensionBanner() {
       <div className="suspension-banner-row">
         <span className="suspension-banner-icon" aria-hidden>⚠</span>
         <p className="suspension-banner-text">
-          {label}{penalty.reason ? ` Reason: ${penalty.reason}` : ""}
+          {label}{penalty.reason ? ` Lý do: ${penalty.reason}` : ""}
         </p>
       </div>
       <button type="button" className="secondary-button btn-xs" onClick={toggle}>
-        {expanded ? "Hide details" : "Learn more"}
+        {expanded ? "Ẩn chi tiết" : "Xem thêm"}
       </button>
 
       {expanded && (
         <div className="suspension-detail">
           {loadingDetail && (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Loading details…</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Đang tải chi tiết…</p>
           )}
           {!loadingDetail && detail === null && (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No violation details available.</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Không có chi tiết vi phạm.</p>
           )}
           {!loadingDetail && detail !== null && (
             <>
               {detail.rule && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", marginBottom: "8px", fontSize: "0.875rem" }}>
-                  <span><span style={{ color: "var(--text-muted)" }}>Rule code</span> {detail.rule.code}</span>
-                  <span><span style={{ color: "var(--text-muted)" }}>Rule name</span> {detail.rule.name}</span>
-                  <span><span style={{ color: "var(--text-muted)" }}>Category</span> {CATEGORY_LABEL[detail.rule.category] ?? detail.rule.category}</span>
-                  <span><span style={{ color: "var(--text-muted)" }}>Severity</span> {SEVERITY_LABEL[detail.rule.severity] ?? detail.rule.severity}</span>
-                  <span><span style={{ color: "var(--text-muted)" }}>Target</span> {TARGET_LABEL[detail.target] ?? detail.target}</span>
-                  <span><span style={{ color: "var(--text-muted)" }}>Penalty applied</span> {detail.penaltyApplied ? (PENALTY_APPLIED_LABEL[detail.penaltyApplied] ?? detail.penaltyApplied) : "—"}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Mã luật</span> {detail.rule.code}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Tên luật</span> {detail.rule.name}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Phân loại</span> {CATEGORY_LABEL[detail.rule.category] ?? detail.rule.category}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Mức độ</span> {SEVERITY_LABEL[detail.rule.severity] ?? detail.rule.severity}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Đối tượng</span> {TARGET_LABEL[detail.target] ?? detail.target}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Hình thức phạt</span> {detail.penaltyApplied ? (PENALTY_APPLIED_LABEL[detail.penaltyApplied] ?? detail.penaltyApplied) : "—"}</span>
                   {detail.rule.banDurationDays > 0 && (
-                    <span><span style={{ color: "var(--text-muted)" }}>Ban duration</span> {detail.rule.banDurationDays} day(s)</span>
+                    <span><span style={{ color: "var(--text-muted)" }}>Thời hạn cấm</span> {detail.rule.banDurationDays} ngày</span>
                   )}
                 </div>
               )}
               <p style={{ margin: "0 0 4px", fontSize: "0.875rem" }}>{detail.description}</p>
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Recorded {fmtDate(detail.recordedAt)}</span>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Ghi nhận {fmtDate(detail.recordedAt)}</span>
               {detail.race && (
                 <p style={{ margin: "6px 0 0", fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  Related race: <strong>{detail.race.name}</strong> · {fmtDate(detail.race.scheduledAt)}
+                  Cuộc đua liên quan: <strong>{detail.race.name}</strong> · {fmtDate(detail.race.scheduledAt)}
                 </p>
               )}
             </>

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import { cn } from "../../utils/cn";
+import { viRaceStatus, viRegStatus } from "../../utils/viLabels";
 
 type RegFilter = "all" | "Pending" | "Approved" | "Rejected";
 
@@ -20,7 +22,7 @@ const RACE_STATUS_TONE: Record<string, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("vi-VN", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }
@@ -33,15 +35,16 @@ export default function OwnerSchedulePage() {
   const [selectedRace, setSelectedRace]             = useState("");
   const [selectedHorse, setSelectedHorse]           = useState("");
   const [regLoading, setRegLoading]                 = useState(false);
-  const [regError, setRegError]                     = useState("");
-  const [regSuccess, setRegSuccess]                 = useState("");
+  const fb = useFeedback();
+  const regError: string = ""; const setRegError = fb.error;
+  const regSuccess: string = ""; const setRegSuccess = fb.success;
 
   // List filter
   const [filter, setFilter] = useState<RegFilter>("all");
 
   // Cancel in progress
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [cancelError, setCancelError]   = useState("");
+  const cancelError: string = ""; const setCancelError = fb.error;
 
   const horses      = appState.horses;
   const tournaments = appState.tournaments;
@@ -57,8 +60,8 @@ export default function OwnerSchedulePage() {
 
   async function doRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedRace)  { setRegError("Please select a race.");  return; }
-    if (!selectedHorse) { setRegError("Please select a horse."); return; }
+    if (!selectedRace)  { setRegError("Vui lòng chọn một cuộc đua.");  return; }
+    if (!selectedHorse) { setRegError("Vui lòng chọn một con ngựa."); return; }
     setRegError("");
     setRegLoading(true);
     try {
@@ -66,10 +69,10 @@ export default function OwnerSchedulePage() {
       setSelectedRace("");
       setSelectedHorse("");
       setSelectedTournament("");
-      setRegSuccess("Registration submitted! Once the admin approves your horse, hire a jockey on the Jockeys page.");
+      setRegSuccess("Đã gửi đăng ký! Khi admin duyệt ngựa của bạn, hãy thuê nài ở trang Thuê nài ngựa.");
       setTimeout(() => setRegSuccess(""), 5000);
     } catch (err: unknown) {
-      setRegError(err instanceof Error ? err.message : "Registration failed.");
+      setRegError(err instanceof Error ? err.message : "Đăng ký thất bại.");
     } finally {
       setRegLoading(false);
     }
@@ -81,7 +84,7 @@ export default function OwnerSchedulePage() {
     try {
       await handleCancelRegistration(id);
     } catch (err: unknown) {
-      setCancelError(err instanceof Error ? err.message : "Cancel failed.");
+      setCancelError(err instanceof Error ? err.message : "Hủy thất bại.");
     } finally {
       setCancellingId(null);
     }
@@ -90,19 +93,19 @@ export default function OwnerSchedulePage() {
   return (
     <div className="page-stack">
       {/* ── Register form ── */}
-      <Panel title="Register for a race" subtitle="Enter your horse in an upcoming race">
+      <Panel title="Đăng ký cuộc đua" subtitle="Đăng ký ngựa của bạn vào cuộc đua sắp tới">
         {regSuccess && <div className="form-banner form-banner-success">{regSuccess}</div>}
         {regError   && <div className="form-banner form-banner-error">{regError}</div>}
         <form onSubmit={doRegister} className="admin-form">
           <div className="form-grid-2">
             <label className="field">
-              <span>Tournament</span>
+              <span>Giải đấu</span>
               <select
                 value={selectedTournament}
                 onChange={(e) => { setSelectedTournament(e.target.value); setSelectedRace(""); }}
                 disabled={regLoading}
               >
-                <option value="">— Select tournament —</option>
+                <option value="">— Chọn giải đấu —</option>
                 {tournaments.filter((t) => t.status === "Registration" || t.status === "Live").map((t) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
@@ -110,13 +113,13 @@ export default function OwnerSchedulePage() {
             </label>
 
             <label className="field">
-              <span>Race <span className="required">*</span></span>
+              <span>Cuộc đua <span className="required">*</span></span>
               <select
                 value={selectedRace}
                 onChange={(e) => setSelectedRace(e.target.value)}
                 disabled={!selectedTournament || regLoading}
               >
-                <option value="">— Select race —</option>
+                <option value="">— Chọn cuộc đua —</option>
                 {racesForTournament.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name} · {fmtDate(r.date)}
@@ -126,13 +129,13 @@ export default function OwnerSchedulePage() {
             </label>
 
             <label className="field">
-              <span>Horse <span className="required">*</span></span>
+              <span>Ngựa <span className="required">*</span></span>
               <select
                 value={selectedHorse}
                 onChange={(e) => setSelectedHorse(e.target.value)}
                 disabled={regLoading}
               >
-                <option value="">— Select horse —</option>
+                <option value="">— Chọn ngựa —</option>
                 {fitHorses.map((h) => (
                   <option key={h.id} value={h.id}>{h.name} ({h.breed})</option>
                 ))}
@@ -141,7 +144,7 @@ export default function OwnerSchedulePage() {
           </div>
 
           <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "4px 0 12px" }}>
-            Flow: register → admin approves your horse → hire a jockey on the <strong>Jockeys</strong> page → jockey accepts.
+            Quy trình: đăng ký → admin duyệt ngựa → thuê nài ở trang <strong>Thuê nài ngựa</strong> → nài chấp nhận.
           </p>
 
           <div className="form-actions">
@@ -151,10 +154,10 @@ export default function OwnerSchedulePage() {
               disabled={regLoading}
               onClick={() => { setSelectedTournament(""); setSelectedRace(""); setSelectedHorse(""); setRegError(""); }}
             >
-              Clear
+              Xóa
             </button>
             <button type="submit" className="primary-button" disabled={regLoading}>
-              {regLoading ? "Submitting…" : "Submit registration"}
+              {regLoading ? "Đang gửi…" : "Gửi đăng ký"}
             </button>
           </div>
         </form>
@@ -162,13 +165,13 @@ export default function OwnerSchedulePage() {
 
       {/* ── Registration list ── */}
       <Panel
-        title="My race registrations"
-        subtitle={`${filtered.length} of ${regs.length} registrations`}
+        title="Đăng ký cuộc đua của tôi"
+        subtitle={`${filtered.length} / ${regs.length} đăng ký`}
         action={
           <div className="filter-tabs">
             {(["all", "Pending", "Approved", "Rejected"] as RegFilter[]).map((f) => (
               <button key={f} type="button" className={cn("filter-tab", filter === f && "is-active")} onClick={() => setFilter(f)}>
-                {f === "all" ? "All" : f}
+                {f === "all" ? "Tất cả" : viRegStatus(f)}
               </button>
             ))}
           </div>
@@ -177,33 +180,33 @@ export default function OwnerSchedulePage() {
         {cancelError && <div className="form-banner form-banner-error" style={{ marginBottom: "10px" }}>{cancelError}</div>}
         <DataTable
           columns={[
-            { key: "raceName",  label: "Race"  },
-            { key: "horseName", label: "Horse" },
-            { key: "raceDate",  label: "Date",        render: (row) => fmtDate(row.raceDate)    },
+            { key: "raceName",  label: "Cuộc đua" },
+            { key: "horseName", label: "Ngựa"     },
+            { key: "raceDate",  label: "Ngày",        render: (row) => fmtDate(row.raceDate)    },
             {
               key: "raceStatus",
-              label: "Race status",
+              label: "Trạng thái đua",
               render: (row) => (
                 <Badge tone={RACE_STATUS_TONE[row.raceStatus ?? ""] as any ?? "neutral"}>
-                  {row.raceStatus ?? "—"}
+                  {row.raceStatus ? viRaceStatus(row.raceStatus) : "—"}
                 </Badge>
               ),
             },
             {
               key: "jockeyName",
-              label: "Jockey",
-              render: (row) => row.jockeyName ?? <span style={{ color: "var(--text-muted)" }}>Not assigned</span>,
+              label: "Nài ngựa",
+              render: (row) => row.jockeyName ?? <span style={{ color: "var(--text-muted)" }}>Chưa phân công</span>,
             },
             {
               key: "status",
-              label: "Status",
+              label: "Trạng thái",
               render: (row) => (
-                <Badge tone={STATUS_TONE[row.status] as any ?? "neutral"}>{row.status}</Badge>
+                <Badge tone={STATUS_TONE[row.status] as any ?? "neutral"}>{viRegStatus(row.status)}</Badge>
               ),
             },
             {
               key: "id",
-              label: "Action",
+              label: "Thao tác",
               render: (row) =>
                 row.status === "Pending" ? (
                   <button
@@ -212,7 +215,7 @@ export default function OwnerSchedulePage() {
                     disabled={cancellingId === row.id}
                     onClick={() => doCancel(row.id)}
                   >
-                    {cancellingId === row.id ? "…" : "Cancel"}
+                    {cancellingId === row.id ? "…" : "Hủy"}
                   </button>
                 ) : (
                   <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>
@@ -220,7 +223,7 @@ export default function OwnerSchedulePage() {
             },
           ]}
           rows={filtered}
-          empty="No registrations found."
+          empty="Không tìm thấy đăng ký nào."
         />
       </Panel>
     </div>

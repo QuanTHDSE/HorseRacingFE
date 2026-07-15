@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Badge, DataTable, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { RefereeDashboard } from "../../types";
+import { viRaceStatus } from "../../utils/viLabels";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("vi-VN", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }
@@ -37,7 +38,7 @@ export default function RefereeDashboard() {
     <div className="page-stack">
       <section className="hero-card">
         <div>
-          <Badge tone="accent">Referee control room</Badge>
+          <Badge tone="accent">Phòng điều hành Trọng tài</Badge>
           <h3>Xin chào, {user.name}</h3>
           <p>Duyệt checklist trước đua và xác nhận kết quả các cuộc đua bạn phụ trách.</p>
         </div>
@@ -59,7 +60,7 @@ export default function RefereeDashboard() {
             {
               key: "liveStatus",
               label: "Trạng thái",
-              render: (r) => <Badge tone={STATUS_TONE[r.liveStatus] as any ?? "neutral"}>{r.liveStatus}</Badge>,
+              render: (r) => <Badge tone={STATUS_TONE[r.liveStatus] as any ?? "neutral"}>{viRaceStatus(r.liveStatus)}</Badge>,
             },
             {
               key: "id",

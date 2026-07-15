@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import { api } from "../../services/api";
+import { viRegStatus } from "../../utils/viLabels";
 
 const STATUS_TONE: Record<string, string> = {
   Pending:  "warning",
@@ -29,8 +31,9 @@ export default function JockeysPage() {
   const [registrationId, setRegistrationId] = useState("");
   const [message, setMessage]               = useState("");
   const [invLoading, setInvLoading]         = useState(false);
-  const [invError, setInvError]             = useState("");
-  const [invSuccess, setInvSuccess]         = useState("");
+  const fb = useFeedback();
+  const invError: string = ""; const setInvError = fb.error;
+  const invSuccess: string = ""; const setInvSuccess = fb.success;
 
   const regs = appState.ownerRegistrations;
 
@@ -77,8 +80,8 @@ export default function JockeysPage() {
 
   async function doInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!registrationId)  { setInvError("Please select a race registration."); return; }
-    if (!selectedJockey)  { setInvError("Please search and select a jockey."); return; }
+    if (!registrationId)  { setInvError("Vui lòng chọn một đơn đăng ký cuộc đua."); return; }
+    if (!selectedJockey)  { setInvError("Vui lòng tìm và chọn một nài ngựa."); return; }
     setInvError("");
     setInvLoading(true);
     try {
@@ -91,10 +94,10 @@ export default function JockeysPage() {
       setRegistrationId("");
       setMessage("");
       clearJockeySelection();
-      setInvSuccess("Invitation sent! Once the jockey accepts, the entry is complete and added to the race line-up.");
+      setInvSuccess("Đã gửi lời mời! Khi nài chấp nhận, suất đua hoàn tất và được thêm vào danh sách thi đấu.");
       setTimeout(() => setInvSuccess(""), 6000);
     } catch (err: unknown) {
-      setInvError(err instanceof Error ? err.message : "Failed to send invitation.");
+      setInvError(err instanceof Error ? err.message : "Gửi lời mời thất bại.");
     } finally {
       setInvLoading(false);
     }
@@ -103,7 +106,7 @@ export default function JockeysPage() {
   return (
     <div className="page-stack">
       {/* ── Invite form ── */}
-      <Panel title="Invite a jockey" subtitle="Search by name and send a ride invitation">
+      <Panel title="Mời nài ngựa" subtitle="Tìm theo tên và gửi lời mời cưỡi ngựa">
         {invSuccess && <div className="form-banner form-banner-success">{invSuccess}</div>}
         {invError   && <div className="form-banner form-banner-error">{invError}</div>}
 
@@ -111,22 +114,22 @@ export default function JockeysPage() {
           <div className="form-grid-2">
             {/* Registration select */}
             <label className="field">
-              <span>Race registration <span className="required">*</span></span>
+              <span>Đơn đăng ký cuộc đua <span className="required">*</span></span>
               <select
                 value={registrationId}
                 onChange={(e) => setRegistrationId(e.target.value)}
                 disabled={invLoading}
               >
-                <option value="">— Select registration —</option>
+                <option value="">— Chọn đơn đăng ký —</option>
                 {eligibleRegs.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.horseName} → {r.raceName} ({r.status})
+                    {r.horseName} → {r.raceName} ({viRegStatus(r.status)})
                   </option>
                 ))}
               </select>
               {eligibleRegs.length === 0 && (
                 <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                  No approved registrations awaiting a jockey. The admin must approve your horse entry first.
+                  Không có đơn đã duyệt nào đang chờ nài. Admin phải duyệt suất đua của ngựa trước.
                 </span>
               )}
             </label>
@@ -134,7 +137,7 @@ export default function JockeysPage() {
             {/* Jockey search */}
             <div className="field">
               <span style={{ display: "block", marginBottom: "4px", fontSize: "0.875rem", fontWeight: 500 }}>
-                Jockey <span className="required">*</span>
+                Nài ngựa <span className="required">*</span>
               </span>
               <div style={{ position: "relative" }}>
                 <input
@@ -143,7 +146,7 @@ export default function JockeysPage() {
                     setSearchQuery(e.target.value);
                     if (selectedJockey) setSelectedJockey(null);
                   }}
-                  placeholder="Type jockey name to search…"
+                  placeholder="Gõ tên nài ngựa để tìm…"
                   disabled={invLoading}
                   autoComplete="off"
                 />
@@ -208,38 +211,38 @@ export default function JockeysPage() {
                     color: "var(--text-muted)",
                     boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
                   }}>
-                    No jockeys found for "{searchQuery}"
+                    Không tìm thấy nài nào cho "{searchQuery}"
                   </div>
                 )}
               </div>
               {/* Selected badge */}
               {selectedJockey && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
-                  <Badge tone="success">Selected: {selectedJockey.fullName}</Badge>
+                  <Badge tone="success">Đã chọn: {selectedJockey.fullName}</Badge>
                   <button
                     type="button"
                     onClick={clearJockeySelection}
                     style={{ fontSize: "0.78rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
                   >
-                    ✕ Change
+                    ✕ Đổi
                   </button>
                 </div>
               )}
               {searching && (
                 <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                  Searching…
+                  Đang tìm…
                 </span>
               )}
             </div>
 
             {/* Message */}
             <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Message (optional)</span>
+              <span>Lời nhắn (không bắt buộc)</span>
               <textarea
                 rows={2}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="e.g. We'd love to have you race Thunder Echo at the Spring Cup."
+                placeholder="vd: Rất mong bạn cưỡi Tia Chớp tại Cúp Mùa Xuân."
                 disabled={invLoading}
                 style={{ resize: "vertical" }}
               />
@@ -248,50 +251,50 @@ export default function JockeysPage() {
 
           {selectedReg && selectedJockey && (
             <div style={{ padding: "10px 14px", background: "var(--surface-2)", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "12px" }}>
-              Inviting <strong>{selectedJockey.fullName}</strong> to ride{" "}
-              <em>{selectedReg.horseName}</em> in <em>{selectedReg.raceName}</em>
+              Đang mời <strong>{selectedJockey.fullName}</strong> cưỡi{" "}
+              <em>{selectedReg.horseName}</em> trong <em>{selectedReg.raceName}</em>
             </div>
           )}
 
           <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "0 0 12px" }}>
-            Once the jockey accepts, your horse + jockey are added to the race line-up and the entry is complete.
+            Khi nài chấp nhận, ngựa + nài của bạn được thêm vào danh sách thi đấu và suất đua hoàn tất.
           </p>
 
           <div className="form-actions">
             <button type="button" className="secondary-button" disabled={invLoading}
               onClick={() => { setRegistrationId(""); setMessage(""); clearJockeySelection(); setInvError(""); }}>
-              Clear
+              Xóa
             </button>
             <button type="submit" className="primary-button" disabled={invLoading || !registrationId || !selectedJockey}>
-              {invLoading ? "Sending…" : "Send invitation"}
+              {invLoading ? "Đang gửi…" : "Gửi lời mời"}
             </button>
           </div>
         </form>
       </Panel>
 
       {/* ── All registrations summary ── */}
-      <Panel title="All registrations" subtitle="Complete list of race entries and their jockey status">
+      <Panel title="Tất cả đăng ký" subtitle="Danh sách đầy đủ các suất đua và trạng thái nài ngựa">
         <DataTable
           columns={[
-            { key: "raceName",   label: "Race"   },
-            { key: "horseName",  label: "Horse"  },
+            { key: "raceName",   label: "Cuộc đua" },
+            { key: "horseName",  label: "Ngựa"     },
             {
               key: "status",
-              label: "Status",
+              label: "Trạng thái",
               render: (row) => (
-                <Badge tone={STATUS_TONE[row.status] as any ?? "neutral"}>{row.status}</Badge>
+                <Badge tone={STATUS_TONE[row.status] as any ?? "neutral"}>{viRegStatus(row.status)}</Badge>
               ),
             },
             {
               key: "jockeyName",
-              label: "Jockey",
+              label: "Nài ngựa",
               render: (row) => row.jockeyName
                 ? <span style={{ color: "var(--text-success)" }}>{row.jockeyName}</span>
-                : <span style={{ color: "var(--text-muted)" }}>Not assigned</span>,
+                : <span style={{ color: "var(--text-muted)" }}>Chưa phân công</span>,
             },
           ]}
           rows={regs}
-          empty="No registrations yet."
+          empty="Chưa có đăng ký nào."
         />
       </Panel>
     </div>

@@ -4,11 +4,11 @@ import { useApp } from "../../context/AppContext";
 import type { SpectatorRace, Tournament } from "../../types";
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("vi-VN", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }
@@ -21,16 +21,16 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  published: "Registration",
-  ongoing:   "Live",
-  completed: "Completed",
-  draft:     "Draft",
+  published: "Đang đăng ký",
+  ongoing:   "Đang diễn ra",
+  completed: "Đã kết thúc",
+  draft:     "Nháp",
 };
 
 const RACE_GROUPS: { key: string; label: string; tone: "success" | "accent" | "neutral" }[] = [
-  { key: "Live",      label: "Live",      tone: "success" },
-  { key: "Upcoming",  label: "Upcoming",  tone: "accent"  },
-  { key: "Completed", label: "Completed", tone: "neutral" },
+  { key: "Live",      label: "Đang diễn ra", tone: "success" },
+  { key: "Upcoming",  label: "Sắp diễn ra",  tone: "accent"  },
+  { key: "Completed", label: "Đã kết thúc",  tone: "neutral" },
 ];
 
 function TournamentRaceRow({ race }: { race: SpectatorRace }) {
@@ -42,7 +42,7 @@ function TournamentRaceRow({ race }: { race: SpectatorRace }) {
         {race.distance && <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{race.distance}m</span>}
       </div>
       <p style={{ margin: "4px 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-        {fmtDateTime(race.scheduledAt)} · {race.participants.length} horse{race.participants.length !== 1 ? "s" : ""}
+        {fmtDateTime(race.scheduledAt)} · {race.participants.length} ngựa
       </p>
       {race.liveStatus === "Completed" && top3.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "6px" }}>
@@ -62,7 +62,7 @@ function TournamentRaceRow({ race }: { race: SpectatorRace }) {
 
 function TournamentRaces({ races }: { races: SpectatorRace[] }) {
   if (races.length === 0) {
-    return <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No races in this tournament yet.</p>;
+    return <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Giải này chưa có cuộc đua nào.</p>;
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -74,7 +74,7 @@ function TournamentRaces({ races }: { races: SpectatorRace[] }) {
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
               <Badge tone={tone}>{label}</Badge>
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                {group.length} race{group.length !== 1 ? "s" : ""}
+                {group.length} cuộc đua
               </span>
             </div>
             <div className="card-list">
@@ -126,11 +126,11 @@ export default function TournamentsPage() {
           </p>
           {t.prizePool && t.prizePool !== "—" && (
             <p style={{ margin: "6px 0 0", fontSize: "0.875rem", fontWeight: 600, color: "var(--accent)" }}>
-              Prize pool: {Number(t.prizePool).toLocaleString()} pts
+              Tổng giải thưởng: {Number(t.prizePool).toLocaleString()} điểm
             </p>
           )}
           <p style={{ margin: "8px 0 0", fontSize: "0.78rem", color: "var(--accent)" }}>
-            {isExpanded ? "Hide races ▲" : "View races ▼"}
+            {isExpanded ? "Ẩn cuộc đua ▲" : "Xem cuộc đua ▼"}
           </p>
         </article>
         {isExpanded && (
@@ -145,9 +145,9 @@ export default function TournamentsPage() {
   if (tournaments.length === 0) {
     return (
       <div className="page-stack">
-        <Panel title="Tournaments" subtitle="No tournaments available at the moment">
+        <Panel title="Giải đấu" subtitle="Hiện chưa có giải đấu nào">
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Check back later for upcoming events.
+            Quay lại sau để xem các sự kiện sắp tới.
           </p>
         </Panel>
       </div>
@@ -158,9 +158,9 @@ export default function TournamentsPage() {
     <div className="page-stack">
       {live.length > 0 && (
         <Panel
-          title="Live now"
-          subtitle={`${live.length} tournament${live.length > 1 ? "s" : ""} in progress`}
-          action={<Badge tone="success">Live</Badge>}
+          title="Đang diễn ra"
+          subtitle={`${live.length} giải đang diễn ra`}
+          action={<Badge tone="success">Trực tiếp</Badge>}
         >
           <div className="card-grid three">
             {live.map(renderCard)}
@@ -170,8 +170,8 @@ export default function TournamentsPage() {
 
       {open.length > 0 && (
         <Panel
-          title="Open registration"
-          subtitle="Tournaments currently accepting entries"
+          title="Đang mở đăng ký"
+          subtitle="Các giải đang nhận đăng ký"
         >
           <div className="card-grid three">
             {open.map(renderCard)}
@@ -181,8 +181,8 @@ export default function TournamentsPage() {
 
       {completed.length > 0 && (
         <Panel
-          title="Completed"
-          subtitle="Past tournaments"
+          title="Đã kết thúc"
+          subtitle="Các giải đã qua"
         >
           <div className="card-grid three">
             {completed.map(renderCard)}
@@ -191,7 +191,7 @@ export default function TournamentsPage() {
       )}
 
       {live.length === 0 && open.length === 0 && (
-        <Panel title="All tournaments" subtitle={`${tournaments.length} tournaments`}>
+        <Panel title="Tất cả giải đấu" subtitle={`${tournaments.length} giải đấu`}>
           <div className="card-grid three">
             {tournaments.map(renderCard)}
           </div>

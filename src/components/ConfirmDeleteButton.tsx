@@ -14,8 +14,8 @@ interface ConfirmDeleteButtonProps {
  */
 export default function ConfirmDeleteButton({
   onConfirm,
-  label = "Delete",
-  confirmLabel = "Confirm?",
+  label = "Xóa",
+  confirmLabel = "Xác nhận?",
   onDeleted,
   disabled,
 }: ConfirmDeleteButtonProps) {
@@ -31,7 +31,7 @@ export default function ConfirmDeleteButton({
       onDeleted?.();
       setConfirming(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Delete failed.");
+      setError(err instanceof Error ? err.message : "Xóa thất bại.");
       setConfirming(false);
     } finally {
       setLoading(false);
@@ -46,7 +46,7 @@ export default function ConfirmDeleteButton({
             {loading ? "…" : confirmLabel}
           </button>
           <button type="button" className="table-button" disabled={loading} onClick={() => setConfirming(false)}>
-            Cancel
+            Hủy
           </button>
         </span>
       ) : (

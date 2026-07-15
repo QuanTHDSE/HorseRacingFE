@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 
 export default function RewardsPage() {
   const { user, appState, handleTopUpPoints, handleCreatePayosTopUp } = useApp();
   const [topUpPoints, setTopUpPoints] = useState(100);
-  const [topUpError, setTopUpError] = useState("");
-  const [topUpMessage, setTopUpMessage] = useState("");
+  const fb = useFeedback();
+  const topUpError: string = ""; const setTopUpError = fb.error;
+  const topUpMessage: string = ""; const setTopUpMessage = fb.success;
   const [submitting, setSubmitting] = useState(false);
   if (!user) return null;
   const myRewards = appState.rewards.filter((r) => r.spectatorId === user.id);
@@ -16,15 +18,15 @@ export default function RewardsPage() {
     setTopUpError("");
     setTopUpMessage("");
     if (!Number.isInteger(topUpPoints) || topUpPoints < 100) {
-      setTopUpError("Minimum top-up is 100 points.");
+      setTopUpError("Nạp tối thiểu 100 điểm.");
       return;
     }
     setSubmitting(true);
     try {
       await handleTopUpPoints(topUpPoints);
-      setTopUpMessage(`Top-up successful: ${topUpPoints} points.`);
+      setTopUpMessage(`Nạp thành công: ${topUpPoints} điểm.`);
     } catch (err) {
-      setTopUpError(err instanceof Error ? err.message : "Top-up failed.");
+      setTopUpError(err instanceof Error ? err.message : "Nạp điểm thất bại.");
     } finally {
       setSubmitting(false);
     }
@@ -34,7 +36,7 @@ export default function RewardsPage() {
     setTopUpError("");
     setTopUpMessage("");
     if (!Number.isInteger(topUpPoints) || topUpPoints < 100) {
-      setTopUpError("Minimum top-up is 100 points.");
+      setTopUpError("Nạp tối thiểu 100 điểm.");
       return;
     }
     setSubmitting(true);
@@ -42,35 +44,35 @@ export default function RewardsPage() {
       const paymentUrl = await handleCreatePayosTopUp(topUpPoints);
       window.location.href = paymentUrl;
     } catch (err) {
-      setTopUpError(err instanceof Error ? err.message : "Could not create PayOS payment.");
+      setTopUpError(err instanceof Error ? err.message : "Không tạo được thanh toán PayOS.");
       setSubmitting(false);
     }
   }
 
   return (
     <div className="page-stack">
-      <Panel title="Points wallet" subtitle="1000 VND = 1 point · minimum top-up 100 points">
+      <Panel title="Ví điểm" subtitle="1000 VND = 1 điểm · nạp tối thiểu 100 điểm">
         <div className="metric-grid three">
           <div className="metric-card">
-            <span>Current balance</span>
-            <strong>{appState.spectatorPoints?.currentBalance ?? 0} pts</strong>
-            <p>Internal points only</p>
+            <span>Số dư hiện tại</span>
+            <strong>{appState.spectatorPoints?.currentBalance ?? 0} điểm</strong>
+            <p>Chỉ dùng nội bộ</p>
           </div>
           <div className="metric-card">
-            <span>Total earned</span>
-            <strong>{appState.spectatorPoints?.totalPointsEarned ?? 0} pts</strong>
-            <p>Top-ups and rewards</p>
+            <span>Tổng đã nhận</span>
+            <strong>{appState.spectatorPoints?.totalPointsEarned ?? 0} điểm</strong>
+            <p>Nạp và thưởng</p>
           </div>
           <div className="metric-card">
-            <span>Total spent</span>
-            <strong>{appState.spectatorPoints?.totalPointsSpent ?? 0} pts</strong>
-            <p>Entries and redemptions</p>
+            <span>Tổng đã tiêu</span>
+            <strong>{appState.spectatorPoints?.totalPointsSpent ?? 0} điểm</strong>
+            <p>Đặt vé và đổi thưởng</p>
           </div>
         </div>
 
         <form className="inline-form" onSubmit={submitTopUp} style={{ marginTop: "16px" }}>
           <label className="field">
-            <span>Top-up points</span>
+            <span>Số điểm nạp</span>
             <input
               min={100}
               step={100}
@@ -80,26 +82,26 @@ export default function RewardsPage() {
             />
           </label>
           <button className="primary-button" type="submit" disabled={submitting}>
-            {submitting ? "Processing..." : `Top up ${(topUpPoints * 1000).toLocaleString()} VND`}
+            {submitting ? "Đang xử lý..." : `Nạp ${(topUpPoints * 1000).toLocaleString()} VND`}
           </button>
           <button className="secondary-button" type="button" disabled={submitting} onClick={submitPayosTopUp}>
-            Pay with PayOS
+            Thanh toán qua PayOS
           </button>
         </form>
         {topUpError ? <div className="form-banner form-banner-error">{topUpError}</div> : null}
         {topUpMessage ? <div className="form-banner form-banner-success">{topUpMessage}</div> : null}
       </Panel>
 
-      <Panel title="Prediction rewards" subtitle="Track your reward status and claims">
+      <Panel title="Thưởng dự đoán" subtitle="Theo dõi trạng thái và việc nhận thưởng">
         <DataTable
           columns={[
-            { key: "title",  label: "Reward" },
-            { key: "amount", label: "Amount" },
+            { key: "title",  label: "Phần thưởng" },
+            { key: "amount", label: "Số lượng" },
             {
               key: "status",
-              label: "Status",
+              label: "Trạng thái",
               render: (row) => (
-                <Badge tone={row.status === "Claimed" ? "neutral" : "success"}>{row.status}</Badge>
+                <Badge tone={row.status === "Claimed" ? "neutral" : "success"}>{row.status === "Claimed" ? "Đã nhận" : "Sẵn sàng"}</Badge>
               ),
             },
           ]}

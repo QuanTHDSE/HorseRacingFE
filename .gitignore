@@ -39,3 +39,14 @@ npm-debug.log*
 pids/
 *.pid
 *.seed
+
+# GitNexus — cache, chỉ mục và tệp sinh ra tự động
+.gitnexus/
+
+# Agent-local instructions
+AGENTS.md
+agents.md
+CLAUDE.md
+claude.md
+SKILL.md
+skill.md

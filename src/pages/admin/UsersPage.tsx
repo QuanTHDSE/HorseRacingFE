@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
+import { viUserStatus } from "../../utils/viLabels";
 
 const ROLE_OPTIONS = [
-  { value: "horse_owner", label: "Horse Owner" },
-  { value: "jockey", label: "Jockey" },
-  { value: "referee", label: "Referee" },
-  { value: "spectator", label: "Spectator" },
+  { value: "horse_owner", label: "Chủ ngựa" },
+  { value: "jockey", label: "Nài ngựa" },
+  { value: "referee", label: "Trọng tài" },
+  { value: "spectator", label: "Khán giả" },
 ] as const;
 
 const DISPLAY_TO_API_ROLE: Record<string, "horse_owner" | "jockey" | "referee" | "spectator" | "admin"> = {
@@ -32,8 +34,9 @@ export default function UsersPage() {
     certificationId: "",
   });
   const [busy, setBusy] = useState("");
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
+  const fb = useFeedback();
+  const msg = ""; const setMsg = fb.success;
+  const error = ""; const setError = fb.error;
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -66,9 +69,9 @@ export default function UsersPage() {
         licenseExpiry: "",
         certificationId: "",
       }));
-      setMsg("Account created. The user can sign in with the password shown in the form.");
+      setMsg("Đã tạo tài khoản. Người dùng có thể đăng nhập bằng mật khẩu hiển thị trong biểu mẫu.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create account.");
+      setError(err instanceof Error ? err.message : "Không tạo được tài khoản.");
     } finally {
       setBusy("");
     }
@@ -80,9 +83,9 @@ export default function UsersPage() {
     setError("");
     try {
       await handleUpdateAdminUser(id, { role });
-      setMsg("Role updated.");
+      setMsg("Đã cập nhật vai trò.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update role.");
+      setError(err instanceof Error ? err.message : "Không cập nhật được vai trò.");
     } finally {
       setBusy("");
     }
@@ -94,9 +97,9 @@ export default function UsersPage() {
     setError("");
     try {
       await handleUpdateAdminUser(id, { isActive: currentStatus !== "Active" });
-      setMsg("Account status updated.");
+      setMsg("Đã cập nhật trạng thái tài khoản.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update account status.");
+      setError(err instanceof Error ? err.message : "Không cập nhật được trạng thái tài khoản.");
     } finally {
       setBusy("");
     }
@@ -108,13 +111,13 @@ export default function UsersPage() {
       {msg && <div className="form-banner form-banner-success">{msg}</div>}
 
       <Panel
-        title="Create Staff / Owner Account"
-        subtitle="Admin creates Horse Owner, Jockey, Referee, or Spectator accounts. Horse owners can then add horses and invite jockeys."
+        title="Tạo tài khoản nhân sự / chủ ngựa"
+        subtitle="Quản trị viên tạo tài khoản Chủ ngựa, Nài ngựa, Trọng tài hoặc Khán giả. Chủ ngựa sau đó có thể thêm ngựa và mời nài."
       >
         <form className="admin-form" onSubmit={createUser}>
           <div className="form-grid-2">
             <label className="field">
-              <span>Full name</span>
+              <span>Họ và tên</span>
               <input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required />
             </label>
             <label className="field">
@@ -122,11 +125,11 @@ export default function UsersPage() {
               <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required />
             </label>
             <label className="field">
-              <span>Initial password</span>
+              <span>Mật khẩu ban đầu</span>
               <input value={form.password} onChange={(e) => set("password", e.target.value)} minLength={8} required />
             </label>
             <label className="field">
-              <span>Role</span>
+              <span>Vai trò</span>
               <select value={form.role} onChange={(e) => set("role", e.target.value as CreateRole)}>
                 {ROLE_OPTIONS.map((role) => (
                   <option key={role.value} value={role.value}>{role.label}</option>
@@ -134,46 +137,46 @@ export default function UsersPage() {
               </select>
             </label>
             <label className="field">
-              <span>Phone</span>
+              <span>Số điện thoại</span>
               <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
             </label>
             {form.role === "jockey" && (
               <>
                 <label className="field">
-                  <span>License number</span>
+                  <span>Số giấy phép</span>
                   <input value={form.licenseNumber} onChange={(e) => set("licenseNumber", e.target.value)} />
                 </label>
                 <label className="field">
-                  <span>License expiry</span>
+                  <span>Ngày hết hạn giấy phép</span>
                   <input type="date" value={form.licenseExpiry} onChange={(e) => set("licenseExpiry", e.target.value)} />
                 </label>
               </>
             )}
             {form.role === "referee" && (
               <label className="field">
-                <span>Certification ID</span>
+                <span>Mã chứng nhận</span>
                 <input value={form.certificationId} onChange={(e) => set("certificationId", e.target.value)} />
               </label>
             )}
           </div>
           <div className="form-actions">
             <button type="submit" className="primary-button" disabled={busy === "create"}>
-              {busy === "create" ? "Creating..." : "Create account"}
+              {busy === "create" ? "Đang tạo..." : "Tạo tài khoản"}
             </button>
           </div>
         </form>
       </Panel>
 
-      <Panel title="User Account Management" subtitle="Manage roles and active status">
+      <Panel title="Quản lý tài khoản người dùng" subtitle="Quản lý vai trò và trạng thái hoạt động">
         <DataTable
           columns={[
-            { key: "name", label: "User" },
+            { key: "name", label: "Người dùng" },
             { key: "email", label: "Email" },
             {
               key: "role",
-              label: "Role",
+              label: "Vai trò",
               render: (row) => row.role === "admin" ? (
-                <Badge tone="accent">admin</Badge>
+                <Badge tone="accent">Quản trị viên</Badge>
               ) : (
                 <select
                   value={DISPLAY_TO_API_ROLE[row.role] ?? row.role}
@@ -188,15 +191,15 @@ export default function UsersPage() {
             },
             {
               key: "status",
-              label: "Status",
+              label: "Trạng thái",
               render: (row) => (
-                <Badge tone={row.status === "Active" ? "success" : "warning"}>{row.status}</Badge>
+                <Badge tone={row.status === "Active" ? "success" : "warning"}>{viUserStatus(row.status)}</Badge>
               ),
             },
-            { key: "lastSeen", label: "Created" },
+            { key: "lastSeen", label: "Ngày tạo" },
             {
               key: "id",
-              label: "Actions",
+              label: "Thao tác",
               render: (row) => (
                 <button
                   type="button"
@@ -204,7 +207,7 @@ export default function UsersPage() {
                   disabled={busy === row.id || row.id === user?.id}
                   onClick={() => toggleActive(row.id, row.status)}
                 >
-                  {row.status === "Active" ? "Disable" : "Enable"}
+                  {row.status === "Active" ? "Vô hiệu hóa" : "Kích hoạt"}
                 </button>
               ),
             },

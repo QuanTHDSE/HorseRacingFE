@@ -2,9 +2,11 @@ import { Badge, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 
+import { viRaceStatus } from "../../utils/viLabels";
+
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("vi-VN", {
     weekday: "short",
     day: "2-digit",
     month: "short",
@@ -15,10 +17,10 @@ function fmtDate(iso?: string): string {
 }
 
 const GROUPS: { key: string; label: string; tone: "accent" | "success" | "neutral" | "danger" }[] = [
-  { key: "Live",      label: "Live now",    tone: "success" },
-  { key: "Upcoming",  label: "Upcoming",    tone: "accent"  },
-  { key: "Completed", label: "Completed",   tone: "neutral" },
-  { key: "Cancelled", label: "Cancelled",   tone: "danger"  },
+  { key: "Live",      label: "Đang diễn ra", tone: "success" },
+  { key: "Upcoming",  label: "Sắp diễn ra",  tone: "accent"  },
+  { key: "Completed", label: "Đã kết thúc",  tone: "neutral" },
+  { key: "Cancelled", label: "Đã hủy",       tone: "danger"  },
 ];
 
 function RaceRow({ race }: { race: Race }) {
@@ -30,7 +32,7 @@ function RaceRow({ race }: { race: Race }) {
           <strong>{race.name}</strong>
           {race.result?.rank !== undefined && (
             <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              Finished #{race.result.rank}
+              Về hạng {race.result.rank}
             </span>
           )}
         </div>
@@ -39,10 +41,10 @@ function RaceRow({ race }: { race: Race }) {
           {race.distance ? ` · ${race.distance}` : ""}
         </p>
         <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)" }}>
-          Horse: <strong>{race.horseName ?? "—"}</strong>
-          {race.laneNumber !== undefined ? ` · Lane ${race.laneNumber}` : ""}
+          Ngựa: <strong>{race.horseName ?? "—"}</strong>
+          {race.laneNumber !== undefined ? ` · Làn ${race.laneNumber}` : ""}
           {race.tournamentName ? ` · ${race.tournamentName}` : ""}
-          {race.ownerName ? ` · Owner: ${race.ownerName}` : ""}
+          {race.ownerName ? ` · Chủ ngựa: ${race.ownerName}` : ""}
         </p>
       </div>
     </article>
@@ -63,8 +65,8 @@ export default function JockeySchedulePage() {
           <Panel
             key={key}
             title={label}
-            subtitle={`${group.length} race${group.length !== 1 ? "s" : ""}`}
-            action={<Badge tone={tone}>{key}</Badge>}
+            subtitle={`${group.length} cuộc đua`}
+            action={<Badge tone={tone}>{viRaceStatus(key)}</Badge>}
           >
             <div className="timeline-list">
               {group.map((race) => <RaceRow key={race.id} race={race} />)}
@@ -74,8 +76,8 @@ export default function JockeySchedulePage() {
       })}
 
       {races.length === 0 && (
-        <Panel title="My schedule" subtitle="No races assigned yet">
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Your race schedule is empty.</p>
+        <Panel title="Lịch của tôi" subtitle="Chưa được giao cuộc đua nào">
+          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Lịch đua của bạn đang trống.</p>
         </Panel>
       )}
     </div>

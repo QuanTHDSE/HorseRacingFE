@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge, DataTable, MetricCard, Panel } from "../../components";
 import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
 
 const DQ_PENALTIES = ["disqualify", "disqualification"];
@@ -60,8 +61,9 @@ export default function PenaltiesPage() {
   const [violations, setViolations] = useState<RaceViolation[]>([]);
   const [result, setResult] = useState<RefereeResultStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [msg, setMsg] = useState("");
+  const fb = useFeedback();
+  const error = ""; const setError = fb.error;
+  const msg = ""; const setMsg = fb.success;
   const [busy, setBusy] = useState(false);
   const [simTimeline, setSimTimeline] = useState<RaceSimTimeline | null>(null);
 

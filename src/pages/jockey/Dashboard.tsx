@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Badge, MetricCard, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { JockeyDashboard } from "../../types";
+import { viInvitationStatus, viRaceStatus } from "../../utils/viLabels";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export default function JockeyDashboardPage() {
@@ -32,72 +33,72 @@ export default function JockeyDashboardPage() {
       <SuspensionBanner />
       <section className="hero-card">
         <div>
-          <Badge tone="accent">Jockey dashboard</Badge>
-          <h3>Welcome back, {user.name}</h3>
-          <p>Track your invitations, upcoming races, and personal performance.</p>
+          <Badge tone="accent">Tổng quan Nài ngựa</Badge>
+          <h3>Chào mừng trở lại, {user.name}</h3>
+          <p>Theo dõi lời mời, các cuộc đua sắp tới và thành tích cá nhân.</p>
         </div>
       </section>
 
       <div className="metric-grid three">
         <MetricCard
-          label="Pending invitations"
+          label="Lời mời chờ phản hồi"
           value={String(pendingInvites)}
-          note="Needs a response"
+          note="Cần phản hồi"
           tone="warning"
         />
         <MetricCard
-          label="Upcoming races"
+          label="Cuộc đua sắp tới"
           value={String(upcomingRaces)}
-          note="Scheduled &amp; live"
+          note="Đã lên lịch &amp; đang diễn ra"
           tone="accent"
         />
         <MetricCard
-          label="Completed races"
+          label="Cuộc đua đã xong"
           value={String(completedRaces)}
-          note="All-time finished"
+          note="Tổng đã hoàn thành"
           tone="success"
         />
       </div>
 
       <div className="content-grid two">
-        <Panel title="Recent invitations" subtitle="Latest ride invitations">
+        <Panel title="Lời mời gần đây" subtitle="Các lời mời cưỡi ngựa mới nhất">
           <div className="card-list">
             {recentInvites.length === 0 && (
-              <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No invitations yet.</p>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa có lời mời nào.</p>
             )}
             {recentInvites.map((inv) => (
               <article key={inv.id} className="info-card">
                 <div className="card-head">
                   <strong>{inv.raceName ?? inv.raceId}</strong>
                   <Badge tone={inv.status === "Accepted" ? "success" : inv.status === "Declined" ? "danger" : "warning"}>
-                    {inv.status}
+                    {viInvitationStatus(inv.status)}
                   </Badge>
                 </div>
                 <p style={{ margin: "4px 0 2px" }}>
-                  Horse: <strong>{inv.horseName ?? inv.horseId}</strong>
+                  Ngựa: <strong>{inv.horseName ?? inv.horseId}</strong>
                 </p>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  {inv.ownerName ? `Owner: ${inv.ownerName}` : ""}{inv.raceDate ? ` · ${fmtDate(inv.raceDate)}` : ""}
+                  {inv.ownerName ? `Chủ ngựa: ${inv.ownerName}` : ""}{inv.raceDate ? ` · ${fmtDate(inv.raceDate)}` : ""}
                 </span>
               </article>
             ))}
           </div>
         </Panel>
 
-        <Panel title="Upcoming races" subtitle="Your next scheduled starts">
+        <Panel title="Cuộc đua sắp tới" subtitle="Các lượt xuất phát tiếp theo của bạn">
           <div className="card-list">
             {recentRaces.length === 0 && (
-              <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No upcoming races.</p>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Không có cuộc đua sắp tới.</p>
             )}
             {recentRaces.map((race) => (
               <article key={race.id} className="info-card">
                 <div className="card-head">
                   <strong>{race.name}</strong>
-                  <Badge tone={race.liveStatus === "Live" ? "success" : "neutral"}>{race.liveStatus}</Badge>
+                  <Badge tone={race.liveStatus === "Live" ? "success" : "neutral"}>{viRaceStatus(race.liveStatus)}</Badge>
                 </div>
                 <p style={{ margin: "4px 0 2px" }}>
-                  Horse: <strong>{race.horseName ?? "—"}</strong>
-                  {race.laneNumber !== undefined ? <span> · Lane {race.laneNumber}</span> : null}
+                  Ngựa: <strong>{race.horseName ?? "—"}</strong>
+                  {race.laneNumber !== undefined ? <span> · Làn {race.laneNumber}</span> : null}
                 </p>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                   {fmtDate(race.date)}{race.distance ? ` · ${race.distance}` : ""}

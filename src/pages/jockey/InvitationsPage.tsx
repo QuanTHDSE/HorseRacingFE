@@ -2,12 +2,20 @@ import { useState } from "react";
 import { Badge, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { cn } from "../../utils/cn";
+import { viInvitationStatus, viRaceStatus } from "../../utils/viLabels";
 
 type Filter = "all" | "pending" | "accepted" | "declined";
 
+const FILTER_LABEL: Record<Filter, string> = {
+  all: "Tất cả",
+  pending: "Chờ phản hồi",
+  accepted: "Đã chấp nhận",
+  declined: "Đã từ chối",
+};
+
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 const STATUS_TONE: Record<string, "warning" | "success" | "danger"> = {
@@ -43,8 +51,8 @@ export default function InvitationsPage() {
     <div className="page-stack">
       <SuspensionBanner />
       <Panel
-        title="Ride invitations"
-        subtitle={`${filtered.length} invitation${filtered.length !== 1 ? "s" : ""}`}
+        title="Lời mời cưỡi ngựa"
+        subtitle={`${filtered.length} lời mời`}
         action={
           <div className="filter-tabs">
             {(["all", "pending", "accepted", "declined"] as Filter[]).map((f) => (
@@ -54,29 +62,29 @@ export default function InvitationsPage() {
                 className={cn("filter-tab", filter === f && "is-active")}
                 onClick={() => setFilter(f)}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {FILTER_LABEL[f]}
               </button>
             ))}
           </div>
         }
       >
         {filtered.length === 0 && (
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No invitations in this category.</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Không có lời mời nào trong mục này.</p>
         )}
         <div className="card-list">
           {filtered.map((inv) => (
             <article key={inv.id} className="info-card">
               <div className="card-head">
                 <strong>{inv.raceName ?? inv.raceId}</strong>
-                <Badge tone={STATUS_TONE[inv.status] ?? "neutral"}>{inv.status}</Badge>
+                <Badge tone={STATUS_TONE[inv.status] ?? "neutral"}>{viInvitationStatus(inv.status)}</Badge>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", margin: "8px 0 6px", fontSize: "0.875rem" }}>
-                <span><span style={{ color: "var(--text-muted)" }}>Horse</span> {inv.horseName ?? "—"}</span>
-                <span><span style={{ color: "var(--text-muted)" }}>Race date</span> {fmtDate(inv.raceDate)}</span>
-                <span><span style={{ color: "var(--text-muted)" }}>Owner</span> {inv.ownerName ?? "—"}</span>
+                <span><span style={{ color: "var(--text-muted)" }}>Ngựa</span> {inv.horseName ?? "—"}</span>
+                <span><span style={{ color: "var(--text-muted)" }}>Ngày đua</span> {fmtDate(inv.raceDate)}</span>
+                <span><span style={{ color: "var(--text-muted)" }}>Chủ ngựa</span> {inv.ownerName ?? "—"}</span>
                 {inv.raceStatus && (
-                  <span><span style={{ color: "var(--text-muted)" }}>Race status</span> {inv.raceStatus}</span>
+                  <span><span style={{ color: "var(--text-muted)" }}>Trạng thái đua</span> {viRaceStatus(inv.raceStatus)}</span>
                 )}
               </div>
 
@@ -94,7 +102,7 @@ export default function InvitationsPage() {
                     disabled={acting === inv.id}
                     onClick={() => respond(inv.id, "Accepted")}
                   >
-                    {acting === inv.id ? "…" : "Accept"}
+                    {acting === inv.id ? "…" : "Chấp nhận"}
                   </button>
                   <button
                     type="button"
@@ -102,7 +110,7 @@ export default function InvitationsPage() {
                     disabled={acting === inv.id}
                     onClick={() => respond(inv.id, "Declined")}
                   >
-                    {acting === inv.id ? "…" : "Decline"}
+                    {acting === inv.id ? "…" : "Từ chối"}
                   </button>
                 </div>
               )}

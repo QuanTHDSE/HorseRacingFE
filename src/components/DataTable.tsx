@@ -15,7 +15,7 @@ interface DataTableProps<T extends { id: string }> {
 export default function DataTable<T extends { id: string }>({
   columns,
   rows,
-  empty = "No data available.",
+  empty = "Không có dữ liệu.",
 }: DataTableProps<T>) {
   return (
     <div className="table-shell">

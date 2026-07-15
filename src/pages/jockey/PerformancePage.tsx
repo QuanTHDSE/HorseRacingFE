@@ -3,7 +3,7 @@ import { useApp } from "../../context/AppContext";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function fmtPrize(n?: number): string {
@@ -20,10 +20,7 @@ function fmtTime(ms?: number): string {
 
 function rankLabel(rank?: number): string {
   if (!rank) return "—";
-  if (rank === 1) return "1st";
-  if (rank === 2) return "2nd";
-  if (rank === 3) return "3rd";
-  return `#${rank}`;
+  return `Hạng ${rank}`;
 }
 
 export default function PerformancePage() {
@@ -51,51 +48,51 @@ export default function PerformancePage() {
     <div className="page-stack">
       <div className="metric-grid four">
         <MetricCard
-          label="Completed races"
+          label="Cuộc đua đã xong"
           value={String(completed.length)}
-          note="All finished starts"
+          note="Tổng lượt đã hoàn thành"
         />
         <MetricCard
-          label="Wins"
+          label="Chiến thắng"
           value={String(wins)}
-          note="1st place finishes"
+          note="Số lần về nhất"
           tone="success"
         />
         <MetricCard
-          label="Podiums"
+          label="Vào top 3"
           value={String(podiums)}
-          note="Top 3 finishes"
+          note="Về trong top 3"
           tone="accent"
         />
         <MetricCard
-          label="Win rate"
+          label="Tỷ lệ thắng"
           value={withResult.length > 0 ? `${winRate}%` : "—"}
-          note="From published results"
+          note="Từ kết quả đã công bố"
           tone="info"
         />
       </div>
 
-      <Panel title="Race results" subtitle="Personal history from completed races">
+      <Panel title="Kết quả thi đấu" subtitle="Lịch sử cá nhân từ các cuộc đua đã hoàn thành">
         {resultRows.length === 0 && (
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>No completed races yet.</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa có cuộc đua nào hoàn thành.</p>
         )}
         <DataTable
           columns={[
-            { key: "name",       label: "Race"       },
-            { key: "horse",      label: "Horse"      },
-            { key: "tournament", label: "Tournament" },
-            { key: "date",       label: "Date"       },
+            { key: "name",       label: "Cuộc đua" },
+            { key: "horse",      label: "Ngựa"     },
+            { key: "tournament", label: "Giải đấu" },
+            { key: "date",       label: "Ngày"     },
             {
               key: "position",
-              label: "Finish",
+              label: "Về đích",
               render: (row) => {
                 const rank = (row as typeof resultRows[number])._rank;
                 const tone = rank === 1 ? "success" : rank === 2 ? "accent" : rank === 3 ? "info" : "neutral";
                 return <Badge tone={tone as any}>{row.position as string}</Badge>;
               },
             },
-            { key: "time",  label: "Time"  },
-            { key: "prize", label: "Prize" },
+            { key: "time",  label: "Thời gian"    },
+            { key: "prize", label: "Giải thưởng"  },
           ]}
           rows={resultRows}
         />

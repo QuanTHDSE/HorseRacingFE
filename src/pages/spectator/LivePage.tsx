@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Badge, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import RaceLivePlayer from "../../components/RaceLivePlayer";
 import type { RaceSimTimeline, SpectatorRace } from "../../types";
 import { cn } from "../../utils/cn";
+import { viRaceStatus } from "../../utils/viLabels";
 
 const REPLAY_POLL_MS = 3000;
 
 type RaceFilter = "all" | "upcoming" | "live" | "completed";
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("vi-VN", {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
@@ -31,19 +33,19 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 const PENALTY_LABEL: Record<string, string> = {
-  warning: "Warning",
-  demote: "Demotion",
-  disqualify: "Disqualification",
-  disqualification: "Disqualification",
-  restart: "Race restart",
-  time_ban: "Time-boxed ban",
-  permanent_ban: "Permanent ban",
+  warning: "Cảnh cáo",
+  demote: "Tụt hạng",
+  disqualify: "Tước quyền",
+  disqualification: "Tước quyền",
+  restart: "Chạy lại",
+  time_ban: "Cấm có thời hạn",
+  permanent_ban: "Cấm vĩnh viễn",
 };
 
 function RankBadge({ rank }: { rank: number }) {
   const tone = rank === 1 ? "success" : rank <= 3 ? "accent" : "neutral";
-  const label = rank === 1 ? "🥇 1st" : rank === 2 ? "🥈 2nd" : rank === 3 ? "🥉 3rd" : `#${rank}`;
-  return <Badge tone={tone as any}>{label}</Badge>;
+  const medal = rank === 1 ? "🥇 " : rank === 2 ? "🥈 " : rank === 3 ? "🥉 " : "";
+  return <Badge tone={tone as any}>{medal}Hạng {rank}</Badge>;
 }
 
 function LiveRaceWatcher({ race, onClose }: { race: SpectatorRace; onClose: () => void }) {
@@ -82,11 +84,11 @@ function LiveRaceWatcher({ race, onClose }: { race: SpectatorRace; onClose: () =
   if (!timeline) {
     const waitingForStart = race.liveStatus !== "Live" && race.liveStatus !== "Completed";
     return (
-      <Panel title={race.name} subtitle="Watching race" action={
-        <button type="button" className="secondary-button btn-xs" onClick={onClose}>Close</button>
+      <Panel title={race.name} subtitle="Đang xem cuộc đua" action={
+        <button type="button" className="secondary-button btn-xs" onClick={onClose}>Đóng</button>
       }>
         <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-          {waitingForStart ? "Waiting for the race to start…" : "Loading race data…"}
+          {waitingForStart ? "Đang chờ cuộc đua bắt đầu…" : "Đang tải dữ liệu cuộc đua…"}
         </p>
       </Panel>
     );
@@ -96,7 +98,7 @@ function LiveRaceWatcher({ race, onClose }: { race: SpectatorRace; onClose: () =
     <div>
       <div style={{ marginBottom: "8px" }}>
         <Badge tone={resultPublished ? "success" : "warning"}>
-          {resultPublished ? "Official result" : "Provisional — pending referee confirmation"}
+          {resultPublished ? "Kết quả chính thức" : "Tạm thời — chờ trọng tài xác nhận"}
         </Badge>
       </div>
       <RaceLivePlayer timeline={timeline} onClose={onClose} />
@@ -115,16 +117,16 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
   return (
     <Panel
       title={race.name}
-      subtitle={`Round ${race.round} · ${race.tournamentName}`}
+      subtitle={`Vòng ${race.round} · ${race.tournamentName}`}
       action={
         <div style={{ display: "flex", gap: "8px" }}>
           {canWatch && (
             <button type="button" className="secondary-button btn-xs" onClick={() => setWatching(true)}>
-              {race.liveStatus === "Live" ? "Watch live" : "Watch replay"}
+              {race.liveStatus === "Live" ? "Xem trực tiếp" : "Xem lại"}
             </button>
           )}
           <button type="button" className="secondary-button btn-xs" onClick={onClose}>
-            Close
+            Đóng
           </button>
         </div>
       }
@@ -132,37 +134,37 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
       {/* Info grid */}
       <div className="info-grid" style={{ marginBottom: "20px" }}>
         <div className="info-cell">
-          <span className="info-label">Status</span>
+          <span className="info-label">Trạng thái</span>
           <span className="info-value">
-            <Badge tone={STATUS_TONE[race.liveStatus] as any ?? "neutral"}>{race.liveStatus}</Badge>
+            <Badge tone={STATUS_TONE[race.liveStatus] as any ?? "neutral"}>{viRaceStatus(race.liveStatus)}</Badge>
           </span>
         </div>
         <div className="info-cell">
-          <span className="info-label">Date</span>
+          <span className="info-label">Ngày</span>
           <span className="info-value">{fmtDate(race.scheduledAt)}</span>
         </div>
         <div className="info-cell">
-          <span className="info-label">Distance</span>
+          <span className="info-label">Cự ly</span>
           <span className="info-value">{race.distance ? `${race.distance}m` : "—"}</span>
         </div>
         <div className="info-cell">
-          <span className="info-label">Tournament</span>
+          <span className="info-label">Giải đấu</span>
           <span className="info-value">{race.tournamentName}</span>
         </div>
         <div className="info-cell">
-          <span className="info-label">Participants</span>
+          <span className="info-label">Số ngựa</span>
           <span className="info-value">{race.participants.length}</span>
         </div>
         {race.canPredict && (
           <div className="info-cell">
-            <span className="info-label">Predictions</span>
-            <span className="info-value" style={{ color: "var(--accent)" }}>Open for predictions</span>
+            <span className="info-label">Dự đoán</span>
+            <span className="info-value" style={{ color: "var(--accent)" }}>Đang mở dự đoán</span>
           </div>
         )}
         {race.hasPrediction && (
           <div className="info-cell">
-            <span className="info-label">Your prediction</span>
-            <span className="info-value" style={{ color: "var(--text-success)" }}>Submitted ✓</span>
+            <span className="info-label">Dự đoán của bạn</span>
+            <span className="info-value" style={{ color: "var(--text-success)" }}>Đã gửi ✓</span>
           </div>
         )}
       </div>
@@ -171,7 +173,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
       {race.participants.length > 0 && (
         <div style={{ marginBottom: "20px" }}>
           <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 600 }}>
-            Participants ({race.participants.length})
+            Ngựa tham gia ({race.participants.length})
           </h4>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {race.participants
@@ -191,7 +193,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                   }}
                 >
                   <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                    Lane {p.laneNumber}
+                    Làn {p.laneNumber}
                   </span>
                   <strong>{p.name}</strong>
                 </div>
@@ -203,7 +205,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
       {/* Results */}
       {race.result && race.result.rankings.length > 0 && (
         <div>
-          <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 600 }}>Race results</h4>
+          <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 600 }}>Kết quả cuộc đua</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {race.result.rankings.map((rk) => (
               <div
@@ -225,7 +227,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                     {rk.jockey.fullName}
                   </span>
                   {rk.isDisqualified && (
-                    <Badge tone="danger">Disqualified</Badge>
+                    <Badge tone="danger">Bị tước quyền</Badge>
                   )}
                 </div>
                 <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
@@ -233,7 +235,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                 </span>
                 {rk.prize > 0 && (
                   <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--accent)" }}>
-                    {rk.prize.toLocaleString()} pts
+                    {rk.prize.toLocaleString()} điểm
                   </span>
                 )}
               </div>
@@ -242,7 +244,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
 
           {race.result.violations && race.result.violations.length > 0 && (
             <div style={{ marginTop: "16px" }}>
-              <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 600 }}>Violations</h4>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 600 }}>Vi phạm</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {race.result.violations.map((v, idx) => (
                   <div
@@ -254,7 +256,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                       fontSize: "0.82rem",
                     }}
                   >
-                    <strong>{v.horseName ?? "Unknown"}</strong>
+                    <strong>{v.horseName ?? "Không rõ"}</strong>
                     <span style={{ marginLeft: "8px", color: "var(--text-muted)" }}>{v.description}</span>
                     {v.penaltyApplied && (
                       <span style={{ marginLeft: "8px", fontWeight: 600, color: "var(--danger, #dc2626)" }}>
@@ -279,7 +281,8 @@ export default function LivePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail]         = useState<SpectatorRace | null>(null);
   const [loadingId, setLoadingId]   = useState<string | null>(null);
-  const [loadError, setLoadError]   = useState("");
+  const fb = useFeedback();
+  const loadError: string = ""; const setLoadError = fb.error;
 
   const races = appState.spectatorRaces;
 
@@ -307,24 +310,24 @@ export default function LivePage() {
       setDetail(d);
       setSelectedId(race.id);
     } catch (err: unknown) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load race details.");
+      setLoadError(err instanceof Error ? err.message : "Không tải được chi tiết cuộc đua.");
     } finally {
       setLoadingId(null);
     }
   }
 
   const FILTERS: { key: RaceFilter; label: string; count?: number }[] = [
-    { key: "all",       label: "All",       count: races.length },
-    { key: "live",      label: "Live",      count: liveCount },
-    { key: "upcoming",  label: "Upcoming",  count: upcomingCount },
-    { key: "completed", label: "Completed", count: completedCount },
+    { key: "all",       label: "Tất cả",       count: races.length },
+    { key: "live",      label: "Đang diễn ra", count: liveCount },
+    { key: "upcoming",  label: "Sắp diễn ra",  count: upcomingCount },
+    { key: "completed", label: "Đã kết thúc",  count: completedCount },
   ];
 
   return (
     <div className="page-stack">
       <Panel
-        title="Races"
-        subtitle="Browse and view details for all races"
+        title="Cuộc đua"
+        subtitle="Duyệt và xem chi tiết tất cả cuộc đua"
         action={
           <div className="filter-tabs">
             {FILTERS.map((f) => (
@@ -359,7 +362,7 @@ export default function LivePage() {
 
         {filtered.length === 0 ? (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            No races in this category yet.
+            Chưa có cuộc đua nào trong mục này.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -388,11 +391,11 @@ export default function LivePage() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <Badge tone={STATUS_TONE[race.liveStatus] as any ?? "neutral"}>
-                    {race.liveStatus}
+                    {viRaceStatus(race.liveStatus)}
                   </Badge>
                   <strong style={{ flex: 1 }}>{race.name}</strong>
                   {loadingId === race.id && (
-                    <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Loading…</span>
+                    <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Đang tải…</span>
                   )}
                 </div>
                 <div style={{
@@ -403,16 +406,16 @@ export default function LivePage() {
                   color: "var(--text-muted)",
                   flexWrap: "wrap",
                 }}>
-                  <span>Round {race.round}</span>
+                  <span>Vòng {race.round}</span>
                   <span>{race.tournamentName}</span>
                   {race.distance && <span>{race.distance}m</span>}
                   <span>{fmtDate(race.scheduledAt)}</span>
-                  <span>{race.participants.length} horse{race.participants.length !== 1 ? "s" : ""}</span>
+                  <span>{race.participants.length} ngựa</span>
                   {race.canPredict && (
-                    <span style={{ color: "var(--accent)", fontWeight: 600 }}>Predictions open</span>
+                    <span style={{ color: "var(--accent)", fontWeight: 600 }}>Đang mở dự đoán</span>
                   )}
                   {race.hasPrediction && (
-                    <span style={{ color: "var(--text-success)" }}>Predicted ✓</span>
+                    <span style={{ color: "var(--text-success)" }}>Đã dự đoán ✓</span>
                   )}
                 </div>
               </div>

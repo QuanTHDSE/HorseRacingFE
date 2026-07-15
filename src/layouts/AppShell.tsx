@@ -52,17 +52,17 @@ export default function AppShell() {
           className="sidebar-toggle"
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
         >
           <span className="toggle-icon">{collapsed ? "›" : "‹"}</span>
-          {!collapsed && <span className="toggle-label">Collapse</span>}
+          {!collapsed && <span className="toggle-label">Thu gọn</span>}
         </button>
 
         <div className="brand-block">
           <div className="brand-mark">RT</div>
           {!collapsed && (
             <div>
-              <p className="kicker">Management</p>
+              <p className="kicker">Quản lý</p>
               <h1>RacetrackVN</h1>
             </div>
           )}
@@ -99,9 +99,9 @@ export default function AppShell() {
             className="ghost-button full-width"
             type="button"
             onClick={handleLogout}
-            title={collapsed ? "Sign Out" : undefined}
+            title={collapsed ? "Đăng xuất" : undefined}
           >
-            {collapsed ? "↩" : "Sign Out"}
+            {collapsed ? "↩" : "Đăng xuất"}
           </button>
         </div>
 
@@ -115,7 +115,7 @@ export default function AppShell() {
           </div>
           <div className="topbar-actions">
             <Badge tone="accent">{role.menu.find((item) => item.id === activePage)?.label}</Badge>
-            <Badge tone="neutral">Active session</Badge>
+            <Badge tone="neutral">Phiên đang hoạt động</Badge>
             <NotificationBell notifications={notifications} />
           </div>
         </header>
@@ -126,7 +126,7 @@ export default function AppShell() {
           </main>
 
           <aside className="workspace-side">
-            <Panel title="Featured Tournaments" subtitle="Active tournaments and upcoming races">
+            <Panel title="Giải đấu nổi bật" subtitle="Giải đang diễn ra và các cuộc đua sắp tới">
               <div className="compact-list">
                 {appState.tournaments.map((t) => (
                   <article key={t.id} className="compact-row">
@@ -140,10 +140,10 @@ export default function AppShell() {
               </div>
             </Panel>
 
-            <Panel title="Quick Leaderboard" subtitle="Top horses and jockeys this season">
+            <Panel title="Bảng xếp hạng nhanh" subtitle="Ngựa và nài xuất sắc mùa này">
               <div className="rank-stack">
                 <div>
-                  <p className="mini-title">Top horses</p>
+                  <p className="mini-title">Ngựa dẫn đầu</p>
                   {appState.leaderboardHorses.map((item, i) => (
                     <div key={item.id} className="compact-rank">
                       <span>{i + 1}</span>
@@ -162,7 +162,7 @@ export default function AppShell() {
                       <span>{i + 1}</span>
                       <div>
                         <strong>{item.name}</strong>
-                        <p>{item.wins} wins</p>
+                        <p>{item.wins} thắng</p>
                       </div>
                       <b>{item.points}</b>
                     </div>

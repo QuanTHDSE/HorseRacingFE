@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import type { Tournament } from "../../types";
 import { cn } from "../../utils/cn";
+import { viTournamentStatus } from "../../utils/viLabels";
 import PredictionConfigForm from "./PredictionConfigForm";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -23,9 +25,9 @@ const NEXT_STATUS: Record<string, TournamentStatus> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  Draft: "Publish",
-  Registration: "Start",
-  Live: "Complete",
+  Draft: "Mở đăng ký",
+  Registration: "Bắt đầu giải",
+  Live: "Hoàn tất giải",
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -55,7 +57,8 @@ export default function AdminTournamentsPage() {
   // Form state
   const [form, setForm] = useState(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<string[]>([]);
-  const [formSuccess, setFormSuccess] = useState("");
+  const fb = useFeedback();
+  const formSuccess = ""; const setFormSuccess = fb.success;
   const [formLoading, setFormLoading] = useState(false);
 
   // List filter
@@ -64,11 +67,11 @@ export default function AdminTournamentsPage() {
   // Detail panel
   const [selected, setSelected] = useState<(Tournament & { raceCount?: number }) | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState("");
+  const detailError = ""; const setDetailError = fb.error;
 
   // Status update
   const [statusLoading, setStatusLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState("");
+  const statusMsg: string = ""; const setStatusMsg = fb.success;
   const [prizePoolInput, setPrizePoolInput] = useState("");
   const [prizePoolSaving, setPrizePoolSaving] = useState(false);
 
@@ -101,12 +104,12 @@ export default function AdminTournamentsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs: string[] = [];
-    if (!form.name.trim()) errs.push("Tournament name is required.");
-    if (!form.location.trim()) errs.push("Location is required.");
-    if (!form.startDate) errs.push("Start date is required.");
-    if (!form.endDate) errs.push("End date is required.");
+    if (!form.name.trim()) errs.push("Vui lòng nhập tên giải đấu.");
+    if (!form.location.trim()) errs.push("Vui lòng nhập địa điểm tổ chức.");
+    if (!form.startDate) errs.push("Vui lòng chọn ngày bắt đầu.");
+    if (!form.endDate) errs.push("Vui lòng chọn ngày kết thúc.");
     if (form.startDate && form.endDate && form.endDate <= form.startDate)
-      errs.push("End date must be after start date.");
+      errs.push("Ngày kết thúc phải sau ngày bắt đầu.");
     if (errs.length) { setFormErrors(errs); return; }
 
     setFormLoading(true);
@@ -120,10 +123,10 @@ export default function AdminTournamentsPage() {
         description: form.description.trim() || undefined,
       });
       setForm(EMPTY_FORM);
-      setFormSuccess("Tournament created successfully!");
+      setFormSuccess("Đã tạo giải đấu thành công!");
       setTimeout(() => setFormSuccess(""), 3500);
     } catch (err: unknown) {
-      setFormErrors([err instanceof Error ? err.message : "Failed to create tournament."]);
+      setFormErrors([err instanceof Error ? err.message : "Không tạo được giải đấu."]);
     } finally {
       setFormLoading(false);
     }
@@ -145,7 +148,7 @@ export default function AdminTournamentsPage() {
       setSelected(detail);
       setPrizePoolInput(String(detail.prizePoolValue ?? 0));
     } catch (err: unknown) {
-      setDetailError(err instanceof Error ? err.message : "Failed to load tournament.");
+      setDetailError(err instanceof Error ? err.message : "Không tải được thông tin giải đấu.");
       setSelected(t);
     } finally {
       setDetailLoading(false);
@@ -165,9 +168,9 @@ export default function AdminTournamentsPage() {
       const updated = await handleGetTournamentById(selected.id);
       setSelected(updated);
       setPrizePoolInput(String(updated.prizePoolValue ?? 0));
-      setStatusMsg(`Status updated to "${nextStatus}".`);
+      setStatusMsg(`Đã cập nhật trạng thái thành "${viTournamentStatus(nextStatus)}".`);
     } catch (err: unknown) {
-      setStatusMsg(err instanceof Error ? err.message : "Status update failed.");
+      setStatusMsg(err instanceof Error ? err.message : "Cập nhật trạng thái thất bại.");
     } finally {
       setStatusLoading(false);
     }
@@ -177,7 +180,7 @@ export default function AdminTournamentsPage() {
     if (!selected) return;
     const nextPrizePool = Number(prizePoolInput);
     if (!Number.isFinite(nextPrizePool) || nextPrizePool < 0) {
-      setStatusMsg("Prize pool must be a non-negative number.");
+      setStatusMsg("Tổng giải thưởng phải là số không âm.");
       return;
     }
 
@@ -188,9 +191,9 @@ export default function AdminTournamentsPage() {
       const detail = await handleGetTournamentById(updated.id);
       setSelected(detail);
       setPrizePoolInput(String(detail.prizePoolValue ?? 0));
-      setStatusMsg("Initial prize pool updated.");
+      setStatusMsg("Đã cập nhật tổng giải thưởng ban đầu.");
     } catch (err: unknown) {
-      setStatusMsg(err instanceof Error ? err.message : "Prize pool update failed.");
+      setStatusMsg(err instanceof Error ? err.message : "Cập nhật tổng giải thưởng thất bại.");
     } finally {
       setPrizePoolSaving(false);
     }
@@ -203,14 +206,14 @@ export default function AdminTournamentsPage() {
 
       {/* ── Metrics ── */}
       <div className="metric-grid four">
-        <MetricCard label="Total tournaments" value={String(total)} note="All tournaments" />
-        <MetricCard label="Live now" value={String(liveCount)} note="Ongoing" tone="success" />
-        <MetricCard label="Registration open" value={String(regCount)} note="Accepting entries" tone="accent" />
-        <MetricCard label="Completed" value={String(doneCount)} note="Finished" tone="neutral" />
+        <MetricCard label="Tổng số giải đấu" value={String(total)} note="Tất cả giải đấu" />
+        <MetricCard label="Đang diễn ra" value={String(liveCount)} note="Đang thi đấu" tone="success" />
+        <MetricCard label="Đang mở đăng ký" value={String(regCount)} note="Đang nhận hồ sơ tham gia" tone="accent" />
+        <MetricCard label="Đã hoàn tất" value={String(doneCount)} note="Giải đã kết thúc" tone="neutral" />
       </div>
 
       {/* ── Create form ── */}
-      <Panel title="Create new tournament" subtitle="Fill in the details to schedule a new tournament">
+      <Panel title="Tạo giải đấu mới" subtitle="Nhập thông tin để lên lịch một giải đấu mới">
         {formSuccess && <div className="form-banner form-banner-success">{formSuccess}</div>}
         {formErrors.length > 0 && (
           <div className="form-banner form-banner-error">
@@ -221,39 +224,39 @@ export default function AdminTournamentsPage() {
           <div className="form-grid-2">
             {/* Name — full width */}
             <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Tournament name <span className="required">*</span></span>
+              <span>Tên giải đấu <span className="required">*</span></span>
               <input
                 value={form.name}
                 onChange={(e) => handleField("name", e.target.value)}
-                placeholder="e.g. Summer Cup 2026"
+                placeholder="vd: Summer Cup 2026"
                 disabled={formLoading}
               />
             </label>
 
             <label className="field">
-              <span>Location <span className="required">*</span></span>
+              <span>Địa điểm <span className="required">*</span></span>
               <input
                 value={form.location}
                 onChange={(e) => handleField("location", e.target.value)}
-                placeholder="e.g. Ho Chi Minh City"
+                placeholder="vd: TP. Hồ Chí Minh"
                 disabled={formLoading}
               />
             </label>
 
             <label className="field">
-              <span>Initial prize pool (points)</span>
+              <span>Tổng giải thưởng ban đầu (điểm)</span>
               <input
                 type="number"
                 min={0}
                 value={form.prizePool}
                 onChange={(e) => handleField("prizePool", e.target.value)}
-                placeholder="e.g. 50000000"
+                placeholder="vd: 50000000"
                 disabled={formLoading}
               />
             </label>
 
             <label className="field">
-              <span>Start date <span className="required">*</span></span>
+              <span>Ngày bắt đầu <span className="required">*</span></span>
               <input
                 type="date"
                 value={form.startDate}
@@ -263,7 +266,7 @@ export default function AdminTournamentsPage() {
             </label>
 
             <label className="field">
-              <span>End date <span className="required">*</span></span>
+              <span>Ngày kết thúc <span className="required">*</span></span>
               <input
                 type="date"
                 value={form.endDate}
@@ -274,12 +277,12 @@ export default function AdminTournamentsPage() {
 
             {/* Description — full width */}
             <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Description</span>
+              <span>Mô tả</span>
               <textarea
                 rows={2}
                 value={form.description}
                 onChange={(e) => handleField("description", e.target.value)}
-                placeholder="Optional details about the tournament…"
+                placeholder="Thông tin bổ sung về giải đấu…"
                 disabled={formLoading}
                 style={{ resize: "vertical" }}
               />
@@ -293,10 +296,10 @@ export default function AdminTournamentsPage() {
               onClick={() => { setForm(EMPTY_FORM); setFormErrors([]); }}
               disabled={formLoading}
             >
-              Reset
+              Đặt lại
             </button>
             <button type="submit" className="primary-button" disabled={formLoading}>
-              {formLoading ? "Creating…" : "Create tournament"}
+              {formLoading ? "Đang tạo…" : "Tạo giải đấu"}
             </button>
           </div>
         </form>
@@ -304,8 +307,8 @@ export default function AdminTournamentsPage() {
 
       {/* ── Tournament list ── */}
       <Panel
-        title="Tournament list"
-        subtitle={`${filtered.length} of ${total} tournaments`}
+        title="Danh sách giải đấu"
+        subtitle={`${filtered.length} / ${total} giải đấu`}
         action={
           <div className="filter-tabs">
             {(["all", "active", "completed"] as const).map((f) => (
@@ -315,7 +318,7 @@ export default function AdminTournamentsPage() {
                 className={cn("filter-tab", filter === f && "is-active")}
                 onClick={() => setFilter(f)}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {f === "all" ? "Tất cả" : f === "active" ? "Đang hoạt động" : "Đã hoàn tất"}
               </button>
             ))}
           </div>
@@ -323,49 +326,49 @@ export default function AdminTournamentsPage() {
       >
         <DataTable
           columns={[
-            { key: "name", label: "Name" },
-            { key: "location", label: "Location" },
-            { key: "range", label: "Dates" },
-            { key: "prizePool", label: "Prize pool" },
-            { key: "races", label: "Races", render: (row) => String(row.races) },
+            { key: "name", label: "Tên giải" },
+            { key: "location", label: "Địa điểm" },
+            { key: "range", label: "Thời gian" },
+            { key: "prizePool", label: "Tổng thưởng" },
+            { key: "races", label: "Số cuộc đua", render: (row) => String(row.races) },
             {
               key: "status",
-              label: "Status",
+              label: "Trạng thái",
               render: (row) => (
-                <Badge tone={STATUS_TONE[row.status] as any}>{row.status}</Badge>
+                <Badge tone={STATUS_TONE[row.status] as any}>{viTournamentStatus(row.status)}</Badge>
               ),
             },
             {
               key: "id",
-              label: "Detail",
+              label: "Chi tiết",
               render: (row) => (
                 <button
                   type="button"
                   className={cn("secondary-button", "btn-xs", selected?.id === row.id && "is-active")}
                   onClick={() => handleSelectRow(row)}
                 >
-                  {selected?.id === row.id ? "Close" : "View"}
+                  {selected?.id === row.id ? "Đóng" : "Xem"}
                 </button>
               ),
             },
           ]}
           rows={filtered}
-          empty="No tournaments found."
+          empty="Không tìm thấy giải đấu nào."
         />
       </Panel>
 
       {/* ── Detail panel ── */}
       {(selected || detailLoading) && (
         <Panel
-          title={detailLoading ? "Loading…" : `Detail — ${selected?.name}`}
-          subtitle="Full information and status management"
+          title={detailLoading ? "Đang tải…" : `Chi tiết — ${selected?.name}`}
+          subtitle="Thông tin đầy đủ và quản lý trạng thái giải đấu"
           action={
             <button
               type="button"
               className="secondary-button btn-xs"
               onClick={() => { setSelected(null); setStatusMsg(""); }}
             >
-              Close
+              Đóng
             </button>
           }
         >
@@ -381,28 +384,28 @@ export default function AdminTournamentsPage() {
               {/* Info grid */}
               <div className="detail-grid">
                 <div className="detail-item">
-                  <span className="detail-label">Name</span>
+                  <span className="detail-label">Tên giải</span>
                   <strong>{selected.name}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Location</span>
+                  <span className="detail-label">Địa điểm</span>
                   <strong>{selected.location}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Dates</span>
+                  <span className="detail-label">Thời gian</span>
                   <strong>{selected.range}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Prize pool</span>
+                  <span className="detail-label">Tổng thưởng</span>
                   <strong>{selected.prizePool}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Races</span>
+                  <span className="detail-label">Số cuộc đua</span>
                   <strong>{selected.races}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Current status</span>
-                  <Badge tone={STATUS_TONE[selected.status] as any}>{selected.status}</Badge>
+                  <span className="detail-label">Trạng thái hiện tại</span>
+                  <Badge tone={STATUS_TONE[selected.status] as any}>{viTournamentStatus(selected.status)}</Badge>
                 </div>
               </div>
 
@@ -410,7 +413,7 @@ export default function AdminTournamentsPage() {
                 <div className="detail-actions" style={{ marginTop: "12px" }}>
                   <div className="form-grid-2" style={{ alignItems: "end" }}>
                     <label className="field">
-                      <span>Initial prize pool (points)</span>
+                      <span>Tổng giải thưởng ban đầu (điểm)</span>
                       <input
                         type="number"
                         min={0}
@@ -425,7 +428,7 @@ export default function AdminTournamentsPage() {
                       disabled={prizePoolSaving}
                       onClick={handlePrizePoolSave}
                     >
-                      {prizePoolSaving ? "Saving..." : "Save prize pool"}
+                      {prizePoolSaving ? "Đang lưu..." : "Lưu tổng thưởng"}
                     </button>
                   </div>
                 </div>
@@ -439,19 +442,19 @@ export default function AdminTournamentsPage() {
                   <div className="detail-actions">
                     <p className="detail-action-hint">
                       {needsRaces
-                        ? "Add at least one race before publishing this tournament."
-                        : "Move tournament to next stage:"}
+                        ? "Cần tạo ít nhất một cuộc đua trước khi mở đăng ký giải đấu."
+                        : "Chuyển giải đấu sang giai đoạn tiếp theo:"}
                     </p>
                     <button
                       type="button"
                       className="primary-button"
                       disabled={statusLoading || needsRaces}
-                      title={needsRaces ? "You must set up at least one race first." : undefined}
+                      title={needsRaces ? "Bạn cần thiết lập ít nhất một cuộc đua trước." : undefined}
                       onClick={() => handleStatusUpdate(NEXT_STATUS[selected.status] as TournamentStatus)}
                     >
                       {statusLoading
-                        ? "Updating…"
-                        : `${STATUS_LABEL[selected.status]} → ${NEXT_STATUS[selected.status]}`}
+                        ? "Đang cập nhật…"
+                        : `${STATUS_LABEL[selected.status]} → ${viTournamentStatus(NEXT_STATUS[selected.status])}`}
                     </button>
                   </div>
                 );
@@ -459,7 +462,7 @@ export default function AdminTournamentsPage() {
 
               {selected.status === "Completed" && (
                 <p className="detail-action-hint" style={{ marginTop: "12px" }}>
-                  This tournament has concluded and cannot be advanced further.
+                  Giải đấu này đã kết thúc và không thể chuyển sang giai đoạn tiếp theo.
                 </p>
               )}
 
@@ -491,10 +494,10 @@ export default function AdminTournamentsPage() {
               {(selected.status === "Draft" || selected.status === "Registration") && (
                 <div className="detail-actions" style={{ marginTop: "16px", borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
                   <p className="detail-action-hint">
-                    Delete this tournament. Only possible before it goes live and when it has no races.
+                    Xóa giải đấu này. Chỉ có thể xóa trước khi giải diễn ra và khi chưa có cuộc đua nào.
                   </p>
                   <ConfirmDeleteButton
-                    label="Delete tournament"
+                    label="Xóa giải đấu"
                     onConfirm={() => handleDeleteTournament(selected.id)}
                     onDeleted={() => { setSelected(null); setStatusMsg(""); }}
                   />

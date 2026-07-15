@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Badge, DataTable, Panel, RaceLeaderboard } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { cn } from "../../utils/cn";
+import { viPublishStatus } from "../../utils/viLabels";
 
 export default function AdminResultsPage() {
   const { appState, handleAction } = useApp();
@@ -9,17 +10,17 @@ export default function AdminResultsPage() {
 
   return (
     <div className="page-stack">
-      <Panel title="Publish results and manage predictions" subtitle="Admin publishes results after referee confirmation">
+      <Panel title="Công bố kết quả và quản lý dự đoán" subtitle="Quản trị viên công bố kết quả sau khi trọng tài xác nhận">
         <DataTable
           columns={[
-            { key: "race",              label: "Race"          },
-            { key: "resultStatus",      label: "Result"        },
-            { key: "predictionStatus",  label: "Prediction"    },
+            { key: "race",              label: "Cuộc đua"    },
+            { key: "resultStatus",      label: "Kết quả"     },
+            { key: "predictionStatus",  label: "Dự đoán"     },
             {
               key: "publishStatus",
-              label: "Publish status",
+              label: "Trạng thái công bố",
               render: (row) => (
-                <Badge tone={row.publishStatus === "Published" ? "success" : "warning"}>{row.publishStatus}</Badge>
+                <Badge tone={row.publishStatus === "Published" ? "success" : "warning"}>{viPublishStatus(row.publishStatus)}</Badge>
               ),
             },
             {
@@ -37,14 +38,14 @@ export default function AdminResultsPage() {
             },
             {
               key: "action",
-              label: "Action",
+              label: "Thao tác",
               render: (row) => (
                 <button
                   className={cn("table-button", row.publishStatus === "Published" && "is-complete")}
                   type="button"
                   onClick={() => handleAction("publishQueue", row.id)}
                 >
-                  {row.publishStatus === "Published" ? "Already published" : "Publish now"}
+                  {row.publishStatus === "Published" ? "Đã công bố" : "Công bố ngay"}
                 </button>
               ),
             },
@@ -54,7 +55,7 @@ export default function AdminResultsPage() {
       </Panel>
 
       {openRaceId && (
-        <Panel title="Bảng xếp hạng cuộc đua" subtitle="Admin xem được cả bản đã xác nhận (chưa công bố)">
+        <Panel title="Bảng xếp hạng cuộc đua" subtitle="Quản trị viên xem được cả bản đã xác nhận (chưa công bố)">
           <RaceLeaderboard raceId={openRaceId} />
         </Panel>
       )}

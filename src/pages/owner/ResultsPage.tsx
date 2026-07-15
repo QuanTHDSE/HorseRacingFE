@@ -3,7 +3,7 @@ import { useApp } from "../../context/AppContext";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export default function OwnerResultsPage() {
@@ -49,45 +49,45 @@ export default function OwnerResultsPage() {
     <div className="page-stack">
       <div className="metric-grid three">
         <MetricCard
-          label="Horses in stable"
+          label="Ngựa trong chuồng"
           value={String(horses.length)}
-          note="Total managed"
+          note="Tổng đang quản lý"
         />
         <MetricCard
-          label="Approved entries"
+          label="Đơn đã duyệt"
           value={String(totalApproved)}
-          note="Cleared for races"
+          note="Đủ điều kiện thi đấu"
           tone="accent"
         />
         <MetricCard
-          label="Completed races"
+          label="Cuộc đua đã xong"
           value={String(totalCompleted)}
-          note="Races your horses finished"
+          note="Ngựa của bạn đã về đích"
           tone="success"
         />
       </div>
 
       <Panel
-        title="Completed race entries"
-        subtitle="Approved registrations for finished races"
+        title="Các cuộc đua đã hoàn thành"
+        subtitle="Đơn đã duyệt cho các cuộc đua đã kết thúc"
       >
         {resultRows.length === 0 ? (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            No completed races yet. Results will appear here once races finish.
+            Chưa có cuộc đua nào hoàn thành. Kết quả sẽ hiện ở đây khi cuộc đua kết thúc.
           </p>
         ) : (
           <DataTable
             columns={[
-              { key: "raceName",   label: "Race"       },
-              { key: "horseName",  label: "Horse"      },
-              { key: "jockeyName", label: "Jockey"     },
-              { key: "tournament", label: "Tournament" },
-              { key: "distance",   label: "Distance"   },
-              { key: "raceDate",   label: "Date"       },
+              { key: "raceName",   label: "Cuộc đua"   },
+              { key: "horseName",  label: "Ngựa"       },
+              { key: "jockeyName", label: "Nài ngựa"   },
+              { key: "tournament", label: "Giải đấu"   },
+              { key: "distance",   label: "Cự ly"      },
+              { key: "raceDate",   label: "Ngày"       },
               {
                 key: "id",
-                label: "Entry",
-                render: () => <Badge tone="success">Participated</Badge>,
+                label: "Tham gia",
+                render: () => <Badge tone="success">Đã tham gia</Badge>,
               },
             ]}
             rows={resultRows}
@@ -106,13 +106,13 @@ export default function OwnerResultsPage() {
       )}
 
       {withJockey > 0 && (
-        <Panel title="Jockey performance" subtitle="Races where your horse had an assigned jockey">
+        <Panel title="Thành tích nài ngựa" subtitle="Các cuộc đua ngựa của bạn có nài được phân công">
           <DataTable
             columns={[
-              { key: "raceName",   label: "Race"   },
-              { key: "horseName",  label: "Horse"  },
-              { key: "jockeyName", label: "Jockey" },
-              { key: "raceDate",   label: "Date"   },
+              { key: "raceName",   label: "Cuộc đua" },
+              { key: "horseName",  label: "Ngựa"     },
+              { key: "jockeyName", label: "Nài ngựa" },
+              { key: "raceDate",   label: "Ngày"     },
             ]}
             rows={completedRegs.filter((r) => r.jockeyName).map((reg) => ({
               id:          reg.id,

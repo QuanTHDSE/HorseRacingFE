@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Badge, DataTable, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import type { RefereeParticipantCheck } from "../../types";
 import { cn } from "../../utils/cn";
+import { viRaceStatus } from "../../utils/viLabels";
 
 export default function ChecksPage() {
   const { appState, handleGetRefereeChecks, handleToggleRefereeCheck } = useApp();
@@ -14,7 +16,8 @@ export default function ChecksPage() {
   const [raceId, setRaceId] = useState("");
   const [checks, setChecks] = useState<RefereeParticipantCheck[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const fb = useFeedback();
+  const error = ""; const setError = fb.error;
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +56,7 @@ export default function ChecksPage() {
           <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
             <option value="">— Chọn cuộc đua —</option>
             {eligible.map((r) => (
-              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({r.liveStatus})</option>
+              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({viRaceStatus(r.liveStatus)})</option>
             ))}
           </select>
           {eligible.length === 0 && (
@@ -70,8 +73,8 @@ export default function ChecksPage() {
         <>
           <div className="metric-grid three">
             <MetricCard label="Số ngựa" value={String(checks.length)} note="Tham gia cuộc đua" />
-            <MetricCard label="Đã duyệt thú y" value={`${vetDone}/${checks.length}`} note="Vet approved" tone={vetDone === checks.length && checks.length > 0 ? "success" : "warning"} />
-            <MetricCard label="Đã xác nhận xuất phát" value={`${lineupDone}/${checks.length}`} note="Lineup confirmed" tone={lineupDone === checks.length && checks.length > 0 ? "success" : "warning"} />
+            <MetricCard label="Đã duyệt thú y" value={`${vetDone}/${checks.length}`} note="Đã kiểm tra thú y" tone={vetDone === checks.length && checks.length > 0 ? "success" : "warning"} />
+            <MetricCard label="Đã xác nhận xuất phát" value={`${lineupDone}/${checks.length}`} note="Đã xác nhận đội hình" tone={lineupDone === checks.length && checks.length > 0 ? "success" : "warning"} />
           </div>
 
           <Panel title="Checklist từng ngựa" subtitle="Bấm để bật/tắt từng mục">

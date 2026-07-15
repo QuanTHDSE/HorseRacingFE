@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Badge, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import type { RaceViolation, RefereeResultStatus, ResultRankingInput } from "../../types";
+import { viRaceStatus } from "../../utils/viLabels";
 
 interface Entry {
   horseId: string;
@@ -44,8 +46,9 @@ export default function ResultsPage() {
   const [violations, setViolations] = useState<RaceViolation[]>([]);
   const [status, setStatus] = useState<RefereeResultStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [msg, setMsg] = useState("");
+  const fb = useFeedback();
+  const error = ""; const setError = fb.error;
+  const msg = ""; const setMsg = fb.success;
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -191,7 +194,7 @@ export default function ResultsPage() {
           <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
             <option value="">— Chọn cuộc đua —</option>
             {eligible.map((r) => (
-              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({r.liveStatus})</option>
+              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({viRaceStatus(r.liveStatus)})</option>
             ))}
           </select>
           {eligible.length === 0 && (
@@ -208,7 +211,7 @@ export default function ResultsPage() {
       {raceId && (
         <>
           <div className="metric-grid three">
-            <MetricCard label="Trạng thái đua" value={race?.liveStatus ?? "—"} note="Race status" />
+            <MetricCard label="Trạng thái đua" value={race ? viRaceStatus(race.liveStatus) : "—"} note="Trạng thái cuộc đua" />
             <MetricCard
               label="Kết quả"
               value={published ? "Đã công bố" : confirmed ? "Đã xác nhận" : status?.rankingsCount ? "Bản nháp" : "Chưa nhập"}
@@ -231,11 +234,11 @@ export default function ResultsPage() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 84 }}>Rank</th>
-                      <th>Horse</th>
-                      <th style={{ width: 150 }}>Finish time</th>
-                      <th style={{ width: 160 }}>Fixed prize</th>
-                      <th style={{ width: 92 }}>Move</th>
+                      <th style={{ width: 84 }}>Hạng</th>
+                      <th>Ngựa</th>
+                      <th style={{ width: 150 }}>Thời gian về đích</th>
+                      <th style={{ width: 160 }}>Giải thưởng</th>
+                      <th style={{ width: 92 }}>Di chuyển</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -243,13 +246,13 @@ export default function ResultsPage() {
                   <tr key={e.horseId}>
                     <td>
                       <Badge tone={i === 0 ? "success" : i <= 2 ? "accent" : "neutral"}>
-                        {i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `#${i + 1}`}
+                        {`Hạng ${i + 1}`}
                       </Badge>
                     </td>
                     <td>
                       <strong>{e.horseName}</strong>
                       <div style={{ fontSize: "0.82rem", color: "var(--c-muted)" }}>
-                        Lane {e.laneNumber} · Cloth {e.clothNumber ?? "—"} · {e.jockeyName} · Owner {e.ownerName ?? "—"}
+                        Làn {e.laneNumber} · Áo {e.clothNumber ?? "—"} · {e.jockeyName} · Chủ ngựa {e.ownerName ?? "—"}
                       </div>
                     </td>
                     <td>
@@ -260,7 +263,7 @@ export default function ResultsPage() {
                         value={e.finishTime ?? ""}
                         disabled={locked}
                         onChange={(event) => updateEntry(i, { finishTime: event.target.value === "" ? "" : Number(event.target.value) })}
-                        placeholder="seconds"
+                        placeholder="giây"
                       />
                     </td>
                     <td>
@@ -270,7 +273,7 @@ export default function ResultsPage() {
                         value={e.prize ?? ""}
                         disabled={locked}
                         onChange={(event) => updateEntry(i, { prize: event.target.value === "" ? "" : Number(event.target.value) })}
-                        placeholder="points"
+                        placeholder="điểm"
                       />
                     </td>
                     <td>

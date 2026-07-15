@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
+import { viPredictionStatus } from "../../utils/viLabels";
 
 export default function PredictionsPage() {
   const { user, appState, handleCreatePrediction, handleCancelPrediction } = useApp();
@@ -8,7 +10,8 @@ export default function PredictionsPage() {
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [ticketCountInput, setTicketCountInput] = useState("1");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const fb = useFeedback();
+  const submitError: string = ""; const setSubmitError = fb.error;
 
   if (!user) return null;
   const myPredictions = appState.predictions.filter((p) => p.spectatorId === user.id);
@@ -46,7 +49,7 @@ export default function PredictionsPage() {
       setSelectedHorseId(null);
       setTicketCountInput("1");
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit prediction.");
+      setSubmitError(err instanceof Error ? err.message : "Gửi dự đoán thất bại.");
     } finally {
       setSubmitting(false);
     }
@@ -54,7 +57,7 @@ export default function PredictionsPage() {
 
   return (
     <div className="page-stack">
-      <Panel title="Create a prediction" subtitle={`Wallet balance: ${balance} pts`}>
+      <Panel title="Tạo dự đoán" subtitle={`Số dư ví: ${balance} điểm`}>
         {submitError && (
           <div className="form-banner form-banner-error" style={{ marginBottom: "12px" }}>
             {submitError}
@@ -63,12 +66,12 @@ export default function PredictionsPage() {
 
         {openRaces.length === 0 ? (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            No races are open for predictions right now.
+            Hiện chưa có cuộc đua nào mở dự đoán.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
-              <h4 style={{ margin: "0 0 8px", fontSize: "0.875rem" }}>1. Choose a race</h4>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.875rem" }}>1. Chọn cuộc đua</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {openRaces.map((race) => (
                   <button
@@ -81,7 +84,7 @@ export default function PredictionsPage() {
                     }}
                     onClick={() => selectRace(race.id)}
                   >
-                    {race.name} · {race.tournamentName} · {new Date(race.scheduledAt).toLocaleString("en-GB")}
+                    {race.name} · {race.tournamentName} · {new Date(race.scheduledAt).toLocaleString("vi-VN")}
                   </button>
                 ))}
               </div>
@@ -89,7 +92,7 @@ export default function PredictionsPage() {
 
             {selectedRace && (
               <div>
-                <h4 style={{ margin: "0 0 8px", fontSize: "0.875rem" }}>2. Choose the winning horse</h4>
+                <h4 style={{ margin: "0 0 8px", fontSize: "0.875rem" }}>2. Chọn ngựa thắng</h4>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {selectedRace.participants.map((horse) => (
                     <button
@@ -102,7 +105,7 @@ export default function PredictionsPage() {
                       }}
                       onClick={() => selectHorse(horse.id)}
                     >
-                      Lane {horse.laneNumber} · {horse.name}
+                      Làn {horse.laneNumber} · {horse.name}
                     </button>
                   ))}
                 </div>
@@ -111,7 +114,7 @@ export default function PredictionsPage() {
 
             {selectedHorse && (
               <div>
-                <h4 style={{ margin: "0 0 8px", fontSize: "0.875rem" }}>3. Number of tickets</h4>
+                <h4 style={{ margin: "0 0 8px", fontSize: "0.875rem" }}>3. Số vé</h4>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                   <input
                     type="number"
@@ -131,18 +134,18 @@ export default function PredictionsPage() {
                     </button>
                   ))}
                   <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                    Price per ticket: {ticketPrice.toLocaleString()} pts
+                    Giá mỗi vé: {ticketPrice.toLocaleString()} điểm
                   </span>
                 </div>
 
                 {ticketCount <= 0 && (
                   <p style={{ margin: "6px 0 0", fontSize: "0.8rem", color: "var(--danger, #dc2626)" }}>
-                    Enter a ticket count greater than 0.
+                    Nhập số vé lớn hơn 0.
                   </p>
                 )}
                 {ticketCount > 0 && cost > balance && (
                   <p style={{ margin: "6px 0 0", fontSize: "0.8rem", color: "var(--danger, #dc2626)" }}>
-                    Not enough points for {ticketCount} ticket{ticketCount > 1 ? "s" : ""} ({cost} pts).
+                    Không đủ điểm cho {ticketCount} vé ({cost} điểm).
                   </p>
                 )}
 
@@ -153,7 +156,7 @@ export default function PredictionsPage() {
                   disabled={ticketCount < 1 || cost > balance || submitting}
                   onClick={submit}
                 >
-                  {submitting ? "Submitting…" : `Place prediction · ${cost.toLocaleString()} pts`}
+                  {submitting ? "Đang gửi…" : `Đặt dự đoán · ${cost.toLocaleString()} điểm`}
                 </button>
               </div>
             )}
@@ -161,26 +164,26 @@ export default function PredictionsPage() {
         )}
       </Panel>
 
-      <Panel title="Your predictions" subtitle={`${myPredictions.length} prediction${myPredictions.length !== 1 ? "s" : ""}`}>
+      <Panel title="Dự đoán của bạn" subtitle={`${myPredictions.length} dự đoán`}>
         <DataTable
           columns={[
-            { key: "raceName", label: "Race"     },
-            { key: "horse",  label: "Your pick" },
-            { key: "tickets", label: "Tickets" },
-            { key: "cost", label: "Cost" },
+            { key: "raceName", label: "Cuộc đua"   },
+            { key: "horse",  label: "Ngựa đã chọn" },
+            { key: "tickets", label: "Số vé" },
+            { key: "cost", label: "Chi phí" },
             {
               key: "status",
-              label: "Status",
+              label: "Trạng thái",
               render: (row) => (
                 <Badge tone={row.status === "Won" ? "success" : row.status === "Lost" ? "danger" : "warning"}>
-                  {row.status}
+                  {viPredictionStatus(row.status)}
                 </Badge>
               ),
             },
-            { key: "reward", label: "Reward" },
+            { key: "reward", label: "Thưởng" },
             {
               key: "actions",
-              label: "Actions",
+              label: "Thao tác",
               render: (row) =>
                 row.status === "Open" ? (
                   <button
@@ -188,7 +191,7 @@ export default function PredictionsPage() {
                     type="button"
                     onClick={() => handleCancelPrediction(row.id)}
                   >
-                    Cancel
+                    Hủy
                   </button>
                 ) : (
                   "—"

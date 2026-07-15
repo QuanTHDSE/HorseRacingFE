@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext";
+import { ToastProvider } from "./context/ToastContext";
 import AuthScreen from "./layouts/AuthScreen";
 import AppShell from "./layouts/AppShell";
 
@@ -19,12 +20,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppProvider>
-        <Routes>
-          <Route path="/login"  element={<LoginRoute />}     />
-          <Route path="/:page"  element={<ProtectedRoute />} />
-          <Route path="/"       element={<Navigate to="/dashboard" replace />} />
-          <Route path="*"       element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+        <ToastProvider>
+          <Routes>
+            <Route path="/login"  element={<LoginRoute />}     />
+            <Route path="/:page"  element={<ProtectedRoute />} />
+            <Route path="/"       element={<Navigate to="/dashboard" replace />} />
+            <Route path="*"       element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </ToastProvider>
       </AppProvider>
     </BrowserRouter>
   );

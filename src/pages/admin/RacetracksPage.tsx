@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Badge, DataTable, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
+import { useFeedback } from "../../context/ToastContext";
 import type { TrackSurface } from "../../types";
 
 const SURFACE_LABEL: Record<TrackSurface, string> = {
-  turf: "Turf (cỏ)", synthetic: "Synthetic (tổng hợp)", dirt: "Dirt (đất)",
+  turf: "Cỏ", synthetic: "Tổng hợp", dirt: "Đất",
 };
 
 const EMPTY_FORM = {
@@ -18,8 +19,9 @@ const EMPTY_FORM = {
 export default function RacetracksPage() {
   const { appState, handleCreateRacetrack } = useApp();
   const [form, setForm] = useState(EMPTY_FORM);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
+  const fb = useFeedback();
+  const successMsg: string = ""; const setSuccessMsg = fb.success;
+  const errors: string[] = []; const setErrors = (arr: string[]) => arr.forEach((e) => fb.error(e));
   const [loading, setLoading] = useState(false);
 
   const racetracks = appState.racetracks ?? [];
@@ -32,9 +34,9 @@ export default function RacetracksPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs: string[] = [];
-    if (!form.name.trim())        errs.push("Track name is required.");
-    if (!form.location.trim())    errs.push("Location is required.");
-    if (!form.countryCode.trim()) errs.push("Country code is required.");
+    if (!form.name.trim())        errs.push("Vui lòng nhập tên đường đua.");
+    if (!form.location.trim())    errs.push("Vui lòng nhập địa điểm.");
+    if (!form.countryCode.trim()) errs.push("Vui lòng nhập mã quốc gia.");
     if (errs.length) { setErrors(errs); return; }
 
     setLoading(true);
@@ -47,10 +49,10 @@ export default function RacetracksPage() {
         isActive: form.isActive,
       });
       setForm(EMPTY_FORM);
-      setSuccessMsg("Racetrack added successfully!");
+      setSuccessMsg("Đã thêm đường đua thành công!");
       setTimeout(() => setSuccessMsg(""), 3500);
     } catch (err: unknown) {
-      setErrors([err instanceof Error ? err.message : "Failed to create racetrack."]);
+      setErrors([err instanceof Error ? err.message : "Tạo đường đua thất bại."]);
     } finally {
       setLoading(false);
     }
@@ -63,13 +65,13 @@ export default function RacetracksPage() {
     <div className="page-stack">
       {/* ── Stats ── */}
       <div className="metric-grid three">
-        <MetricCard label="Total racetracks" value={String(racetracks.length)} note="Registered in the system" />
-        <MetricCard label="Active tracks"     value={String(activeCount)}   note="Có thể gán cho cuộc đua" tone="success" />
-        <MetricCard label="Inactive"          value={String(inactiveCount)} note="Đang ngừng hoạt động"    tone="neutral" />
+        <MetricCard label="Tổng số đường đua" value={String(racetracks.length)} note="Đã đăng ký trong hệ thống" />
+        <MetricCard label="Đang hoạt động"    value={String(activeCount)}   note="Có thể gán cho cuộc đua" tone="success" />
+        <MetricCard label="Ngừng hoạt động"   value={String(inactiveCount)} note="Đang ngừng hoạt động"    tone="neutral" />
       </div>
 
       {/* ── Create form ── */}
-      <Panel title="Add new racetrack" subtitle="Khai báo một trường đua để gán cho các cuộc đua">
+      <Panel title="Thêm đường đua mới" subtitle="Khai báo một đường đua để gán cho các cuộc đua">
         {successMsg && <div className="form-banner form-banner-success">{successMsg}</div>}
         {errors.length > 0 && (
           <div className="form-banner form-banner-error">
@@ -80,23 +82,23 @@ export default function RacetracksPage() {
         <form onSubmit={handleSubmit} className="admin-form">
           <div className="form-grid-2">
             <label className="field">
-              <span>Track name <span className="required">*</span></span>
-              <input value={form.name} onChange={(e) => handleField("name", e.target.value)} placeholder="e.g. Phú Thọ Racecourse" disabled={loading} />
+              <span>Tên đường đua <span className="required">*</span></span>
+              <input value={form.name} onChange={(e) => handleField("name", e.target.value)} placeholder="vd: Trường đua Phú Thọ" disabled={loading} />
             </label>
             <label className="field">
-              <span>Location <span className="required">*</span></span>
-              <input value={form.location} onChange={(e) => handleField("location", e.target.value)} placeholder="e.g. TP. Hồ Chí Minh" disabled={loading} />
+              <span>Địa điểm <span className="required">*</span></span>
+              <input value={form.location} onChange={(e) => handleField("location", e.target.value)} placeholder="vd: TP. Hồ Chí Minh" disabled={loading} />
             </label>
             <label className="field">
-              <span>Country code <span className="required">*</span></span>
+              <span>Mã quốc gia <span className="required">*</span></span>
               <input value={form.countryCode} onChange={(e) => handleField("countryCode", e.target.value)} placeholder="VN" maxLength={3} disabled={loading} />
             </label>
             <label className="field">
-              <span>Default surface</span>
+              <span>Mặt đường mặc định</span>
               <select value={form.surface} onChange={(e) => handleField("surface", e.target.value)} disabled={loading}>
-                <option value="turf">Turf (cỏ)</option>
-                <option value="synthetic">Synthetic (tổng hợp)</option>
-                <option value="dirt">Dirt (đất)</option>
+                <option value="turf">Cỏ</option>
+                <option value="synthetic">Tổng hợp</option>
+                <option value="dirt">Đất</option>
               </select>
             </label>
             <label className="pc-switch" style={{ gridColumn: "1 / -1", marginTop: "4px" }}>
@@ -107,31 +109,31 @@ export default function RacetracksPage() {
           </div>
           <div className="form-actions">
             <button type="button" className="secondary-button" disabled={loading} onClick={() => { setForm(EMPTY_FORM); setErrors([]); }}>
-              Reset
+              Đặt lại
             </button>
             <button type="submit" className="primary-button" disabled={loading}>
-              {loading ? "Saving…" : "Add racetrack"}
+              {loading ? "Đang lưu…" : "Thêm đường đua"}
             </button>
           </div>
         </form>
       </Panel>
 
       {/* ── Directory ── */}
-      <Panel title="Racetrack directory" subtitle="All registered venues and their current status">
+      <Panel title="Danh mục đường đua" subtitle="Tất cả địa điểm đã đăng ký và trạng thái hiện tại">
         <DataTable
           columns={[
-            { key: "name",        label: "Track name" },
-            { key: "location",    label: "Location"   },
-            { key: "countryCode", label: "Country"    },
-            { key: "surface",     label: "Surface", render: (row) => SURFACE_LABEL[row.surface] ?? row.surface },
+            { key: "name",        label: "Tên đường đua" },
+            { key: "location",    label: "Địa điểm"      },
+            { key: "countryCode", label: "Quốc gia"      },
+            { key: "surface",     label: "Mặt đường", render: (row) => SURFACE_LABEL[row.surface] ?? row.surface },
             {
               key: "isActive",
-              label: "Status",
-              render: (row) => <Badge tone={row.isActive ? "success" : "neutral"}>{row.isActive ? "Active" : "Inactive"}</Badge>,
+              label: "Trạng thái",
+              render: (row) => <Badge tone={row.isActive ? "success" : "neutral"}>{row.isActive ? "Hoạt động" : "Ngừng"}</Badge>,
             },
           ]}
           rows={racetracks}
-          empty="No racetracks registered yet."
+          empty="Chưa đăng ký đường đua nào."
         />
       </Panel>
     </div>
