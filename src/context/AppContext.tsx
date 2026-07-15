@@ -9,6 +9,7 @@ import {
   type ApiAdminUpdateUserInput,
   type ApiAdminUser,
   type ApiHorse,
+  type ApiHorseLeaderboardItem,
   type ApiInvitation,
   type ApiJockeyRace,
   type ApiNotification,
@@ -213,6 +214,15 @@ function mapTournamentDto(t: ApiTournamentDto): Tournament {
     status: TOURNAMENT_STATUS[t.status] ?? t.status,
     prizePool: "—",
     races: 0,
+  };
+}
+
+function mapHorseLeaderboardCard(item: ApiHorseLeaderboardItem) {
+  return {
+    id: item.horseId,
+    name: item.horseName,
+    points: item.firstPlaceWins,
+    stable: `${item.firstPlaceWins} thắng • ${item.winRate}% • ${item.totalPublishedRaces} cuộc`,
   };
 }
 
@@ -774,12 +784,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setAppState((prev) => ({ ...prev, invitations, races, notifications }));
       } else if (role === "spectator") {
-        const [tourRes, racesRes, predsRes, ptsRes, notiRes] = await Promise.allSettled([
+        const [tourRes, racesRes, predsRes, ptsRes, notiRes, horseLeaderboardRes] = await Promise.allSettled([
           api.spectator.listTournaments(),
           api.spectator.listRaces(),
           api.spectator.listPredictions(account.id),
           api.spectator.getPoints(),
           api.spectator.listNotifications(),
+          api.spectator.listHorseLeaderboard(5),
         ]);
 
         const tournaments =
@@ -810,6 +821,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const spectatorPoints =
           ptsRes.status === "fulfilled" ? mapPointsSummary(ptsRes.value.points) : null;
 
+        const leaderboardHorses =
+          horseLeaderboardRes.status === "fulfilled"
+            ? horseLeaderboardRes.value.items.map(mapHorseLeaderboardCard)
+            : [];
+
         setAppState((prev) => ({
           ...prev,
           tournaments,
@@ -818,6 +834,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           rewards,
           notifications,
           spectatorPoints,
+          leaderboardHorses,
         }));
       } else if (role === "referee") {
         const [racesRes, notiRes] = await Promise.allSettled([

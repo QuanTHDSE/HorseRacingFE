@@ -151,7 +151,7 @@ export default function AppShell() {
                         <strong>{item.name}</strong>
                         <p>{item.stable}</p>
                       </div>
-                      <b>{item.points}</b>
+                      <b>{item.points} thắng</b>
                     </div>
                   ))}
                 </div>
