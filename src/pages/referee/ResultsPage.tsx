@@ -15,7 +15,6 @@ interface Entry {
   laneNumber: number;
   clothNumber?: number;
   finishTime?: number | "";
-  prize?: number | "";
 }
 
 const DQ_PENALTIES = ["disqualify", "disqualification"];
@@ -114,7 +113,6 @@ export default function ResultsPage() {
               return {
                 ...row,
                 finishTime: ranking.finishTime ?? "",
-                prize: ranking.prize ?? 0,
               };
             })
             .filter((row): row is NonNullable<typeof row> => row !== null);
@@ -139,16 +137,6 @@ export default function ResultsPage() {
     setMsg("");
   }
 
-  function updateEntry(idx: number, patch: Partial<Pick<Entry, "finishTime" | "prize">>) {
-    setEntries((prev) => prev.map((entry, i) => (i === idx ? { ...entry, ...patch } : entry)));
-    setMsg("");
-  }
-
-  function optionalNumber(value: number | "" | undefined): number | undefined {
-    if (value === "" || value === undefined) return undefined;
-    return Number.isFinite(value) ? value : undefined;
-  }
-
   async function submit() {
     if (!entries.length) return;
     setSubmitting(true); setError(""); setMsg("");
@@ -158,8 +146,6 @@ export default function ResultsPage() {
         horseId: e.horseId,
         jockeyId: e.jockeyId,
         ownerId: e.ownerId,
-        finishTime: optionalNumber(e.finishTime),
-        prize: optionalNumber(e.prize) ?? 0,
       }));
       await handleSubmitRaceResult(raceId, rankings);
       const st = await handleGetRaceResult(raceId);
@@ -188,7 +174,7 @@ export default function ResultsPage() {
 
   return (
     <div className="page-stack">
-      <Panel title="Nhập & xác nhận kết quả" subtitle="Chọn cuộc đua đang/đã diễn ra, sắp thứ hạng rồi xác nhận">
+      <Panel title="Xếp hạng & xác nhận kết quả" subtitle="Chọn cuộc đua đang/đã diễn ra, điều chỉnh thứ hạng rồi xác nhận">
         <label className="field" style={{ maxWidth: "420px" }}>
           <span>Cuộc đua</span>
           <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
@@ -236,8 +222,7 @@ export default function ResultsPage() {
                     <tr>
                       <th style={{ width: 84 }}>Hạng</th>
                       <th>Ngựa</th>
-                      <th style={{ width: 150 }}>Thời gian về đích</th>
-                      <th style={{ width: 160 }}>Giải thưởng</th>
+                      <th style={{ width: 170 }}>Thời gian về đích (chỉ xem)</th>
                       <th style={{ width: 92 }}>Di chuyển</th>
                     </tr>
                   </thead>
@@ -256,25 +241,9 @@ export default function ResultsPage() {
                       </div>
                     </td>
                     <td>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.001"
-                        value={e.finishTime ?? ""}
-                        disabled={locked}
-                        onChange={(event) => updateEntry(i, { finishTime: event.target.value === "" ? "" : Number(event.target.value) })}
-                        placeholder="giây"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        value={e.prize ?? ""}
-                        disabled={locked}
-                        onChange={(event) => updateEntry(i, { prize: event.target.value === "" ? "" : Number(event.target.value) })}
-                        placeholder="điểm"
-                      />
+                      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                        {typeof e.finishTime === "number" ? `${e.finishTime.toFixed(3)} giây` : "—"}
+                      </span>
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "4px" }}>
@@ -298,7 +267,7 @@ export default function ResultsPage() {
             {!locked && entries.length > 0 && (
               <div className="form-actions" style={{ marginTop: "16px" }}>
                 <button type="button" className="primary-button" disabled={submitting} onClick={submit}>
-                  {submitting ? "Đang lưu…" : status?.rankingsCount ? "Cập nhật kết quả" : "Lưu kết quả"}
+                  {submitting ? "Đang lưu…" : status?.rankingsCount ? "Cập nhật thứ hạng" : "Lưu thứ hạng"}
                 </button>
               </div>
             )}
