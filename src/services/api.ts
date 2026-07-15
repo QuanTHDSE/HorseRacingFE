@@ -156,6 +156,19 @@ export interface ApiPredictionConfig {
   minScoreToShare: number;
 }
 
+export interface ApiHorseLeaderboardItem {
+  rank: number;
+  horseId: string;
+  horseName: string;
+  ownerId: string | null;
+  ownerName: string | null;
+  firstPlaceWins: number;
+  totalPublishedRaces: number;
+  winRate: number;
+  latestWinAt: string | null;
+  latestRaceName: string | null;
+}
+
 export interface ApiRefereeDashboard {
   upcomingRaces: number;
   completedRaces: number;
@@ -813,6 +826,8 @@ export const api = {
       request<{ tournaments: ApiTournamentDto[] }>("/spectator/tournaments"),
     listRaces: (filter?: "upcoming" | "completed") =>
       request<{ races: ApiSpectatorRace[] }>(`/spectator/races${filter ? `?filter=${filter}` : ""}`),
+    listHorseLeaderboard: (limit = 10) =>
+      request<{ items: ApiHorseLeaderboardItem[] }>(`/spectator/leaderboard/horses?limit=${limit}`),
     getRaceById: (id: string) =>
       request<{ race: ApiSpectatorRace }>(`/spectator/races/${id}`),
     getReplay: (id: string) =>
