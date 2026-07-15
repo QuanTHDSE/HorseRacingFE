@@ -171,6 +171,18 @@ export interface RefereeParticipantCheck {
   raceName: string;
   horseId: string;
   horseName: string;
+  horseRegistrationId?: string;
+  horseBreed?: string;
+  horseSire?: string;
+  horseDam?: string;
+  horseTrainerName?: string;
+  horseAge?: number;
+  horseColor?: string;
+  horseWeight?: number;
+  horseHealth?: string;
+  horseImageUrl?: string;
+  horseProfilePdfUrl?: string;
+  horseProfilePdfName?: string;
   jockeyId: string;
   jockeyName: string;
   ownerId: string;

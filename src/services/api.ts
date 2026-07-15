@@ -179,6 +179,18 @@ export interface ApiRefereeCheck {
   raceName: string;
   horseId: string;
   horseName: string;
+  horseRegistrationId?: string | null;
+  horseBreed?: string;
+  horseSire?: string | null;
+  horseDam?: string | null;
+  horseTrainerName?: string | null;
+  horseAge?: number;
+  horseColor?: string | null;
+  horseWeight?: number | null;
+  horseHealthStatus?: string;
+  horseImageUrl?: string | null;
+  horseProfilePdfUrl?: string | null;
+  horseProfilePdfName?: string | null;
   jockeyId: string;
   jockeyName: string;
   ownerId: string;

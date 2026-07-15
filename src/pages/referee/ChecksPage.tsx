@@ -4,7 +4,13 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RefereeParticipantCheck } from "../../types";
 import { cn } from "../../utils/cn";
-import { viRaceStatus } from "../../utils/viLabels";
+import { viHealth, viRaceStatus } from "../../utils/viLabels";
+
+const HEALTH_TONE: Record<string, "success" | "warning" | "neutral"> = {
+  Fit: "success",
+  Injured: "warning",
+  Retired: "neutral",
+};
 
 export default function ChecksPage() {
   const { appState, handleGetRefereeChecks, handleToggleRefereeCheck } = useApp();
@@ -15,14 +21,16 @@ export default function ChecksPage() {
 
   const [raceId, setRaceId] = useState("");
   const [checks, setChecks] = useState<RefereeParticipantCheck[]>([]);
+  const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const fb = useFeedback();
   const error = ""; const setError = fb.error;
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!raceId) { setChecks([]); return; }
+    if (!raceId) { setChecks([]); setSelectedHorseId(null); return; }
     let alive = true;
+    setSelectedHorseId(null);
     setLoading(true);
     setError("");
     handleGetRefereeChecks(raceId)
@@ -47,6 +55,7 @@ export default function ChecksPage() {
 
   const vetDone = checks.filter((c) => c.vetApproved).length;
   const lineupDone = checks.filter((c) => c.confirmed).length;
+  const selected = checks.find((c) => c.horseId === selectedHorseId) ?? null;
 
   return (
     <div className="page-stack">
@@ -87,7 +96,20 @@ export default function ChecksPage() {
                   { key: "clothNumber", label: "Áo số", render: (r) => r.clothNumber ? `#${r.clothNumber}` : "—" },
                   { key: "horseName", label: "Ngựa" },
                   { key: "jockeyName", label: "Nài ngựa" },
-                  { key: "ownerName", label: "Chủ ngựa", render: (r) => r.ownerName ?? "—" },
+                  { key: "ownerName", label: "Chủ ngựa", render: (r) => r.ownerName ?? "Chưa có dữ liệu" },
+                  {
+                    key: "horseDetail",
+                    label: "Hồ sơ",
+                    render: (r) => (
+                      <button
+                        type="button"
+                        className={cn("secondary-button", "btn-xs", selectedHorseId === r.horseId && "is-active")}
+                        onClick={() => setSelectedHorseId((current) => current === r.horseId ? null : r.horseId)}
+                      >
+                        {selectedHorseId === r.horseId ? "Đóng" : "Xem chi tiết"}
+                      </button>
+                    ),
+                  },
                   {
                     key: "vetApproved",
                     label: "Thú y",
@@ -117,7 +139,7 @@ export default function ChecksPage() {
                     ),
                   },
                   {
-                    key: "horseId",
+                    key: "checkStatus",
                     label: "Trạng thái",
                     render: (r) =>
                       r.vetApproved && r.confirmed
@@ -130,6 +152,125 @@ export default function ChecksPage() {
               />
             )}
           </Panel>
+
+          {selected && (
+            <Panel
+              title={`Hồ sơ kiểm tra — ${selected.horseName}`}
+              subtitle="Thông tin ngựa, chủ ngựa và hồ sơ phục vụ quyết định trước cuộc đua"
+              action={
+                <button type="button" className="secondary-button btn-xs" onClick={() => setSelectedHorseId(null)}>
+                  Đóng
+                </button>
+              }
+            >
+              <div className="detail-body">
+                {selected.horseImageUrl && (
+                  <img
+                    src={selected.horseImageUrl}
+                    alt={selected.horseName}
+                    style={{ width: "100%", height: "280px", objectFit: "contain", borderRadius: "8px", background: "var(--c-surf-low)" }}
+                  />
+                )}
+
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Chủ ngựa</span>
+                    <strong>{selected.ownerName ?? "Chưa có dữ liệu"}</strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Mã đăng ký</span>
+                    <strong>{selected.horseRegistrationId ?? "—"}</strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Giống / Tuổi</span>
+                    <strong>
+                      {selected.horseBreed ?? "—"}
+                      {selected.horseAge ? ` · ${selected.horseAge} tuổi` : ""}
+                    </strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Sức khỏe</span>
+                    <span>
+                      {selected.horseHealth
+                        ? <Badge tone={HEALTH_TONE[selected.horseHealth] ?? "neutral"}>{viHealth(selected.horseHealth)}</Badge>
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Màu lông / Cân nặng</span>
+                    <strong>
+                      {selected.horseColor ?? "—"}
+                      {selected.horseWeight ? ` · ${selected.horseWeight} kg` : ""}
+                    </strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Huấn luyện viên</span>
+                    <strong>{selected.horseTrainerName ?? "—"}</strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Nài ngựa</span>
+                    <strong>{selected.jockeyName || "—"}</strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Vị trí thi đấu</span>
+                    <strong>Làn #{selected.laneNumber} · Áo #{selected.clothNumber ?? "—"}</strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Hồ sơ ngựa (PDF)</span>
+                    {selected.horseProfilePdfUrl ? (
+                      <a
+                        className="secondary-button btn-xs"
+                        href={selected.horseProfilePdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {selected.horseProfilePdfName || "Mở hồ sơ PDF"}
+                      </a>
+                    ) : (
+                      <span style={{ color: "var(--c-muted)" }}>Chưa có hồ sơ</span>
+                    )}
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Cuộc đua</span>
+                    <strong>{selected.raceName}</strong>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Trạng thái kiểm tra</span>
+                    <span>
+                      {selected.vetApproved && selected.confirmed
+                        ? <Badge tone="success">Đủ điều kiện thi đấu</Badge>
+                        : <Badge tone="warning">Chưa hoàn tất</Badge>}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="detail-actions" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                  <div>
+                    <strong style={{ display: "block" }}>Quyết định trước cuộc đua</strong>
+                    <span className="detail-action-hint">Kiểm tra hồ sơ và thể trạng trước khi xác nhận ngựa xuất phát.</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className={cn("table-button", selected.vetApproved && "is-complete")}
+                      disabled={busy === `${selected.horseId}-vetApprovedAt`}
+                      onClick={() => toggle(selected.horseId, "vetApprovedAt")}
+                    >
+                      {selected.vetApproved ? "Bỏ duyệt thú y" : "Duyệt thú y"}
+                    </button>
+                    <button
+                      type="button"
+                      className={cn("primary-button", "btn-xs", selected.confirmed && "is-complete")}
+                      disabled={busy === `${selected.horseId}-confirmedAt`}
+                      onClick={() => toggle(selected.horseId, "confirmedAt")}
+                    >
+                      {selected.confirmed ? "Hủy xác nhận xuất phát" : "Xác nhận đủ điều kiện đua"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Panel>
+          )}
         </>
       )}
     </div>

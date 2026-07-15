@@ -2066,6 +2066,12 @@ button:disabled {
   }
 }
 
+@media (max-width: 560px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Prediction config form ───────────────────────────────────── */
 
 .pc-form {
