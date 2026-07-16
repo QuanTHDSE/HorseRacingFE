@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Badge, NotificationBell, Panel } from "../components";
+import { Badge, NotificationBell, Panel, PointChangeNotifier } from "../components";
 import { roleConfigs } from "../config/roleConfigs";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
@@ -46,6 +46,7 @@ export default function AppShell() {
 
   return (
     <div className={cn("dashboard-layout", collapsed && "sidebar-collapsed")}>
+      <PointChangeNotifier userId={user.id} role={user.role} />
       <aside className="sidebar">
 
         <button

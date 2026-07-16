@@ -5,4 +5,5 @@ export { default as DataTable } from "./DataTable";
 export { default as ConfirmDeleteButton } from "./ConfirmDeleteButton";
 export { default as RaceLeaderboard } from "./RaceLeaderboard";
 export { default as NotificationBell } from "./NotificationBell";
+export { default as PointChangeNotifier } from "./PointChangeNotifier";
 export { default as SuspensionBanner } from "./SuspensionBanner";

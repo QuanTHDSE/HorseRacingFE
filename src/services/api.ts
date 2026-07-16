@@ -865,6 +865,10 @@ export const api = {
       request<{ notifications: ApiNotification[] }>("/spectator/notifications"),
   },
 
+  points: {
+    getMine: () => request<{ points: ApiSpectatorPoints }>("/points/me"),
+  },
+
   referee: {
     getDashboard: () =>
       request<{ dashboard: ApiRefereeDashboard }>("/referee/dashboard"),
