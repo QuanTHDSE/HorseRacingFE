@@ -278,6 +278,10 @@ function mapAdminUser(u: ApiAdminUser): SystemUser {
     name: u.fullName,
     email: u.email,
     role: mapRole(u.role),
+    phone: u.phone ?? null,
+    licenseNumber: u.licenseNumber ?? null,
+    licenseExpiry: u.licenseExpiry ?? null,
+    certificationId: u.certificationId ?? null,
     status: u.isActive ? "Active" : "Inactive",
     lastSeen: fmtDate(u.createdAt),
   };
@@ -1393,6 +1397,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshAdminUsers();
   }
 
+  async function handleDeleteAdminUser(id: string): Promise<void> {
+    await api.admin.deleteUser(id);
+    await refreshAdminUsers();
+  }
+
   // ─── Deletes ──────────────────────────────────────────────────────────────
 
   async function handleDeleteTournament(id: string): Promise<void> {
@@ -1598,6 +1607,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleUpdateRegistration,
     handleCreateAdminUser,
     handleUpdateAdminUser,
+    handleDeleteAdminUser,
     handleDeleteTournament,
     handleDeleteRace,
     handleDeleteHorse,
