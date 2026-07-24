@@ -568,7 +568,8 @@ a {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   min-height: 52px;
   padding: 0 16px;
   border: 1.5px solid var(--c-outline-var);
@@ -582,7 +583,8 @@ a {
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   outline: none;
   border-color: var(--c-primary);
   box-shadow: 0 0 0 3px rgba(192, 56, 10, .12);

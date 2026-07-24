@@ -234,6 +234,52 @@ export interface ApiViolationRule {
   appliesTo: "horse" | "jockey" | "both";
 }
 
+export type ApiViolationCategory =
+  | "race_conduct"
+  | "medical"
+  | "equipment"
+  | "administrative";
+
+export type ApiViolationSeverity = "low" | "medium" | "high" | "critical";
+
+export type ApiViolationPenalty =
+  | "warning"
+  | "demote"
+  | "disqualify"
+  | "disqualification"
+  | "restart"
+  | "time_ban"
+  | "permanent_ban";
+
+export interface ApiAdminViolationRule {
+  _id: string;
+  id?: string;
+  code: string;
+  name: string;
+  description: string;
+  category: ApiViolationCategory;
+  severity: ApiViolationSeverity;
+  appliesTo: "horse" | "jockey" | "both";
+  penaltyApplied: ApiViolationPenalty;
+  banDurationDays: number;
+  isActive: boolean;
+  createdBy?: { _id?: string; fullName?: string; email?: string } | string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ApiViolationRuleInput {
+  code: string;
+  name: string;
+  description: string;
+  category: ApiViolationCategory;
+  severity: ApiViolationSeverity;
+  appliesTo: "horse" | "jockey" | "both";
+  penaltyApplied: ApiViolationPenalty;
+  banDurationDays: number;
+  isActive: boolean;
+}
+
 export interface ApiRaceViolation {
   id: string;
   ruleId: string | null;
@@ -642,6 +688,36 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+  },
+
+  adminViolationRules: {
+    list: (filters?: { category?: ApiViolationCategory; isActive?: boolean }) => {
+      const params = new URLSearchParams();
+      if (filters?.category) params.set("category", filters.category);
+      if (filters?.isActive !== undefined) params.set("isActive", String(filters.isActive));
+      const query = params.toString();
+      return request<{ success: boolean; data: ApiAdminViolationRule[] }>(
+        `/admin/violation-rules${query ? `?${query}` : ""}`,
+      );
+    },
+    create: (data: ApiViolationRuleInput) =>
+      request<{ success: boolean; data: ApiAdminViolationRule }>("/admin/violation-rules", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<Omit<ApiViolationRuleInput, "code">>) =>
+      request<{ success: boolean; data: ApiAdminViolationRule }>(
+        `/admin/violation-rules/${id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        },
+      ),
+    toggleStatus: (id: string) =>
+      request<{ success: boolean; message: string; data: ApiAdminViolationRule }>(
+        `/admin/violation-rules/${id}/toggle-status`,
+        { method: "PATCH" },
+      ),
   },
 
   tournaments: {

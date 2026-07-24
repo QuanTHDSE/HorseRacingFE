@@ -5,6 +5,7 @@ import RacesPage from "./RacesPage";
 import TournamentsPage from "./TournamentsPage";
 import ApprovalsPage from "./ApprovalsPage";
 import ResultsPage from "./ResultsPage";
+import ViolationRulesPage from "./ViolationRulesPage";
 
 export default function AdminPages({ page }: { page: string }) {
   switch (page) {
@@ -14,6 +15,7 @@ export default function AdminPages({ page }: { page: string }) {
     case "tournaments": return <TournamentsPage />;
     case "approvals":   return <ApprovalsPage />;
     case "results":     return <ResultsPage />;
+    case "violation-rules": return <ViolationRulesPage />;
     default:            return <Dashboard />;
   }
 }

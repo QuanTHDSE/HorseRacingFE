@@ -59,6 +59,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "races", label: "Thiết lập đua", abbr: "TL" },
       { id: "tournaments", label: "Giải đấu", abbr: "GĐ" },
       { id: "approvals", label: "Duyệt đơn", abbr: "DU" },
+      { id: "violation-rules", label: "Luật vi phạm", abbr: "LV" },
       { id: "results", label: "Kết quả & Dự đoán", abbr: "KD" },
     ],
   },
