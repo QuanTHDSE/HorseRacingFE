@@ -201,7 +201,13 @@ export default function PenaltiesPage() {
 
   return (
     <div className="page-stack">
-      {simTimeline && <RaceLivePlayer timeline={simTimeline} onClose={onPlayerClose} />}
+      {simTimeline && (
+        <RaceLivePlayer
+          timeline={simTimeline}
+          onClose={onPlayerClose}
+          showRaceNotes
+        />
+      )}
       <Panel title="Xử phạt trọng tài" subtitle="Lập biên bản vi phạm cho ngựa hoặc nài ngựa, áp dụng án phạt theo luật và hoàn tác khi kết quả chưa khóa">
         <label className="field" style={{ maxWidth: "440px" }}>
           <span>Cuộc đua</span>

@@ -3,6 +3,232 @@ import type { RaceSimTimeline } from "../types";
 import { computeFrame, fmtClock, lengthsBehind, paceWeights, type RaceFrame } from "../utils/raceSim";
 
 const SPEEDS = [1, 2, 4] as const;
+const HORSE_VIOLATION_RATE = 0.2;
+const JOCKEY_VIOLATION_RATE = 0.25;
+
+const HORSE_VIOLATIONS = [
+  "Đổi hướng đột ngột, có dấu hiệu cản đường ngựa phía sau.",
+  "Chạy lệch làn và lấn sang phần đường của ngựa bên cạnh.",
+  "Có va chạm với ngựa bên cạnh trong lúc tranh vị trí.",
+  "Không giữ đúng quỹ đạo tại khúc cua.",
+] as const;
+
+const JOCKEY_VIOLATIONS = [
+  "Có dấu hiệu ép làn khi đang vượt.",
+  "Sử dụng roi liên tiếp vượt mức cần thiết.",
+  "Không duy trì khoảng cách an toàn với đối thủ phía trước.",
+  "Điều khiển ngựa chuyển làn khi chưa đủ khoảng trống.",
+] as const;
+
+interface RaceNote {
+  id: string;
+  progress: number;
+  time: string;
+  tone: "neutral" | "info" | "warning" | "violation" | "finish";
+  text: string;
+  violationTarget?: "horse" | "jockey";
+  subjectName?: string;
+}
+
+function seededUnit(seed: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 4294967296;
+}
+
+function addSimulatedViolationNotes(
+  notes: RaceNote[],
+  timeline: RaceSimTimeline,
+  maxFinish: number,
+): void {
+  const initialNoteCount = notes.length;
+
+  timeline.horses.forEach((horse) => {
+    const horseSeed = `${timeline.raceId}:horse:${horse.horseId}`;
+    const horseRoll = seededUnit(`${horseSeed}:roll`);
+
+    if (horseRoll < HORSE_VIOLATION_RATE) {
+      const progress = 0.18 + seededUnit(`${horseSeed}:time`) * 0.64;
+      const description =
+        HORSE_VIOLATIONS[
+          Math.floor(seededUnit(`${horseSeed}:type`) * HORSE_VIOLATIONS.length)
+        ] ?? HORSE_VIOLATIONS[0];
+      notes.push({
+        id: `horse-violation-${horse.horseId}`,
+        progress,
+        time: fmtClock(progress * maxFinish),
+        tone: "violation",
+        violationTarget: "horse",
+        subjectName: horse.horseName,
+        text: `Nghi vấn vi phạm của ngựa ${horse.horseName}: ${description}`,
+      });
+    }
+
+    const jockeySeed = `${timeline.raceId}:jockey:${horse.jockeyId || horse.horseId}`;
+    const jockeyRoll = seededUnit(`${jockeySeed}:roll`);
+
+    if (jockeyRoll < JOCKEY_VIOLATION_RATE) {
+      const progress = 0.2 + seededUnit(`${jockeySeed}:time`) * 0.62;
+      const description =
+        JOCKEY_VIOLATIONS[
+          Math.floor(seededUnit(`${jockeySeed}:type`) * JOCKEY_VIOLATIONS.length)
+        ] ?? JOCKEY_VIOLATIONS[0];
+      notes.push({
+        id: `jockey-violation-${horse.jockeyId || horse.horseId}`,
+        progress,
+        time: fmtClock(progress * maxFinish),
+        tone: "violation",
+        violationTarget: "jockey",
+        subjectName: horse.jockeyName,
+        text: `Nghi vấn vi phạm của nài ${horse.jockeyName}: ${description}`,
+      });
+    }
+  });
+
+  // Mỗi lượt mô phỏng dành cho trọng tài cần có ít nhất một tình huống để
+  // kiểm tra quy trình lập biên bản, kể cả khi toàn bộ lượt quay tỷ lệ đều trượt.
+  if (notes.length === initialNoteCount && timeline.horses.length > 0) {
+    const fallbackSeed = `${timeline.raceId}:fallback-violation`;
+    const horse =
+      timeline.horses[
+        Math.floor(seededUnit(`${fallbackSeed}:participant`) * timeline.horses.length)
+      ] ?? timeline.horses[0];
+    if (!horse) return;
+
+    const isJockey = seededUnit(`${fallbackSeed}:target`) < 0.55;
+    const progress = 0.35 + seededUnit(`${fallbackSeed}:time`) * 0.35;
+    const descriptions = isJockey ? JOCKEY_VIOLATIONS : HORSE_VIOLATIONS;
+    const description =
+      descriptions[
+        Math.floor(seededUnit(`${fallbackSeed}:type`) * descriptions.length)
+      ] ?? descriptions[0];
+    const subjectName = isJockey ? horse.jockeyName : horse.horseName;
+
+    notes.push({
+      id: "fallback-violation",
+      progress,
+      time: fmtClock(progress * maxFinish),
+      tone: "violation",
+      violationTarget: isJockey ? "jockey" : "horse",
+      subjectName,
+      text: `Nghi vấn vi phạm của ${isJockey ? "nài" : "ngựa"} ${subjectName}: ${description}`,
+    });
+  }
+}
+
+function buildRaceNotes(
+  timeline: RaceSimTimeline,
+  weights: Record<string, number[]>,
+): RaceNote[] {
+  if (timeline.horses.length === 0) return [];
+
+  const maxFinish = Math.max(...timeline.horses.map((horse) => horse.finishTime));
+  const notes: RaceNote[] = [
+    {
+      id: "start",
+      progress: 0,
+      time: "0:00.00",
+      tone: "info",
+      text: `${timeline.horses.length} ngựa đã xuất phát. Trọng tài bắt đầu theo dõi cuộc đua.`,
+    },
+  ];
+
+  let previousOrder = computeFrame(timeline.horses, weights, 0, timeline.durationMs).ranking;
+  let lastLeadNoteProgress = -1;
+  let lastMoveNoteProgress = -1;
+
+  for (let step = 1; step < 20; step += 1) {
+    const progress = step / 20;
+    const frame = computeFrame(
+      timeline.horses,
+      weights,
+      timeline.durationMs * progress,
+      timeline.durationMs,
+    );
+    const currentOrder = frame.ranking;
+    const previousLeader = previousOrder[0];
+    const currentLeader = currentOrder[0];
+    const time = fmtClock(progress * maxFinish);
+
+    if (
+      previousLeader &&
+      currentLeader &&
+      previousLeader.horse.horseId !== currentLeader.horse.horseId &&
+      progress - lastLeadNoteProgress >= 0.1
+    ) {
+      notes.push({
+        id: `lead-${step}`,
+        progress,
+        time,
+        tone: "warning",
+        text: `${currentLeader.horse.horseName} vượt ${previousLeader.horse.horseName} và vươn lên dẫn đầu.`,
+      });
+      lastLeadNoteProgress = progress;
+    } else if (progress - lastMoveNoteProgress >= 0.15) {
+      const previousPositions = new Map(
+        previousOrder.map((horse, index) => [horse.horse.horseId, index]),
+      );
+      const climber = currentOrder
+        .map((horse, index) => ({
+          horse,
+          gained: (previousPositions.get(horse.horse.horseId) ?? index) - index,
+        }))
+        .sort((a, b) => b.gained - a.gained)[0];
+
+      if (climber && climber.gained >= 2) {
+        notes.push({
+          id: `move-${step}`,
+          progress,
+          time,
+          tone: "info",
+          text: `${climber.horse.horse.horseName} tăng ${climber.gained} bậc, hiện đứng vị trí ${currentOrder.indexOf(climber.horse) + 1}.`,
+        });
+        lastMoveNoteProgress = progress;
+      }
+    }
+
+    if (step === 5 || step === 10 || step === 15) {
+      const distance = Math.round(progress * timeline.distance);
+      notes.push({
+        id: `checkpoint-${step}`,
+        progress,
+        time,
+        tone: "neutral",
+        text: `Qua mốc ${distance}m: ${currentLeader?.horse.horseName ?? "chưa xác định"} đang dẫn đầu.`,
+      });
+    }
+
+    if (step === 18) {
+      notes.push({
+        id: "final-stretch",
+        progress,
+        time,
+        tone: "warning",
+        text: `Vào đoạn nước rút cuối. Còn khoảng ${Math.max(1, Math.round(timeline.distance * 0.1))}m đến đích.`,
+      });
+    }
+
+    previousOrder = currentOrder;
+  }
+
+  addSimulatedViolationNotes(notes, timeline, maxFinish);
+
+  const winner = [...timeline.horses].sort((a, b) => a.rank - b.rank)[0];
+  notes.push({
+    id: "finish",
+    progress: 1,
+    time: fmtClock(maxFinish),
+    tone: "finish",
+    text: winner
+      ? `${winner.horseName} cán đích đầu tiên. Cuộc đua đã kết thúc, chờ trọng tài chốt kết quả.`
+      : "Cuộc đua đã kết thúc, chờ trọng tài chốt kết quả.",
+  });
+
+  return notes.sort((a, b) => a.progress - b.progress);
+}
 
 // Màu sắc màn đua theo mặt sân của trường đua
 const SURFACE_THEME: Record<string, { field: string; track: string; infield: string; rail: string; label: string }> = {
@@ -14,9 +240,11 @@ const SURFACE_THEME: Record<string, { field: string; track: string; infield: str
 export default function RaceLivePlayer({
   timeline,
   onClose,
+  showRaceNotes = false,
 }: {
   timeline: RaceSimTimeline;
   onClose: () => void;
+  showRaceNotes?: boolean;
 }) {
   const weights = useMemo(() => {
     const map: Record<string, number[]> = {};
@@ -36,6 +264,12 @@ export default function RaceLivePlayer({
   const lastTsRef = useRef<number | null>(null);
   const prevLeadRef = useRef({ p: 0, t: 0 });
   const [speedPct, setSpeedPct] = useState(80);
+  const notesEndRef = useRef<HTMLDivElement>(null);
+
+  const raceNotes = useMemo(
+    () => buildRaceNotes(timeline, weights),
+    [timeline, weights],
+  );
 
   useEffect(() => { speedRef.current = speed; }, [speed]);
 
@@ -84,6 +318,19 @@ export default function RaceLivePlayer({
   const distRemaining = Math.max(0, Math.round((1 - frame.leaderProgress) * timeline.distance));
   const cond = timeline.trackCondition.toUpperCase();
   const theme = SURFACE_THEME[timeline.surface] ?? SURFACE_THEME.turf;
+  const maxFinish = Math.max(...timeline.horses.map((horse) => horse.finishTime), 1);
+  const elapsedProgress = Math.min(1, frame.raceTimeSec / maxFinish);
+  const visibleNotes = showRaceNotes
+    ? raceNotes.filter((note) => note.progress <= elapsedProgress + 0.001)
+    : [];
+  const visibleViolationCount = visibleNotes.filter(
+    (note) => note.tone === "violation",
+  ).length;
+
+  useEffect(() => {
+    if (!showRaceNotes) return;
+    notesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [showRaceNotes, visibleNotes.length]);
 
   return (
     <div style={S.wrap} ref={wrapRef}>
@@ -215,6 +462,67 @@ export default function RaceLivePlayer({
           </div>
         </div>
 
+        {showRaceNotes && (
+          <section style={S.notesPanel} aria-label="Nhật ký diễn biến dành cho trọng tài">
+            <div style={S.notesHeader}>
+              <div>
+                <span style={S.panelLabel}>NHẬT KÝ TRỌNG TÀI</span>
+                <strong style={S.notesTitle}>Diễn biến trong cuộc đua</strong>
+              </div>
+              <div style={S.notesMeta}>
+                <span style={S.rateChip}>Ngựa: {Math.round(HORSE_VIOLATION_RATE * 100)}%</span>
+                <span style={S.rateChip}>Nài: {Math.round(JOCKEY_VIOLATION_RATE * 100)}%</span>
+                <span style={S.violationCount}>{visibleViolationCount} nghi vấn</span>
+                <span style={S.liveIndicator}>
+                  <span style={S.liveDot} />
+                  {done ? "Đã kết thúc" : "Đang ghi nhận"}
+                </span>
+              </div>
+            </div>
+            <div style={S.notesList} aria-live="polite">
+              {visibleNotes.map((note) => (
+                <article
+                  key={note.id}
+                  style={{
+                    ...S.noteRow,
+                    ...(note.tone === "warning" ? S.noteWarning : {}),
+                    ...(note.tone === "violation" ? S.noteViolation : {}),
+                    ...(note.tone === "finish" ? S.noteFinish : {}),
+                  }}
+                >
+                  <time style={S.noteTime}>{note.time}</time>
+                  <span style={S.noteMarker}>
+                    {note.tone === "finish"
+                      ? "🏁"
+                      : note.tone === "violation"
+                        ? "⚠"
+                        : note.tone === "warning"
+                          ? "!"
+                          : "•"}
+                  </span>
+                  <span style={S.noteText}>
+                    {note.violationTarget && (
+                      <span
+                        style={{
+                          ...S.targetBadge,
+                          ...(note.violationTarget === "horse" ? S.horseBadge : S.jockeyBadge),
+                        }}
+                      >
+                        {note.violationTarget === "horse" ? "NGỰA" : "NÀI NGỰA"}
+                      </span>
+                    )}
+                    {note.text}
+                  </span>
+                </article>
+              ))}
+              <div ref={notesEndRef} />
+            </div>
+            <p style={S.notesHint}>
+              Tỷ lệ mô phỏng trên được tính độc lập cho từng ngựa và từng nài. Các cảnh báo chỉ là nghi vấn hỗ trợ quan sát; trọng tài phải kiểm tra và lập biên bản trước khi áp dụng hình phạt.
+            </p>
+          </section>
+        )}
+
         {/* ── Finish overlay ── */}
         {done && (
           <div style={S.finishCard}>
@@ -303,6 +611,63 @@ const S: Record<string, React.CSSProperties> = {
   speedBarWrap: { display: "flex", flexDirection: "column", gap: 4 },
   speedBarOuter: { height: 12, background: "#0e141b", borderRadius: 6, overflow: "hidden", border: "1px solid #2c3744" },
   speedBarInner: { height: "100%", background: "linear-gradient(90deg, #4ade80, #22c55e)", transition: "width 0.1s linear" },
+  notesPanel: {
+    margin: "0 16px 16px", background: "#161d26", border: "1px solid #394556",
+    borderRadius: 10, overflow: "hidden",
+  },
+  notesHeader: {
+    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+    padding: "12px 14px", borderBottom: "1px solid #2c3744",
+  },
+  notesTitle: { display: "block", color: "#fff", fontSize: "0.95rem", marginTop: 3 },
+  notesMeta: {
+    display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7,
+    flexWrap: "wrap",
+  },
+  rateChip: {
+    padding: "4px 7px", borderRadius: 999, background: "#25303d", color: "#cbd2db",
+    border: "1px solid #394556", fontSize: "0.68rem", fontWeight: 700,
+  },
+  violationCount: {
+    padding: "4px 7px", borderRadius: 999, background: "rgba(239,68,68,0.12)",
+    color: "#fca5a5", border: "1px solid rgba(239,68,68,0.35)",
+    fontSize: "0.68rem", fontWeight: 800,
+  },
+  liveIndicator: {
+    display: "inline-flex", alignItems: "center", gap: 6, color: "#cbd2db",
+    fontSize: "0.72rem", fontWeight: 700,
+  },
+  liveDot: {
+    display: "inline-block", width: 8, height: 8, borderRadius: "50%",
+    background: "#ef4444", boxShadow: "0 0 0 3px rgba(239,68,68,0.16)",
+  },
+  notesList: { maxHeight: 180, overflowY: "auto", padding: "6px 10px" },
+  noteRow: {
+    display: "grid", gridTemplateColumns: "62px 22px 1fr", alignItems: "start",
+    gap: 8, padding: "8px 6px", borderBottom: "1px solid rgba(57,69,86,0.55)",
+  },
+  noteWarning: { background: "rgba(245,158,11,0.08)" },
+  noteViolation: {
+    background: "rgba(239,68,68,0.12)", borderLeft: "3px solid #ef4444",
+  },
+  noteFinish: { background: "rgba(74,222,128,0.08)" },
+  noteTime: { color: "#ffd24a", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums" },
+  noteMarker: {
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    width: 18, height: 18, borderRadius: "50%", background: "#2c3744",
+    color: "#fff", fontSize: "0.68rem", fontWeight: 800,
+  },
+  noteText: { color: "#d8dee7", fontSize: "0.8rem", lineHeight: 1.45 },
+  targetBadge: {
+    display: "inline-block", padding: "2px 5px", marginRight: 7, borderRadius: 4,
+    fontSize: "0.62rem", fontWeight: 900, letterSpacing: "0.04em",
+  },
+  horseBadge: { background: "#7c3aed", color: "#ede9fe" },
+  jockeyBadge: { background: "#0369a1", color: "#e0f2fe" },
+  notesHint: {
+    margin: 0, padding: "8px 14px", borderTop: "1px solid #2c3744",
+    color: "#7c8694", fontSize: "0.7rem", lineHeight: 1.4,
+  },
   finishCard: {
     position: "absolute", inset: 0, background: "rgba(15,20,27,0.92)", borderRadius: 14,
     display: "flex", flexDirection: "column", justifyContent: "center", padding: "24px 32px",
