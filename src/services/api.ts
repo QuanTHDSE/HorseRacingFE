@@ -647,10 +647,15 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ email, password }),
       }),
-    register: (email: string, password: string, fullName: string) =>
+    register: (
+      email: string,
+      password: string,
+      fullName: string,
+      role: Extract<ApiRole, "spectator" | "jockey">,
+    ) =>
       request<ApiAuthResponse>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password, fullName }),
+        body: JSON.stringify({ email, password, fullName, role }),
       }),
     me: () => request<{ user: ApiUser }>("/auth/me"),
   },

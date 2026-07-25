@@ -617,7 +617,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     name: "",
     email: "",
     password: "",
-    role: "owner",
+    role: "spectator",
   });
 
   // ─── Fetch role-specific data after login ─────────────────────────────────
@@ -944,13 +944,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         registerForm.email.trim(),
         registerForm.password,
         registerForm.name.trim(),
+        registerForm.role,
       );
       setToken(token);
       const account = mapApiUserToAccount(apiUser);
       setUser(account);
       await fetchDataForUser(account);
       setAuthMode("login");
-      setRegisterForm({ name: "", email: "", password: "", role: "owner" });
+      setRegisterForm({ name: "", email: "", password: "", role: "spectator" });
     } catch (err: unknown) {
       setAuthError(
         err instanceof Error ? err.message : "Registration failed. Please try again.",
