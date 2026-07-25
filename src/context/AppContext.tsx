@@ -412,14 +412,18 @@ function mapPrediction(p: ApiPrediction, spectatorId: string): Prediction {
 function mapPointsToRewards(pts: ApiSpectatorPoints, spectatorId: string): Reward[] {
   if (!pts.transactions.length) return [];
   return pts.transactions
-    .filter((tx) => tx.points > 0)
-    .slice(0, 10)
+    .slice(0, 50)
     .map((tx) => ({
       id: tx.id,
       spectatorId,
-      title: tx.note ?? tx.type,
-      amount: `${tx.points} pts`,
-      status: "Claimed",
+      title: tx.note ?? tx.type.replace(/_/g, " "),
+      amount: `${tx.points > 0 ? "+" : ""}${tx.points.toLocaleString("vi-VN")} pts`,
+      rawPoints: tx.points,
+      balanceAfter: tx.balanceAfter,
+      type: tx.type,
+      direction: tx.points > 0 ? "credit" : tx.points < 0 ? "debit" : "neutral",
+      createdAt: tx.createdAt,
+      status: tx.points > 0 ? "Received" : tx.points < 0 ? "Spent" : "Recorded",
     }));
 }
 
