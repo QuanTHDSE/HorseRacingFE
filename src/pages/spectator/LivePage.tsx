@@ -267,9 +267,14 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
             </div>
             <div className="spectator-violation-list">
               {race.result.violations.map((violation, index) => (
-                <article className="spectator-violation-item" key={`${violation.horseId ?? "unknown"}-${index}`}>
+                <article className="spectator-violation-item" key={`${violation.horseId ?? violation.jockeyId ?? "unknown"}-${index}`}>
                   <div>
-                    <strong>{violation.horseName ?? "Chưa xác định"}</strong>
+                    <strong>
+                      {violation.target === "jockey" ? (violation.jockeyName ?? "Chưa xác định") : (violation.horseName ?? "Chưa xác định")}
+                    </strong>{" "}
+                    <Badge tone={violation.target === "jockey" ? "info" : "accent"}>
+                      {violation.target === "jockey" ? "Nài" : violation.target === "both" ? "Cả hai" : "Ngựa"}
+                    </Badge>
                     <p>{violation.description}</p>
                   </div>
                   {violation.penaltyApplied && (

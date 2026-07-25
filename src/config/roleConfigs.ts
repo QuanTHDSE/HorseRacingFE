@@ -32,7 +32,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
     menu: [
       { id: "dashboard", label: "Tổng quan", abbr: "TQ" },
       { id: "checks", label: "Kiểm tra trước đua", abbr: "KT" },
-      { id: "penalties", label: "Xử phạt", abbr: "XP" },
+      { id: "penalties", label: "Điều hành & Xử phạt", abbr: "XP" },
       { id: "results", label: "Kết quả", abbr: "KQ" },
     ],
   },
