@@ -415,6 +415,10 @@ export interface SystemUser {
   name: string;
   email: string;
   role: string;
+  phone?: string | null;
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  certificationId?: string | null;
   status: string;
   lastSeen: string;
 }
@@ -760,6 +764,7 @@ export interface AppContextValue {
     licenseExpiry?: string | null;
     certificationId?: string | null;
   }) => Promise<void>;
+  handleDeleteAdminUser: (id: string) => Promise<void>;
   handleDeleteTournament: (id: string) => Promise<void>;
   handleDeleteRace: (id: string) => Promise<void>;
   handleDeleteHorse: (id: string) => Promise<void>;
