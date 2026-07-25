@@ -703,7 +703,7 @@ export interface RegisterForm {
   name: string;
   email: string;
   password: string;
-  role: Role;
+  role: Extract<Role, "spectator" | "jockey">;
 }
 
 export interface AppContextValue {

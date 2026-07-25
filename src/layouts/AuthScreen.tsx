@@ -1,34 +1,27 @@
+import { Link } from "react-router-dom";
+import { Eye, Gauge, type LucideIcon } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
+import bgImage from "../../assets/race-bg.jpg";
 
-const FEATURES = [
+const ROLE_OPTIONS: {
+  value: "spectator" | "jockey";
+  label: string;
+  desc: string;
+  icon: LucideIcon;
+}[] = [
   {
-    icon: "🏟️",
-    title: "Thiết lập giải đấu & cuộc đua",
-    desc: "Tạo giải đấu, cấu hình đường đua và quản lý toàn bộ lịch đua từ đầu đến cuối.",
+    value: "spectator",
+    label: "Khán giả",
+    desc: "Theo dõi đua trực tiếp, dự đoán kết quả và nhận thưởng",
+    icon: Eye,
   },
   {
-    icon: "🐴",
-    title: "Quản lý ngựa & nài ngựa",
-    desc: "Đăng ký ngựa, phân công nài, theo dõi hồ sơ sức khỏe và thống kê thành tích.",
+    value: "jockey",
+    label: "Nài ngựa",
+    desc: "Nhận lời mời thi đấu và quản lý các cuộc đua được giao",
+    icon: Gauge,
   },
-  {
-    icon: "📡",
-    title: "Điều hành đua trực tiếp",
-    desc: "Bảng điều khiển của trọng tài với theo dõi thời gian thực, ghi nhận vi phạm và cảnh báo tức thì.",
-  },
-  {
-    icon: "🏅",
-    title: "Kết quả & Dự đoán",
-    desc: "Công bố kết quả chính thức, trao thưởng và thu hút khán giả bằng dự đoán trực tiếp.",
-  },
-];
-
-const STATS = [
-  { value: "12+", label: "Giải đấu" },
-  { value: "48", label: "Ngựa" },
-  { value: "24", label: "Nài ngựa" },
-  { value: "6", label: "Đường đua" },
 ];
 
 export default function AuthScreen() {
@@ -46,175 +39,148 @@ export default function AuthScreen() {
   } = useApp();
 
   return (
-    <div className="auth-layout">
+    <div className="auth-page">
+      <div className="auth-bg" style={{ backgroundImage: `url(${bgImage})` }} />
+      <div className="auth-bg-overlay" />
 
-      {/* ════════════════════════════════════════
-          LEFT — Hero panel
-      ════════════════════════════════════════ */}
-      <section className="auth-hero">
-
-        {/* Brand header */}
-        <div className="auth-hero-brand">
-          <div className="auth-hero-logo">RT</div>
-          <div>
-            <span className="auth-hero-brand-name">RacetrackVN</span>
-            <span className="auth-hero-brand-sub">Nền tảng quản lý</span>
-          </div>
+      {/* ── Nav — transparent blurred navbar, same as homepage ─────── */}
+      <header className="home-nav">
+        <Link to="/" className="home-nav-brand">
+          <div className="brand-mark">RT</div>
+          <span className="home-nav-brand-name">RacetrackVN</span>
+        </Link>
+        <div className="home-nav-actions">
+          <Link className="ghost-button" to="/">← Trang chủ</Link>
         </div>
+      </header>
 
-        {/* Hero copy */}
-        <div className="auth-hero-copy">
-          <span className="auth-hero-eyebrow">🏆 Nền tảng đua ngựa số 1 Việt Nam</span>
-          <h1>Quản lý mọi cuộc đua,<br />từ đầu đến cuối</h1>
-          <p>
-            Nền tảng số hoàn chỉnh kết nối chủ ngựa, nài ngựa, trọng tài và khán giả —
-            bao trùm toàn bộ vòng đời của mỗi giải đua ngựa.
+      {/* ── Centered auth card ──────────────────────────────────────── */}
+      <main className="auth-center">
+        <div className="auth-card">
+
+          <div className="auth-tabs">
+            <button
+              className={cn("auth-tab", authMode === "login" && "is-active")}
+              type="button"
+              onClick={() => handleModeChange("login")}
+            >
+              Đăng nhập
+            </button>
+            <button
+              className={cn("auth-tab", authMode === "register" && "is-active")}
+              type="button"
+              onClick={() => handleModeChange("register")}
+            >
+              Đăng ký
+            </button>
+          </div>
+
+          {authMode === "login" ? (
+            <form className="auth-form" onSubmit={handleLoginSubmit}>
+              <div className="form-copy">
+                <h2>Chào mừng trở lại</h2>
+                <p>Đăng nhập để vào khu làm việc theo vai trò và quản lý hoạt động đua ngựa của bạn.</p>
+              </div>
+              <label className="field">
+                <span>Địa chỉ email</span>
+                <input
+                  name="email"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
+                  placeholder="you@example.vn"
+                  autoComplete="email"
+                  disabled={isLoading}
+                />
+              </label>
+              <label className="field">
+                <span>Mật khẩu</span>
+                <input
+                  name="password"
+                  type="password"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
+                  placeholder="Nhập mật khẩu"
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                />
+              </label>
+              {authError ? <div className="form-error">{authError}</div> : null}
+              <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
+                {isLoading ? "Đang đăng nhập…" : "Đăng nhập →"}
+              </button>
+            </form>
+          ) : (
+            <form className="auth-form" onSubmit={handleRegisterSubmit}>
+              <div className="form-copy">
+                <h2>Tham gia RacetrackVN</h2>
+                <p>Chọn loại tài khoản phù hợp và đăng ký để bắt đầu trải nghiệm.</p>
+              </div>
+
+              <div className="field">
+                <span>Loại tài khoản</span>
+                <div className="auth-role-grid">
+                  {ROLE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={cn("auth-role-option", registerForm.role === opt.value && "is-active")}
+                      onClick={() => setRegisterForm((prev) => ({ ...prev, role: opt.value }))}
+                      disabled={isLoading}
+                    >
+                      <span className="auth-role-icon"><opt.icon size={18} strokeWidth={2} /></span>
+                      <strong>{opt.label}</strong>
+                      <p>{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="field">
+                <span>Họ và tên</span>
+                <input
+                  name="name"
+                  value={registerForm.name}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
+                  placeholder="Nhập họ và tên của bạn"
+                  autoComplete="name"
+                  disabled={isLoading}
+                />
+              </label>
+              <label className="field">
+                <span>Địa chỉ email</span>
+                <input
+                  name="email"
+                  value={registerForm.email}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
+                  placeholder="name@example.vn"
+                  autoComplete="email"
+                  disabled={isLoading}
+                />
+              </label>
+              <label className="field">
+                <span>Mật khẩu</span>
+                <input
+                  name="password"
+                  type="password"
+                  value={registerForm.password}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
+                  placeholder="Ít nhất 8 ký tự"
+                  autoComplete="new-password"
+                  disabled={isLoading}
+                />
+              </label>
+              {authError ? <div className="form-error">{authError}</div> : null}
+              <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
+                {isLoading ? "Đang tạo tài khoản…" : "Tạo tài khoản →"}
+              </button>
+            </form>
+          )}
+
+          <p className="auth-panel-footer">
+            © 2026 RacetrackVN · Bảo lưu mọi quyền
           </p>
         </div>
-
-        {/* Platform stats */}
-        <div className="auth-stats-row">
-          {STATS.map((s) => (
-            <div key={s.label} className="auth-stat">
-              <strong>{s.value}</strong>
-              <span>{s.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Feature showcase */}
-        <div className="auth-features">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="auth-feature">
-              <span className="auth-feature-icon">{f.icon}</span>
-              <div>
-                <h4>{f.title}</h4>
-                <p>{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-      </section>
-
-      {/* ════════════════════════════════════════
-          RIGHT — Form panel
-      ════════════════════════════════════════ */}
-      <section className="auth-panel">
-
-        {/* Panel brand */}
-        <div className="auth-panel-top">
-          <div className="auth-panel-mark">RT</div>
-          <div>
-            <p className="auth-panel-brand">RacetrackVN</p>
-            <p className="auth-panel-sub">Truy cập an toàn vào khu làm việc của bạn</p>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="auth-tabs">
-          <button
-            className={cn("auth-tab", authMode === "login" && "is-active")}
-            type="button"
-            onClick={() => handleModeChange("login")}
-          >
-            Đăng nhập
-          </button>
-          <button
-            className={cn("auth-tab", authMode === "register" && "is-active")}
-            type="button"
-            onClick={() => handleModeChange("register")}
-          >
-            Đăng ký
-          </button>
-        </div>
-
-        {authMode === "login" ? (
-          <form className="auth-form" onSubmit={handleLoginSubmit}>
-            <div className="form-copy">
-              <h2>Chào mừng trở lại</h2>
-              <p>Đăng nhập để vào khu làm việc theo vai trò và quản lý hoạt động đua ngựa của bạn.</p>
-            </div>
-            <label className="field">
-              <span>Địa chỉ email</span>
-              <input
-                name="email"
-                value={loginForm.email}
-                onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="you@example.vn"
-                autoComplete="email"
-                disabled={isLoading}
-              />
-            </label>
-            <label className="field">
-              <span>Mật khẩu</span>
-              <input
-                name="password"
-                type="password"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="Nhập mật khẩu"
-                autoComplete="current-password"
-                disabled={isLoading}
-              />
-            </label>
-            {authError ? <div className="form-error">{authError}</div> : null}
-            <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
-              {isLoading ? "Đang đăng nhập…" : "Đăng nhập →"}
-            </button>
-          </form>
-        ) : (
-          <form className="auth-form" onSubmit={handleRegisterSubmit}>
-            <div className="form-copy">
-              <h2>Tham gia RacetrackVN</h2>
-              <p>Đăng ký làm khán giả để theo dõi các cuộc đua và tham gia dự đoán.</p>
-            </div>
-            <label className="field">
-              <span>Họ và tên</span>
-              <input
-                name="name"
-                value={registerForm.name}
-                onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="Nhập họ và tên của bạn"
-                autoComplete="name"
-                disabled={isLoading}
-              />
-            </label>
-            <label className="field">
-              <span>Địa chỉ email</span>
-              <input
-                name="email"
-                value={registerForm.email}
-                onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="name@example.vn"
-                autoComplete="email"
-                disabled={isLoading}
-              />
-            </label>
-            <label className="field">
-              <span>Mật khẩu</span>
-              <input
-                name="password"
-                type="password"
-                value={registerForm.password}
-                onChange={(e) => setRegisterForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))}
-                placeholder="Ít nhất 8 ký tự"
-                autoComplete="new-password"
-                disabled={isLoading}
-              />
-            </label>
-            {authError ? <div className="form-error">{authError}</div> : null}
-            <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
-              {isLoading ? "Đang tạo tài khoản…" : "Tạo tài khoản →"}
-            </button>
-          </form>
-        )}
-
-        <p className="auth-panel-footer">
-          © 2026 RacetrackVN · Bảo lưu mọi quyền
-        </p>
-      </section>
-
+      </main>
     </div>
   );
 }
