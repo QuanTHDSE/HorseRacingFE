@@ -45,7 +45,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "tournaments", label: "Giải đấu", abbr: "GĐ" },
       { id: "live", label: "Kết quả trực tiếp", abbr: "TT" },
       { id: "predictions", label: "Dự đoán", abbr: "DĐ" },
-      { id: "rewards", label: "Lịch sử thưởng", abbr: "LS" },
+      { id: "rewards", label: "Ví điểm", abbr: "VD" },
     ],
   },
   admin: {

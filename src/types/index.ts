@@ -376,6 +376,11 @@ export interface Reward {
   spectatorId: string;
   title: string;
   amount: string;
+  rawPoints: number;
+  balanceAfter: number;
+  type: string;
+  direction: "credit" | "debit" | "neutral";
+  createdAt: string;
   status: string;
 }
 
