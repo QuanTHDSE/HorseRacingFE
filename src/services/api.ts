@@ -83,7 +83,11 @@ export interface ApiAdminUser {
   email: string;
   role: ApiRole;
   fullName: string;
+  phone?: string | null;
   isActive: boolean;
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  certificationId?: string | null;
   createdAt: string;
 }
 
@@ -660,6 +664,8 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
+    deleteUser: (id: string) =>
+      request<void>(`/admin/users/${id}`, { method: "DELETE" }),
     listRegistrations: (status?: string) =>
       request<{ registrations: ApiRegistration[] }>(
         `/admin/registrations${status ? `?status=${status}` : ""}`,
