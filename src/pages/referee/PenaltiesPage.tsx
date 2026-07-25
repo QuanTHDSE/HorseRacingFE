@@ -208,7 +208,7 @@ export default function PenaltiesPage() {
           showRaceNotes
         />
       )}
-      <Panel title="Xử phạt trọng tài" subtitle="Lập biên bản vi phạm cho ngựa hoặc nài ngựa, áp dụng án phạt theo luật và hoàn tác khi kết quả chưa khóa">
+      <Panel title="Điều hành trận đấu" subtitle="Chọn cuộc đua, bắt đầu điều hành và theo dõi trạng thái trước khi lập biên bản xử phạt">
         <label className="field" style={{ maxWidth: "440px" }}>
           <span>Cuộc đua</span>
           <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>

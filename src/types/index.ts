@@ -602,8 +602,11 @@ export interface SpectatorRaceResult {
     isDisqualified?: boolean;
   }>;
   violations?: Array<{
+    target: "horse" | "jockey" | "both";
     horseId: string | null;
     horseName: string | null;
+    jockeyId: string | null;
+    jockeyName: string | null;
     type: string;
     description: string;
     penaltyApplied: string | null;
