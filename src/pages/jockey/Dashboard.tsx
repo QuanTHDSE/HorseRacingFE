@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, MetricCard, Panel, SuspensionBanner } from "../../components";
+import { Badge, LoadingState, MetricCard, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { JockeyDashboard } from "../../types";
 import { viInvitationStatus, viRaceStatus } from "../../utils/viLabels";
@@ -10,14 +10,22 @@ function fmtDate(iso?: string): string {
 }
 
 export default function JockeyDashboardPage() {
-  const { user, appState, handleGetJockeyDashboard } = useApp();
+  const { user, appState, isDataLoading, handleGetJockeyDashboard } = useApp();
   const [stats, setStats] = useState<JockeyDashboard | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
+    let alive = true;
     handleGetJockeyDashboard()
-      .then(setStats)
-      .catch(() => null);
+      .then((res) => alive && setStats(res))
+      .catch(() => null)
+      .finally(() => alive && setStatsLoading(false));
+    return () => { alive = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The metrics fall back to `appState`, so they are only unknown while both
+  // the dashboard call and the shared fetch are still running.
+  const metricsLoading = statsLoading && isDataLoading;
 
   if (!user) return null;
 
@@ -45,25 +53,29 @@ export default function JockeyDashboardPage() {
           value={String(pendingInvites)}
           note="Cần phản hồi"
           tone="warning"
+          loading={metricsLoading}
         />
         <MetricCard
           label="Cuộc đua sắp tới"
           value={String(upcomingRaces)}
           note="Đã lên lịch &amp; đang diễn ra"
           tone="accent"
+          loading={metricsLoading}
         />
         <MetricCard
           label="Cuộc đua đã xong"
           value={String(completedRaces)}
           note="Tổng đã hoàn thành"
           tone="success"
+          loading={metricsLoading}
         />
       </div>
 
       <div className="content-grid two">
         <Panel title="Lời mời gần đây" subtitle="Các lời mời cưỡi ngựa mới nhất">
           <div className="card-list">
-            {recentInvites.length === 0 && (
+            {isDataLoading && recentInvites.length === 0 && <LoadingState label="Đang tải lời mời…" />}
+            {!isDataLoading && recentInvites.length === 0 && (
               <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa có lời mời nào.</p>
             )}
             {recentInvites.map((inv) => (
@@ -87,7 +99,8 @@ export default function JockeyDashboardPage() {
 
         <Panel title="Cuộc đua sắp tới" subtitle="Các lượt xuất phát tiếp theo của bạn">
           <div className="card-list">
-            {recentRaces.length === 0 && (
+            {isDataLoading && recentRaces.length === 0 && <LoadingState label="Đang tải lịch đua…" />}
+            {!isDataLoading && recentRaces.length === 0 && (
               <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Không có cuộc đua sắp tới.</p>
             )}
             {recentRaces.map((race) => (

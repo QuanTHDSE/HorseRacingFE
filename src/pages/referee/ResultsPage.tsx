@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, MetricCard, Panel } from "../../components";
+import { Badge, LoadingState, MetricCard, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceViolation, RefereeResultStatus, ResultRankingInput } from "../../types";
@@ -197,14 +197,15 @@ export default function ResultsPage() {
       {raceId && (
         <>
           <div className="metric-grid three">
-            <MetricCard label="Trạng thái đua" value={race ? viRaceStatus(race.liveStatus) : "—"} note="Trạng thái cuộc đua" />
+            <MetricCard label="Trạng thái đua" value={race ? viRaceStatus(race.liveStatus) : "—"} note="Trạng thái cuộc đua" loading={loading} />
             <MetricCard
               label="Kết quả"
               value={published ? "Đã công bố" : confirmed ? "Đã xác nhận" : status?.rankingsCount ? "Bản nháp" : "Chưa nhập"}
               note={`${status?.rankingsCount ?? 0} thứ hạng`}
               tone={published ? "success" : confirmed ? "accent" : "warning"}
+              loading={loading}
             />
-            <MetricCard label="Xác nhận lúc" value={confirmed ? "✓" : "—"} note={fmtDate(status?.confirmedAt)} tone={confirmed ? "success" : "neutral"} />
+            <MetricCard label="Xác nhận lúc" value={confirmed ? "✓" : "—"} note={fmtDate(status?.confirmedAt)} tone={confirmed ? "success" : "neutral"} loading={loading} />
           </div>
 
           <Panel
@@ -212,7 +213,7 @@ export default function ResultsPage() {
             subtitle={locked ? "Kết quả đã khóa, không thể sửa" : "Dùng ↑ ↓ để sắp thứ tự về đích (trên cùng = hạng 1)"}
           >
             {loading ? (
-              <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Đang tải…</p>
+              <LoadingState label="Đang tải thứ hạng…" />
             ) : entries.length === 0 ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Cuộc đua chưa có ngựa tham gia.</p>
             ) : (
@@ -267,7 +268,7 @@ export default function ResultsPage() {
             {!locked && entries.length > 0 && (
               <div className="form-actions" style={{ marginTop: "16px" }}>
                 <button type="button" className="primary-button" disabled={submitting} onClick={submit}>
-                  {submitting ? "Đang lưu…" : status?.rankingsCount ? "Cập nhật thứ hạng" : "Lưu thứ hạng"}
+                  {submitting ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : status?.rankingsCount ? "Cập nhật thứ hạng" : "Lưu thứ hạng"}
                 </button>
               </div>
             )}
@@ -292,7 +293,7 @@ export default function ResultsPage() {
                       disabled={confirming || race?.liveStatus !== "Completed" || !status?.rankingsCount}
                       onClick={confirm}
                     >
-                      {confirming ? "Đang xác nhận…" : "Xác nhận kết quả"}
+                      {confirming ? <><Spinner size="sm" onPrimary /> Đang xác nhận…</> : "Xác nhận kết quả"}
                     </button>
                   </div>
                 </>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Panel, SuspensionBanner } from "../../components";
+import { Badge, LoadingState, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { cn } from "../../utils/cn";
 import { viInvitationStatus, viRaceStatus } from "../../utils/viLabels";
@@ -25,7 +25,7 @@ const STATUS_TONE: Record<string, "warning" | "success" | "danger"> = {
 };
 
 export default function InvitationsPage() {
-  const { appState, handleAction } = useApp();
+  const { appState, isDataLoading, handleAction } = useApp();
   const [filter, setFilter] = useState<Filter>("all");
   const [acting, setActing] = useState<string | null>(null);
 
@@ -68,7 +68,8 @@ export default function InvitationsPage() {
           </div>
         }
       >
-        {filtered.length === 0 && (
+        {isDataLoading && filtered.length === 0 && <LoadingState label="Đang tải lời mời…" />}
+        {!isDataLoading && filtered.length === 0 && (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Không có lời mời nào trong mục này.</p>
         )}
         <div className="card-list">

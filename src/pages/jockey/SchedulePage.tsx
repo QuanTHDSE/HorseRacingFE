@@ -1,4 +1,4 @@
-import { Badge, Panel, SuspensionBanner } from "../../components";
+import { Badge, LoadingState, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 
@@ -52,7 +52,7 @@ function RaceRow({ race }: { race: Race }) {
 }
 
 export default function JockeySchedulePage() {
-  const { appState } = useApp();
+  const { appState, isDataLoading } = useApp();
   const races = appState.races;
 
   return (
@@ -76,8 +76,15 @@ export default function JockeySchedulePage() {
       })}
 
       {races.length === 0 && (
-        <Panel title="Lịch của tôi" subtitle="Chưa được giao cuộc đua nào">
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Lịch đua của bạn đang trống.</p>
+        <Panel
+          title="Lịch của tôi"
+          subtitle={isDataLoading ? "Đang tải lịch đua" : "Chưa được giao cuộc đua nào"}
+        >
+          {isDataLoading ? (
+            <LoadingState label="Đang tải lịch đua…" />
+          ) : (
+            <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Lịch đua của bạn đang trống.</p>
+          )}
         </Panel>
       )}
     </div>

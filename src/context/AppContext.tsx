@@ -612,6 +612,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authError, setAuthError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Start in "booting" only when there is a token worth restoring, so a signed-out
+  // visitor never sees the splash.
+  const [isBooting, setIsBooting] = useState(() => getToken() !== null);
+  const [isDataLoading, setIsDataLoading] = useState(false);
   const [loginForm, setLoginForm] = useState<LoginForm>({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState<RegisterForm>({
     name: "",
@@ -624,6 +628,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const fetchDataForUser = useCallback(async (account: Account) => {
     const role = account.role;
+    setIsDataLoading(true);
     try {
       if (role === "admin") {
         const [usersRes, regsRes, queueRes, tourRes, tracksRes] = await Promise.allSettled([
@@ -864,6 +869,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error("fetchDataForUser failed:", err);
+    } finally {
+      setIsDataLoading(false);
     }
   }, []);
 
@@ -871,7 +878,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      setIsBooting(false);
+      return;
+    }
 
     setIsLoading(true);
     api.auth
@@ -879,11 +889,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then(({ user: apiUser }) => {
         const account = mapApiUserToAccount(apiUser);
         setUser(account);
+        // Release the splash as soon as the session is known; the workspace then
+        // renders with its own per-panel skeletons while data keeps loading.
+        setIsBooting(false);
         return fetchDataForUser(account);
       })
       .catch(() => {
         clearToken();
         setUser(null);
+        setIsBooting(false);
       })
       .finally(() => setIsLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1573,6 +1587,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     authMode,
     authError,
     isLoading,
+    isBooting,
+    isDataLoading,
     loginForm,
     setLoginForm,
     registerForm,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, DataTable, MetricCard, Panel, Spinner } from "../../components";
 import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
@@ -227,11 +227,11 @@ export default function PenaltiesPage() {
         <>
           <div className="metric-grid three">
             <MetricCard label="Trạng thái đua" value={race?.liveStatus ?? "—"} note="Race status"
-              tone={isLive || isReady ? "success" : isUpcoming ? "accent" : "neutral"} />
+              tone={isLive || isReady ? "success" : isUpcoming ? "accent" : "neutral"} loading={loading} />
             <MetricCard label="Số biên bản" value={String(violations.length)} note="Vi phạm đã ghi"
-              tone={violations.length > 0 ? "warning" : "neutral"} />
+              tone={violations.length > 0 ? "warning" : "neutral"} loading={loading} />
             <MetricCard label="Kết quả nháp" value={hasDraft ? "Có" : result?.confirmedAt ? "Đã xác nhận" : "Chưa có"}
-              note={`${result?.rankingsCount ?? 0} thứ hạng`} tone={hasDraft ? "accent" : "neutral"} />
+              note={`${result?.rankingsCount ?? 0} thứ hạng`} tone={hasDraft ? "accent" : "neutral"} loading={loading} />
           </div>
 
           {/* Lifecycle controls */}
@@ -344,7 +344,7 @@ export default function PenaltiesPage() {
             )}
             <div className="form-actions" style={{ marginTop: "12px" }}>
               <button type="button" className="primary-button" disabled={!canPenalize || busy} onClick={applyConduct}>
-                {busy ? "Đang xử lý…" : "Áp dụng án phạt"}
+                {busy ? <><Spinner size="sm" onPrimary /> Đang xử lý…</> : "Áp dụng án phạt"}
               </button>
             </div>
           </Panel>
@@ -398,6 +398,7 @@ export default function PenaltiesPage() {
               ]}
               rows={violations.map((v) => ({ ...v, id: v.id }))}
               empty="Chưa có biên bản vi phạm nào."
+              loading={loading}
             />
           </Panel>
 

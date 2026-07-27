@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Panel, SuspensionBanner } from "../../components";
+import { Badge, LoadingState, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 import { viRaceStatus } from "../../utils/viLabels";
@@ -85,7 +85,7 @@ function RaceCard({ race }: { race: Race }) {
 }
 
 export default function AssignedPage() {
-  const { appState } = useApp();
+  const { appState, isDataLoading } = useApp();
   const races = appState.races;
 
   return (
@@ -95,7 +95,8 @@ export default function AssignedPage() {
         title="Cuộc đua được giao"
         subtitle={`${races.length} cuộc đua được giao`}
       >
-        {races.length === 0 && (
+        {isDataLoading && races.length === 0 && <LoadingState label="Đang tải cuộc đua được giao…" />}
+        {!isDataLoading && races.length === 0 && (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa được giao cuộc đua nào.</p>
         )}
         <div className="card-list">

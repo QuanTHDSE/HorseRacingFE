@@ -16,16 +16,24 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export default function RefereeDashboard() {
-  const { user, appState, handleGetRefereeDashboard } = useApp();
+  const { user, appState, isDataLoading, handleGetRefereeDashboard } = useApp();
   const [stats, setStats] = useState<RefereeDashboard | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const races = appState.refereeRaces;
 
   useEffect(() => {
     let alive = true;
-    handleGetRefereeDashboard().then((d) => alive && setStats(d)).catch(() => {});
+    handleGetRefereeDashboard()
+      .then((d) => alive && setStats(d))
+      .catch(() => {})
+      .finally(() => alive && setStatsLoading(false));
     return () => { alive = false; };
   }, [handleGetRefereeDashboard]);
+
+  // Metrics fall back to the shared race list, so they are only unknown while
+  // both sources are still loading.
+  const metricsLoading = statsLoading && isDataLoading;
 
   // Fallback derived from the loaded race list
   const upcoming = stats?.upcomingRaces ?? races.filter((r) => r.liveStatus === "Upcoming" || r.liveStatus === "Live").length;
@@ -45,9 +53,9 @@ export default function RefereeDashboard() {
       </section>
 
       <div className="metric-grid three">
-        <MetricCard label="Sắp / đang diễn ra" value={String(upcoming)} note="Cần duyệt checklist" tone="accent" />
-        <MetricCard label="Đã hoàn thành" value={String(completed)} note="Các cuộc đua đã xong" tone="neutral" />
-        <MetricCard label="Chờ xác nhận kết quả" value={String(pending)} note="Có kết quả, chưa xác nhận" tone="warning" />
+        <MetricCard label="Sắp / đang diễn ra" value={String(upcoming)} note="Cần duyệt checklist" tone="accent" loading={metricsLoading} />
+        <MetricCard label="Đã hoàn thành" value={String(completed)} note="Các cuộc đua đã xong" tone="neutral" loading={metricsLoading} />
+        <MetricCard label="Chờ xác nhận kết quả" value={String(pending)} note="Có kết quả, chưa xác nhận" tone="warning" loading={metricsLoading} />
       </div>
 
       <Panel title="Các cuộc đua bạn phụ trách" subtitle={`${races.length} cuộc đua`}>
@@ -75,6 +83,7 @@ export default function RefereeDashboard() {
           ]}
           rows={races}
           empty="Bạn chưa được phân công cuộc đua nào."
+          loading={isDataLoading}
         />
       </Panel>
     </div>

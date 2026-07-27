@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, DataTable, Panel } from "../../components";
+import { Badge, DataTable, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 
@@ -19,7 +19,7 @@ const TX_LABELS: Record<string, string> = {
 };
 
 export default function RewardsPage() {
-  const { user, appState, handleTopUpPoints, handleCreatePayosTopUp } = useApp();
+  const { user, appState, isDataLoading, handleTopUpPoints, handleCreatePayosTopUp } = useApp();
   const [topUpPoints, setTopUpPoints] = useState(100);
   const [filter, setFilter] = useState<"all" | "credit" | "debit" | "prediction" | "topup">("all");
   const fb = useFeedback();
@@ -126,10 +126,10 @@ export default function RewardsPage() {
             />
           </label>
           <button className="primary-button" type="submit" disabled={submitting}>
-            {submitting ? "Đang xử lý..." : `Nạp ${(topUpPoints * 1000).toLocaleString()} VND`}
+            {submitting ? <><Spinner size="sm" onPrimary /> Đang xử lý…</> : `Nạp ${(topUpPoints * 1000).toLocaleString()} VND`}
           </button>
           <button className="secondary-button" type="button" disabled={submitting} onClick={submitPayosTopUp}>
-            Thanh toán qua PayOS
+            {submitting ? <><Spinner size="sm" /> Đang xử lý…</> : "Thanh toán qua PayOS"}
           </button>
         </form>
         {topUpError ? <div className="form-banner form-banner-error">{topUpError}</div> : null}
@@ -194,6 +194,7 @@ export default function RewardsPage() {
           ]}
           rows={myTransactions}
           empty="No point history yet."
+          loading={isDataLoading}
         />
       </Panel>
     </div>

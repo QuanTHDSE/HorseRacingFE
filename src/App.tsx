@@ -1,24 +1,32 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppProvider, useApp } from "./context/AppContext";
 import { ToastProvider } from "./context/ToastContext";
+import { BootScreen } from "./components";
 import Homepage from "./layouts/Homepage";
 import AuthScreen from "./layouts/AuthScreen";
 import AppShell from "./layouts/AppShell";
 
+// While the stored token is being exchanged for a session, `user` is still null.
+// Redirecting on that would bounce a signed-in visitor to /login and back on every
+// refresh, so every route holds on the splash until the session is resolved.
+
 function ProtectedRoute() {
-  const { user } = useApp();
+  const { user, isBooting } = useApp();
+  if (isBooting) return <BootScreen />;
   if (!user) return <Navigate to="/login" replace />;
   return <AppShell />;
 }
 
 function LoginRoute() {
-  const { user } = useApp();
+  const { user, isBooting } = useApp();
+  if (isBooting) return <BootScreen />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <AuthScreen />;
 }
 
 function HomeRoute() {
-  const { user } = useApp();
+  const { user, isBooting } = useApp();
+  if (isBooting) return <BootScreen />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <Homepage />;
 }

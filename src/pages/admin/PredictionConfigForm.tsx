@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LoadingState, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { PredictionConfig } from "../../types";
@@ -135,7 +136,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
     setMsg("");
   }
 
-  if (loading) return <p className="pc-section-sub">Đang tải cấu hình dự đoán...</p>;
+  if (loading) return <LoadingState label="Đang tải cấu hình dự đoán…" />;
   if (loadError) return <div className="form-banner form-banner-error">{loadError}</div>;
   if (!cfg) return <p className="pc-section-sub">Chưa có cấu hình dự đoán.</p>;
 
@@ -409,7 +410,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
           )}
           <div className="form-actions">
             <button type="submit" className="primary-button" disabled={saving || !valid}>
-              {saving ? "Đang lưu..." : "Lưu cấu hình"}
+              {saving ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : "Lưu cấu hình"}
             </button>
           </div>
         </>

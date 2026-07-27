@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Badge, Panel } from "../../components";
+import { Badge, LoadingState, Panel, Spinner } from "../../components";
 import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
@@ -291,7 +291,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
 }
 
 export default function LivePage() {
-  const { appState, handleGetSpectatorRaceById } = useApp();
+  const { appState, isDataLoading, handleGetSpectatorRaceById } = useApp();
   const [filter, setFilter] = useState<RaceFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SpectatorRace | null>(null);
@@ -372,7 +372,9 @@ export default function LivePage() {
 
             {loadError && <div className="form-banner form-banner-error">{loadError}</div>}
 
-            {filtered.length === 0 ? (
+            {isDataLoading && filtered.length === 0 ? (
+              <LoadingState label="Đang tải danh sách cuộc đua…" />
+            ) : filtered.length === 0 ? (
               <div className="spectator-result-empty">
                 <strong>Chưa có cuộc đua trong mục này</strong>
                 <p>Hãy chọn một trạng thái khác để xem các cuộc đua hiện có.</p>
@@ -405,7 +407,7 @@ export default function LivePage() {
                           aria-pressed={selected}
                           onClick={() => openDetail(race)}
                         >
-                          {loadingId === race.id ? "Đang tải…" : selected ? "Đang xem" : actionLabel}
+                          {loadingId === race.id ? <><Spinner size="sm" /> Đang tải…</> : selected ? "Đang xem" : actionLabel}
                         </button>
                       </div>
                       <div className="spectator-race-item-meta">

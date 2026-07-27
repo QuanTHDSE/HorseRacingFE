@@ -1,13 +1,16 @@
-import { Panel } from "../../components";
+import { LoadingState, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 export default function MonitorPage() {
-  const { appState } = useApp();
+  const { appState, isDataLoading } = useApp();
   const { liveBoard } = appState;
 
   return (
     <div className="page-stack">
       <Panel title={liveBoard.title} subtitle={`${liveBoard.phase} • ${liveBoard.updatedAt}`}>
+        {isDataLoading && liveBoard.positions.length === 0 && (
+          <LoadingState label="Đang tải bảng theo dõi…" />
+        )}
         <div className="live-board">
           {liveBoard.positions.map((item) => (
             <article key={item.position} className="live-row">

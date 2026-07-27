@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { CreateHorseInput, Horse } from "../../types";
@@ -47,7 +47,11 @@ function PdfUploadField({
     <label className="field" style={{ gridColumn: "1 / -1" }}>
       <span>Hồ sơ ngựa (PDF) — để admin xem &amp; duyệt</span>
       <input ref={inputRef} type="file" accept="application/pdf" onChange={onPick} disabled={disabled || uploading} />
-      {uploading && <span style={{ fontSize: "0.78rem", color: "var(--c-muted)" }}>Đang tải lên…</span>}
+      {uploading && (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.78rem", color: "var(--c-muted)" }}>
+          <Spinner size="sm" /> Đang tải lên…
+        </span>
+      )}
       {err && <span style={{ fontSize: "0.78rem", color: "var(--c-danger)" }}>{err}</span>}
       {url && !uploading && (
         <span style={{ display: "inline-flex", gap: "10px", alignItems: "center", marginTop: "4px" }}>
@@ -93,7 +97,7 @@ const EMPTY_FORM: CreateHorseInput = {
 function ageNum(s: string): number { return Math.max(1, Math.min(30, parseInt(s, 10) || 1)); }
 
 export default function HorsesPage() {
-  const { appState, handleCreateHorse, handleUpdateHorse, handleDeleteHorse } = useApp();
+  const { appState, isDataLoading, handleCreateHorse, handleUpdateHorse, handleDeleteHorse } = useApp();
 
   // Create form
   const [showCreate, setShowCreate] = useState(false);
@@ -211,10 +215,10 @@ export default function HorsesPage() {
     <div className="page-stack">
       {/* ── Metrics ── */}
       <div className="metric-grid four">
-        <MetricCard label="Tổng số ngựa" value={String(horses.length)} note="Trong chuồng của bạn" />
-        <MetricCard label="Khỏe mạnh" value={String(fitCount)} note="Sẵn sàng thi đấu" tone="success" />
-        <MetricCard label="Chấn thương" value={String(injuredCount)} note="Đang theo dõi" tone="warning" />
-        <MetricCard label="Giải nghệ" value={String(retiredCount)} note="Không còn thi đấu" tone="neutral" />
+        <MetricCard label="Tổng số ngựa" value={String(horses.length)} note="Trong chuồng của bạn" loading={isDataLoading} />
+        <MetricCard label="Khỏe mạnh" value={String(fitCount)} note="Sẵn sàng thi đấu" tone="success" loading={isDataLoading} />
+        <MetricCard label="Chấn thương" value={String(injuredCount)} note="Đang theo dõi" tone="warning" loading={isDataLoading} />
+        <MetricCard label="Giải nghệ" value={String(retiredCount)} note="Không còn thi đấu" tone="neutral" loading={isDataLoading} />
       </div>
 
       {/* ── Create form (toggle) ── */}
@@ -282,7 +286,7 @@ export default function HorsesPage() {
               </div>
               <div className="form-actions">
                 <button type="button" className="secondary-button" disabled={cLoading} onClick={() => { setCForm(EMPTY_FORM); setCErrors([]); }}>Đặt lại</button>
-                <button type="submit" className="primary-button" disabled={cLoading}>{cLoading ? "Đang đăng ký…" : "Đăng ký ngựa"}</button>
+                <button type="submit" className="primary-button" disabled={cLoading}>{cLoading ? <><Spinner size="sm" onPrimary /> Đang đăng ký…</> : "Đăng ký ngựa"}</button>
               </div>
             </form>
           </>
@@ -343,6 +347,7 @@ export default function HorsesPage() {
           ]}
           rows={filtered}
           empty="Không tìm thấy ngựa nào."
+          loading={isDataLoading}
         />
       </Panel>
 
@@ -400,7 +405,7 @@ export default function HorsesPage() {
             </div>
             <div className="form-actions">
               <button type="button" className="secondary-button" disabled={eLoading} onClick={() => { setEditHorse(null); setEMsg(""); }}>Hủy</button>
-              <button type="submit" className="primary-button" disabled={eLoading}>{eLoading ? "Đang lưu…" : "Lưu thay đổi"}</button>
+              <button type="submit" className="primary-button" disabled={eLoading}>{eLoading ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : "Lưu thay đổi"}</button>
             </div>
           </form>
 

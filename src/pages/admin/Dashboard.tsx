@@ -3,7 +3,7 @@ import { useApp } from "../../context/AppContext";
 import { viRegStatus } from "../../utils/viLabels";
 
 export default function AdminDashboard() {
-  const { appState } = useApp();
+  const { appState, isDataLoading } = useApp();
 
   return (
     <div className="page-stack">
@@ -21,23 +21,27 @@ export default function AdminDashboard() {
           value={String(appState.approvals.filter((a) => a.status === "Pending").length)}
           note="Cần xét duyệt hôm nay"
           tone="warning"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Giải đang diễn ra"
           value={String(appState.tournaments.filter((t) => t.status === "Live").length)}
           note="Theo dõi công bố kết quả"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Người dùng hoạt động"
           value={String(appState.users.filter((u) => u.status === "Active").length)}
           note="Theo dõi vai trò và lần truy cập"
           tone="success"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Hàng chờ công bố"
           value={String(appState.publishQueue.filter((p) => p.publishStatus !== "Published").length)}
           note="Kết quả chờ công bố"
           tone="accent"
+          loading={isDataLoading}
         />
       </div>
 

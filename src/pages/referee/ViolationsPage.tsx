@@ -2,7 +2,7 @@ import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 export default function ViolationsPage() {
-  const { user, appState } = useApp();
+  const { user, appState, isDataLoading } = useApp();
   if (!user) return null;
   const refereeViolations = appState.violations.filter((v) => v.refereeId === user.id);
 
@@ -28,6 +28,7 @@ export default function ViolationsPage() {
             { key: "action", label: "Action" },
           ]}
           rows={refereeViolations}
+          loading={isDataLoading}
         />
       </Panel>
     </div>

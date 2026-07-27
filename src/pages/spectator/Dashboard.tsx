@@ -1,9 +1,9 @@
-import { Badge, MetricCard, Panel } from "../../components";
+import { Badge, LoadingState, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { viPredictionStatus } from "../../utils/viLabels";
 
 export default function SpectatorDashboard() {
-  const { user, appState } = useApp();
+  const { user, appState, isDataLoading } = useApp();
   if (!user) return null;
   const myPredictions = appState.predictions.filter((p) => p.spectatorId === user.id);
 
@@ -19,12 +19,15 @@ export default function SpectatorDashboard() {
 
       <div className="metric-grid three">
         <MetricCard label="Cuộc đua trực tiếp hôm nay" value="8"                          note="Chuyển nhanh giữa các cuộc đua"          />
-        <MetricCard label="Vé dự đoán"                 value={String(myPredictions.length)} note="Đang mở, thắng và thua"  tone="accent"  />
+        <MetricCard label="Vé dự đoán"                 value={String(myPredictions.length)} note="Đang mở, thắng và thua"  tone="accent"  loading={isDataLoading} />
         <MetricCard label="Thưởng sẵn sàng"            value="4.8M"                       note="1 phần thưởng cho cuộc đua 07" tone="success" />
       </div>
 
       <div className="content-grid two">
         <Panel title="Bảng trực tiếp" subtitle="Cuộc đua đang theo dõi">
+          {isDataLoading && appState.liveBoard.positions.length === 0 && (
+            <LoadingState label="Đang tải bảng trực tiếp…" />
+          )}
           <div className="live-board">
             {appState.liveBoard.positions.map((item) => (
               <article key={item.position} className="live-row">

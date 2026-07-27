@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { Tournament } from "../../types";
@@ -51,7 +51,7 @@ const EMPTY_FORM = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminTournamentsPage() {
-  const { appState, handleCreateTournament, handleUpdateTournamentStatus, handleUpdateTournamentPrizePool, handleGetTournamentById, handleDeleteTournament } =
+  const { appState, isDataLoading, handleCreateTournament, handleUpdateTournamentStatus, handleUpdateTournamentPrizePool, handleGetTournamentById, handleDeleteTournament } =
     useApp();
 
   // Form state
@@ -206,10 +206,10 @@ export default function AdminTournamentsPage() {
 
       {/* ── Metrics ── */}
       <div className="metric-grid four">
-        <MetricCard label="Tổng số giải đấu" value={String(total)} note="Tất cả giải đấu" />
-        <MetricCard label="Đang diễn ra" value={String(liveCount)} note="Đang thi đấu" tone="success" />
-        <MetricCard label="Đang mở đăng ký" value={String(regCount)} note="Đang nhận hồ sơ tham gia" tone="accent" />
-        <MetricCard label="Đã hoàn tất" value={String(doneCount)} note="Giải đã kết thúc" tone="neutral" />
+        <MetricCard label="Tổng số giải đấu" value={String(total)} note="Tất cả giải đấu" loading={isDataLoading} />
+        <MetricCard label="Đang diễn ra" value={String(liveCount)} note="Đang thi đấu" tone="success" loading={isDataLoading} />
+        <MetricCard label="Đang mở đăng ký" value={String(regCount)} note="Đang nhận hồ sơ tham gia" tone="accent" loading={isDataLoading} />
+        <MetricCard label="Đã hoàn tất" value={String(doneCount)} note="Giải đã kết thúc" tone="neutral" loading={isDataLoading} />
       </div>
 
       {/* ── Create form ── */}
@@ -299,7 +299,7 @@ export default function AdminTournamentsPage() {
               Đặt lại
             </button>
             <button type="submit" className="primary-button" disabled={formLoading}>
-              {formLoading ? "Đang tạo…" : "Tạo giải đấu"}
+              {formLoading ? <><Spinner size="sm" onPrimary /> Đang tạo…</> : "Tạo giải đấu"}
             </button>
           </div>
         </form>
@@ -354,6 +354,7 @@ export default function AdminTournamentsPage() {
           ]}
           rows={filtered}
           empty="Không tìm thấy giải đấu nào."
+          loading={isDataLoading}
         />
       </Panel>
 
@@ -428,7 +429,7 @@ export default function AdminTournamentsPage() {
                       disabled={prizePoolSaving}
                       onClick={handlePrizePoolSave}
                     >
-                      {prizePoolSaving ? "Đang lưu..." : "Lưu tổng thưởng"}
+                      {prizePoolSaving ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : "Lưu tổng thưởng"}
                     </button>
                   </div>
                 </div>

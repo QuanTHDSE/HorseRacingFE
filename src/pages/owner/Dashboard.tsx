@@ -1,4 +1,4 @@
-import { Badge, MetricCard, Panel } from "../../components";
+import { Badge, LoadingState, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { viHealth, viRegStatus } from "../../utils/viLabels";
 
@@ -11,7 +11,7 @@ const HEALTH_TONE: Record<string, string> = { Fit: "success", Injured: "warning"
 const REG_TONE: Record<string, string>    = { Pending: "warning", Approved: "success", Rejected: "danger" };
 
 export default function OwnerDashboard() {
-  const { user, appState } = useApp();
+  const { user, appState, isDataLoading } = useApp();
   if (!user) return null;
 
   const horses    = appState.horses;
@@ -34,15 +34,16 @@ export default function OwnerDashboard() {
       </section>
 
       <div className="metric-grid four">
-        <MetricCard label="Tổng số ngựa"          value={String(horses.length)}    note="Trong chuồng của bạn"               />
-        <MetricCard label="Ngựa khỏe mạnh"         value={String(fitCount)}          note="Sẵn sàng thi đấu"          tone="success" />
-        <MetricCard label="Đăng ký đang hoạt động" value={String(approvedRegs)}      note="Đã duyệt cho cuộc đua"     tone="accent"  />
-        <MetricCard label="Đăng ký chờ duyệt"      value={String(pendingRegs)}       note="Đang chờ admin xét duyệt"  tone="warning" />
+        <MetricCard label="Tổng số ngựa"          value={String(horses.length)}    note="Trong chuồng của bạn"                     loading={isDataLoading} />
+        <MetricCard label="Ngựa khỏe mạnh"         value={String(fitCount)}          note="Sẵn sàng thi đấu"          tone="success" loading={isDataLoading} />
+        <MetricCard label="Đăng ký đang hoạt động" value={String(approvedRegs)}      note="Đã duyệt cho cuộc đua"     tone="accent"  loading={isDataLoading} />
+        <MetricCard label="Đăng ký chờ duyệt"      value={String(pendingRegs)}       note="Đang chờ admin xét duyệt"  tone="warning" loading={isDataLoading} />
       </div>
 
       <div className="content-grid two">
         <Panel title="Ngựa của tôi" subtitle="Tổng quan sức khỏe và phân công">
-          {recentHorses.length === 0 && (
+          {isDataLoading && recentHorses.length === 0 && <LoadingState label="Đang tải danh sách ngựa…" />}
+          {!isDataLoading && recentHorses.length === 0 && (
             <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa đăng ký ngựa nào.</p>
           )}
           <div className="card-list">
@@ -65,7 +66,8 @@ export default function OwnerDashboard() {
         </Panel>
 
         <Panel title="Đăng ký gần đây" subtitle="Trạng thái đăng ký cuộc đua">
-          {recentRegs.length === 0 && (
+          {isDataLoading && recentRegs.length === 0 && <LoadingState label="Đang tải đăng ký…" />}
+          {!isDataLoading && recentRegs.length === 0 && (
             <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa có đăng ký cuộc đua nào.</p>
           )}
           <div className="card-list">

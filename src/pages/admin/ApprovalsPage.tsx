@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, DataTable, Panel } from "../../components";
+import { Badge, DataTable, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { Approval } from "../../types";
@@ -18,7 +18,7 @@ const HEALTH_TONE: Record<string, string> = {
 };
 
 export default function ApprovalsPage() {
-  const { appState, handleUpdateRegistration } = useApp();
+  const { appState, isDataLoading, handleUpdateRegistration } = useApp();
 
   // Detail panel (horse approval) state
   const [selected, setSelected]   = useState<Approval | null>(null);
@@ -122,6 +122,7 @@ export default function ApprovalsPage() {
           ]}
           rows={pendingHorse}
           empty="Không có đơn đăng ký ngựa nào chờ duyệt."
+          loading={isDataLoading}
         />
       </Panel>
 
@@ -218,7 +219,7 @@ export default function ApprovalsPage() {
                 {actionLoading ? "…" : "Từ chối"}
               </button>
               <button type="button" className="primary-button" disabled={actionLoading} onClick={() => doDecision("Approved")}>
-                {actionLoading ? "Đang xử lý…" : "Duyệt ngựa"}
+                {actionLoading ? <><Spinner size="sm" onPrimary /> Đang xử lý…</> : "Duyệt ngựa"}
               </button>
             </div>
           </div>
@@ -244,6 +245,7 @@ export default function ApprovalsPage() {
           ]}
           rows={awaitingJockey}
           empty="Không có đơn đã duyệt nào đang chờ nài."
+          loading={isDataLoading}
         />
       </Panel>
 
@@ -269,6 +271,7 @@ export default function ApprovalsPage() {
           ]}
           rows={completed}
           empty="Chưa có đơn nào hoàn tất."
+          loading={isDataLoading}
         />
       </Panel>
 

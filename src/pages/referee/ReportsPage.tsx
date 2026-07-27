@@ -2,7 +2,7 @@ import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 export default function ReportsPage() {
-  const { user, appState } = useApp();
+  const { user, appState, isDataLoading } = useApp();
   if (!user) return null;
   const refereeReports = appState.reports.filter((r) => r.refereeId === user.id);
 
@@ -21,6 +21,7 @@ export default function ReportsPage() {
             },
           ]}
           rows={refereeReports}
+          loading={isDataLoading}
         />
       </Panel>
     </div>

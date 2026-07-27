@@ -5,7 +5,7 @@ import { cn } from "../../utils/cn";
 import { viPublishStatus } from "../../utils/viLabels";
 
 export default function AdminResultsPage() {
-  const { appState, handleAction } = useApp();
+  const { appState, isDataLoading, handleAction } = useApp();
   const [openRaceId, setOpenRaceId] = useState<string | null>(null);
 
   return (
@@ -51,6 +51,7 @@ export default function AdminResultsPage() {
             },
           ]}
           rows={appState.publishQueue}
+          loading={isDataLoading}
         />
       </Panel>
 

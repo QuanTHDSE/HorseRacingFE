@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, DataTable, MetricCard, Panel, Spinner } from "../../components";
 import { useFeedback } from "../../context/ToastContext";
 import {
   api,
@@ -203,10 +203,10 @@ export default function ViolationRulesPage() {
   return (
     <div className="page-stack">
       <div className="metric-grid four">
-        <MetricCard label="Tổng số luật" value={String(rules.length)} note="Trong bộ luật hệ thống" />
-        <MetricCard label="Đang áp dụng" value={String(activeRules)} note="Trọng tài có thể chọn" tone="success" />
-        <MetricCard label="Luật cho ngựa" value={String(horseRules)} note="Gồm luật áp dụng chung" tone="accent" />
-        <MetricCard label="Luật cho nài" value={String(jockeyRules)} note="Gồm luật áp dụng chung" tone="warning" />
+        <MetricCard label="Tổng số luật" value={String(rules.length)} note="Trong bộ luật hệ thống" loading={loading} />
+        <MetricCard label="Đang áp dụng" value={String(activeRules)} note="Trọng tài có thể chọn" tone="success" loading={loading} />
+        <MetricCard label="Luật cho ngựa" value={String(horseRules)} note="Gồm luật áp dụng chung" tone="accent" loading={loading} />
+        <MetricCard label="Luật cho nài" value={String(jockeyRules)} note="Gồm luật áp dụng chung" tone="warning" loading={loading} />
       </div>
 
       <Panel
@@ -324,7 +324,7 @@ export default function ViolationRulesPage() {
               {editingId ? "Hủy chỉnh sửa" : "Đặt lại"}
             </button>
             <button type="submit" className="primary-button" disabled={busy === "save"}>
-              {busy === "save" ? "Đang lưu…" : editingId ? "Lưu thay đổi" : "Tạo luật"}
+              {busy === "save" ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : editingId ? "Lưu thay đổi" : "Tạo luật"}
             </button>
           </div>
         </form>
@@ -417,7 +417,8 @@ export default function ViolationRulesPage() {
             },
           ]}
           rows={filteredRules}
-          empty={loading ? "Đang tải bộ luật…" : "Không có luật phù hợp bộ lọc."}
+          empty="Không có luật phù hợp bộ lọc."
+          loading={loading}
         />
       </Panel>
     </div>

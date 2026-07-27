@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Badge, DataTable, Panel } from "../../components";
+import { Badge, DataTable, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import { api } from "../../services/api";
@@ -18,7 +18,7 @@ interface JockeyResult {
 }
 
 export default function JockeysPage() {
-  const { appState, handleInviteJockey } = useApp();
+  const { appState, isDataLoading, handleInviteJockey } = useApp();
 
   // Search state
   const [searchQuery, setSearchQuery]       = useState("");
@@ -229,8 +229,8 @@ export default function JockeysPage() {
                 </div>
               )}
               {searching && (
-                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                  Đang tìm…
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                  <Spinner size="sm" /> Đang tìm…
                 </span>
               )}
             </div>
@@ -266,7 +266,7 @@ export default function JockeysPage() {
               Xóa
             </button>
             <button type="submit" className="primary-button" disabled={invLoading || !registrationId || !selectedJockey}>
-              {invLoading ? "Đang gửi…" : "Gửi lời mời"}
+              {invLoading ? <><Spinner size="sm" onPrimary /> Đang gửi…</> : "Gửi lời mời"}
             </button>
           </div>
         </form>
@@ -295,6 +295,7 @@ export default function JockeysPage() {
           ]}
           rows={regs}
           empty="Chưa có đăng ký nào."
+          loading={isDataLoading}
         />
       </Panel>
     </div>

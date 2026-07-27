@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, DataTable, MetricCard, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { TrackSurface } from "../../types";
@@ -17,7 +17,7 @@ const EMPTY_FORM = {
 };
 
 export default function RacetracksPage() {
-  const { appState, handleCreateRacetrack } = useApp();
+  const { appState, isDataLoading, handleCreateRacetrack } = useApp();
   const [form, setForm] = useState(EMPTY_FORM);
   const fb = useFeedback();
   const successMsg: string = ""; const setSuccessMsg = fb.success;
@@ -65,9 +65,9 @@ export default function RacetracksPage() {
     <div className="page-stack">
       {/* ── Stats ── */}
       <div className="metric-grid three">
-        <MetricCard label="Tổng số đường đua" value={String(racetracks.length)} note="Đã đăng ký trong hệ thống" />
-        <MetricCard label="Đang hoạt động"    value={String(activeCount)}   note="Có thể gán cho cuộc đua" tone="success" />
-        <MetricCard label="Ngừng hoạt động"   value={String(inactiveCount)} note="Đang ngừng hoạt động"    tone="neutral" />
+        <MetricCard label="Tổng số đường đua" value={String(racetracks.length)} note="Đã đăng ký trong hệ thống" loading={isDataLoading} />
+        <MetricCard label="Đang hoạt động"    value={String(activeCount)}   note="Có thể gán cho cuộc đua" tone="success" loading={isDataLoading} />
+        <MetricCard label="Ngừng hoạt động"   value={String(inactiveCount)} note="Đang ngừng hoạt động"    tone="neutral" loading={isDataLoading} />
       </div>
 
       {/* ── Create form ── */}
@@ -112,7 +112,7 @@ export default function RacetracksPage() {
               Đặt lại
             </button>
             <button type="submit" className="primary-button" disabled={loading}>
-              {loading ? "Đang lưu…" : "Thêm đường đua"}
+              {loading ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : "Thêm đường đua"}
             </button>
           </div>
         </form>
@@ -134,6 +134,7 @@ export default function RacetracksPage() {
           ]}
           rows={racetracks}
           empty="Chưa đăng ký đường đua nào."
+          loading={isDataLoading}
         />
       </Panel>
     </div>

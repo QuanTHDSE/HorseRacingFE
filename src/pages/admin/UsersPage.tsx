@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, ConfirmDeleteButton, DataTable, Panel } from "../../components";
+import { Badge, ConfirmDeleteButton, DataTable, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { SystemUser } from "../../types";
@@ -41,7 +41,7 @@ function profileSummary(row: SystemUser) {
 }
 
 export default function UsersPage() {
-  const { appState, user, handleCreateAdminUser, handleUpdateAdminUser, handleDeleteAdminUser } = useApp();
+  const { appState, user, isDataLoading, handleCreateAdminUser, handleUpdateAdminUser, handleDeleteAdminUser } = useApp();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -244,7 +244,7 @@ export default function UsersPage() {
           </div>
           <div className="form-actions">
             <button type="submit" className="primary-button" disabled={busy === "create"}>
-              {busy === "create" ? "Đang tạo..." : "Tạo tài khoản"}
+              {busy === "create" ? <><Spinner size="sm" onPrimary /> Đang tạo…</> : "Tạo tài khoản"}
             </button>
           </div>
         </form>
@@ -312,7 +312,7 @@ export default function UsersPage() {
             </div>
             <div className="form-actions">
               <button type="submit" className="primary-button" disabled={busy === editingUser.id}>
-                {busy === editingUser.id ? "Đang lưu..." : "Lưu thay đổi"}
+                {busy === editingUser.id ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : "Lưu thay đổi"}
               </button>
               <button type="button" className="secondary-button" onClick={() => setEditingId("")}>
                 Đóng
@@ -382,6 +382,7 @@ export default function UsersPage() {
             },
           ]}
           rows={appState.users}
+          loading={isDataLoading}
         />
       </Panel>
     </div>

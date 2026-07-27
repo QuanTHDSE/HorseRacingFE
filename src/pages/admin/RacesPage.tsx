@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, ConfirmDeleteButton, DataTable, LoadingState, MetricCard, Panel, Spinner } from "../../components";
 import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
@@ -89,6 +89,7 @@ function ParticipantsTable({ participants }: { participants: RaceDetail["partici
 export default function RacesPage() {
   const {
     appState,
+    isDataLoading,
     handleCreateRace,
     handleGetRaceById,
     handleAddParticipant,
@@ -368,10 +369,10 @@ export default function RacesPage() {
 
       {/* ── Metrics ── */}
       <div className="metric-grid four">
-        <MetricCard label="Tổng số cuộc đua"  value={String(totalCount)}     note="Tất cả cuộc đua trong hệ thống"      />
-        <MetricCard label="Đang diễn ra"      value={String(liveCount)}      note="Đang diễn ra"  tone="success" />
-        <MetricCard label="Sắp diễn ra"       value={String(upcomingCount)}  note="Đã lên lịch"          tone="accent"  />
-        <MetricCard label="Đã kết thúc"       value={String(completedCount)} note="Đã hoàn thành"           tone="neutral" />
+        <MetricCard label="Tổng số cuộc đua"  value={String(totalCount)}     note="Tất cả cuộc đua trong hệ thống"                     loading={isDataLoading} />
+        <MetricCard label="Đang diễn ra"      value={String(liveCount)}      note="Đang diễn ra"  tone="success" loading={isDataLoading} />
+        <MetricCard label="Sắp diễn ra"       value={String(upcomingCount)}  note="Đã lên lịch"          tone="accent"  loading={isDataLoading} />
+        <MetricCard label="Đã kết thúc"       value={String(completedCount)} note="Đã hoàn thành"           tone="neutral" loading={isDataLoading} />
       </div>
 
       {/* ── Create form ── */}
@@ -469,7 +470,7 @@ export default function RacesPage() {
               Đặt lại
             </button>
             <button type="submit" className="primary-button" disabled={formLoading}>
-              {formLoading ? "Đang tạo…" : "Tạo cuộc đua"}
+              {formLoading ? <><Spinner size="sm" onPrimary /> Đang tạo…</> : "Tạo cuộc đua"}
             </button>
           </div>
         </form>
@@ -538,6 +539,7 @@ export default function RacesPage() {
           ]}
           rows={filtered}
           empty="Không tìm thấy cuộc đua nào."
+          loading={isDataLoading}
         />
       </Panel>
 
@@ -633,7 +635,7 @@ export default function RacesPage() {
                     )}
 
                     {entriesLoading ? (
-                      <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Đang tải các đơn đã duyệt…</p>
+                      <LoadingState label="Đang tải các đơn đã duyệt…" inline />
                     ) : entries.length === 0 ? (
                       <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
                         Không còn đơn đã duyệt nào để thêm. Hãy duyệt đơn ở trang Duyệt đơn trước.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, DataTable, MetricCard, Panel } from "../../components";
+import { Badge, DataTable, LoadingState, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RefereeParticipantCheck } from "../../types";
@@ -81,14 +81,14 @@ export default function ChecksPage() {
       {raceId && (
         <>
           <div className="metric-grid three">
-            <MetricCard label="Số ngựa" value={String(checks.length)} note="Tham gia cuộc đua" />
-            <MetricCard label="Đã duyệt thú y" value={`${vetDone}/${checks.length}`} note="Đã kiểm tra thú y" tone={vetDone === checks.length && checks.length > 0 ? "success" : "warning"} />
-            <MetricCard label="Đã xác nhận xuất phát" value={`${lineupDone}/${checks.length}`} note="Đã xác nhận đội hình" tone={lineupDone === checks.length && checks.length > 0 ? "success" : "warning"} />
+            <MetricCard label="Số ngựa" value={String(checks.length)} note="Tham gia cuộc đua" loading={loading} />
+            <MetricCard label="Đã duyệt thú y" value={`${vetDone}/${checks.length}`} note="Đã kiểm tra thú y" tone={vetDone === checks.length && checks.length > 0 ? "success" : "warning"} loading={loading} />
+            <MetricCard label="Đã xác nhận xuất phát" value={`${lineupDone}/${checks.length}`} note="Đã xác nhận đội hình" tone={lineupDone === checks.length && checks.length > 0 ? "success" : "warning"} loading={loading} />
           </div>
 
           <Panel title="Checklist từng ngựa" subtitle="Bấm để bật/tắt từng mục">
-            {loading ? (
-              <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Đang tải…</p>
+            {loading && checks.length === 0 ? (
+              <LoadingState label="Đang tải checklist…" />
             ) : (
               <DataTable
                 columns={[

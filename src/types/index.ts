@@ -711,7 +711,12 @@ export interface AppContextValue {
   appState: AppState;
   authMode: AuthMode;
   authError: string;
+  /** An auth request (login / register) is in flight. */
   isLoading: boolean;
+  /** The stored token is being exchanged for a session on first paint. */
+  isBooting: boolean;
+  /** Role-specific data for `appState` is being fetched. */
+  isDataLoading: boolean;
   loginForm: LoginForm;
   setLoginForm: React.Dispatch<React.SetStateAction<LoginForm>>;
   registerForm: RegisterForm;

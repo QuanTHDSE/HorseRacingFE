@@ -50,3 +50,7 @@ CLAUDE.md
 claude.md
 SKILL.md
 skill.md
+.vercel
+.env
+.env.local
+.env.*.local

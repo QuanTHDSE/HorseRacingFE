@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Badge, DataTable, Panel } from "../../components";
+import { Badge, DataTable, LoadingState, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import { viPredictionStatus } from "../../utils/viLabels";
 
 export default function PredictionsPage() {
-  const { user, appState, handleCreatePrediction, handleCancelPrediction } = useApp();
+  const { user, appState, isDataLoading, handleCreatePrediction, handleCancelPrediction } = useApp();
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [ticketCountInput, setTicketCountInput] = useState("1");
@@ -64,7 +64,9 @@ export default function PredictionsPage() {
           </div>
         )}
 
-        {openRaces.length === 0 ? (
+        {isDataLoading && openRaces.length === 0 ? (
+          <LoadingState label="Đang tải cuộc đua…" />
+        ) : openRaces.length === 0 ? (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
             Hiện chưa có cuộc đua nào mở dự đoán.
           </p>
@@ -156,7 +158,7 @@ export default function PredictionsPage() {
                   disabled={ticketCount < 1 || cost > balance || submitting}
                   onClick={submit}
                 >
-                  {submitting ? "Đang gửi…" : `Đặt dự đoán · ${cost.toLocaleString()} điểm`}
+                  {submitting ? <><Spinner size="sm" onPrimary /> Đang gửi…</> : `Đặt dự đoán · ${cost.toLocaleString()} điểm`}
                 </button>
               </div>
             )}
@@ -199,6 +201,7 @@ export default function PredictionsPage() {
             },
           ]}
           rows={myPredictions}
+          loading={isDataLoading}
         />
       </Panel>
     </div>

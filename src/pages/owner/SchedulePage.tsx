@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, DataTable, Panel } from "../../components";
+import { Badge, DataTable, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import { cn } from "../../utils/cn";
@@ -28,7 +28,7 @@ function fmtDate(iso?: string): string {
 }
 
 export default function OwnerSchedulePage() {
-  const { appState, handleRegisterForRace, handleCancelRegistration } = useApp();
+  const { appState, isDataLoading, handleRegisterForRace, handleCancelRegistration } = useApp();
 
   // Registration form
   const [selectedTournament, setSelectedTournament] = useState("");
@@ -157,7 +157,7 @@ export default function OwnerSchedulePage() {
               Xóa
             </button>
             <button type="submit" className="primary-button" disabled={regLoading}>
-              {regLoading ? "Đang gửi…" : "Gửi đăng ký"}
+              {regLoading ? <><Spinner size="sm" onPrimary /> Đang gửi…</> : "Gửi đăng ký"}
             </button>
           </div>
         </form>
@@ -224,6 +224,7 @@ export default function OwnerSchedulePage() {
           ]}
           rows={filtered}
           empty="Không tìm thấy đăng ký nào."
+          loading={isDataLoading}
         />
       </Panel>
     </div>

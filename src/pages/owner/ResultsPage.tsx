@@ -1,4 +1,4 @@
-import { Badge, DataTable, MetricCard, Panel, RaceLeaderboard } from "../../components";
+import { Badge, DataTable, LoadingState, MetricCard, Panel, RaceLeaderboard } from "../../components";
 import { useApp } from "../../context/AppContext";
 
 function fmtDate(iso?: string): string {
@@ -7,7 +7,7 @@ function fmtDate(iso?: string): string {
 }
 
 export default function OwnerResultsPage() {
-  const { appState } = useApp();
+  const { appState, isDataLoading } = useApp();
 
   const horses = appState.horses;
   const regs   = appState.ownerRegistrations;
@@ -52,18 +52,21 @@ export default function OwnerResultsPage() {
           label="Ngựa trong chuồng"
           value={String(horses.length)}
           note="Tổng đang quản lý"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Đơn đã duyệt"
           value={String(totalApproved)}
           note="Đủ điều kiện thi đấu"
           tone="accent"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Cuộc đua đã xong"
           value={String(totalCompleted)}
           note="Ngựa của bạn đã về đích"
           tone="success"
+          loading={isDataLoading}
         />
       </div>
 
@@ -71,7 +74,9 @@ export default function OwnerResultsPage() {
         title="Các cuộc đua đã hoàn thành"
         subtitle="Đơn đã duyệt cho các cuộc đua đã kết thúc"
       >
-        {resultRows.length === 0 ? (
+        {isDataLoading && resultRows.length === 0 ? (
+          <LoadingState label="Đang tải kết quả…" />
+        ) : resultRows.length === 0 ? (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
             Chưa có cuộc đua nào hoàn thành. Kết quả sẽ hiện ở đây khi cuộc đua kết thúc.
           </p>

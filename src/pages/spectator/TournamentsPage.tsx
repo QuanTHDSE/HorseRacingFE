@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Badge, Panel } from "../../components";
+import { Badge, LoadingState, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { SpectatorRace, Tournament } from "../../types";
 import { cn } from "../../utils/cn";
@@ -138,7 +138,7 @@ function TournamentRaces({ races }: { races: SpectatorRace[] }) {
 }
 
 export default function TournamentsPage() {
-  const { appState } = useApp();
+  const { appState, isDataLoading } = useApp();
   const [filter, setFilter] = useState<TournamentFilter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -173,10 +173,14 @@ export default function TournamentsPage() {
     return (
       <div className="page-stack">
         <Panel title="Giải đấu" subtitle="Theo dõi các giải đua ngựa đang và sắp diễn ra">
-          <div className="spectator-result-empty">
-            <strong>Chưa có giải đấu nào được công bố</strong>
-            <p>Thông tin giải và lịch thi đấu sẽ xuất hiện tại đây khi sẵn sàng.</p>
-          </div>
+          {isDataLoading ? (
+            <LoadingState label="Đang tải giải đấu…" />
+          ) : (
+            <div className="spectator-result-empty">
+              <strong>Chưa có giải đấu nào được công bố</strong>
+              <p>Thông tin giải và lịch thi đấu sẽ xuất hiện tại đây khi sẵn sàng.</p>
+            </div>
+          )}
         </Panel>
       </div>
     );

@@ -24,7 +24,7 @@ function rankLabel(rank?: number): string {
 }
 
 export default function PerformancePage() {
-  const { appState, user } = useApp();
+  const { appState, user, isDataLoading } = useApp();
   const allRaces     = appState.races;
   const completed    = allRaces.filter((r) => r.liveStatus === "Completed");
   const withResult   = completed.filter((r) => r.result?.rank !== undefined);
@@ -51,29 +51,33 @@ export default function PerformancePage() {
           label="Cuộc đua đã xong"
           value={String(completed.length)}
           note="Tổng lượt đã hoàn thành"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Chiến thắng"
           value={String(wins)}
           note="Số lần về nhất"
           tone="success"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Vào top 3"
           value={String(podiums)}
           note="Về trong top 3"
           tone="accent"
+          loading={isDataLoading}
         />
         <MetricCard
           label="Tỷ lệ thắng"
           value={withResult.length > 0 ? `${winRate}%` : "—"}
           note="Từ kết quả đã công bố"
           tone="info"
+          loading={isDataLoading}
         />
       </div>
 
       <Panel title="Kết quả thi đấu" subtitle="Lịch sử cá nhân từ các cuộc đua đã hoàn thành">
-        {resultRows.length === 0 && (
+        {!isDataLoading && resultRows.length === 0 && (
           <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa có cuộc đua nào hoàn thành.</p>
         )}
         <DataTable
@@ -95,6 +99,7 @@ export default function PerformancePage() {
             { key: "prize", label: "Giải thưởng"  },
           ]}
           rows={resultRows}
+          loading={isDataLoading}
         />
       </Panel>
 
