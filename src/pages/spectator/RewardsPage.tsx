@@ -196,7 +196,6 @@ export default function RewardsPage() {
           ]}
           rows={myTransactions}
           empty="No point history yet."
-          loading={isDataLoading}
         />
       </Panel>
     </div>

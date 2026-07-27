@@ -12,8 +12,8 @@ interface Entry {
   jockeyName: string;
   ownerId: string;
   ownerName?: string;
+  /** Not shown in the UI — only seeds the initial finishing order the referee reorders. */
   laneNumber: number;
-  clothNumber?: number;
   finishTime?: number | "";
 }
 
@@ -87,7 +87,6 @@ export default function ResultsPage() {
             ownerId: c.ownerId,
             ownerName: c.ownerName,
             laneNumber: c.laneNumber,
-            clothNumber: c.clothNumber,
           }));
 
         for (const v of raceViolations) {
@@ -238,7 +237,7 @@ export default function ResultsPage() {
                     <td>
                       <strong>{e.horseName}</strong>
                       <div style={{ fontSize: "0.82rem", color: "var(--c-muted)" }}>
-                        Làn {e.laneNumber} · Áo {e.clothNumber ?? "—"} · {e.jockeyName} · Chủ ngựa {e.ownerName ?? "—"}
+                        {e.jockeyName} · Chủ ngựa {e.ownerName ?? "—"}
                       </div>
                     </td>
                     <td>

@@ -33,9 +33,8 @@ function fmtDate(iso?: string | null): string {
 }
 
 function participantLabel(p: RefereeParticipantCheck): string {
-  const cloth = p.clothNumber ? `áo #${p.clothNumber}` : "áo —";
-  const owner = p.ownerName ? ` · owner ${p.ownerName}` : "";
-  return `${p.horseName} · ${p.jockeyName}${owner} · lane ${p.laneNumber} · ${cloth}`;
+  const owner = p.ownerName ? ` · chủ ngựa ${p.ownerName}` : "";
+  return `${p.horseName} · ${p.jockeyName}${owner}`;
 }
 
 export default function PenaltiesPage() {

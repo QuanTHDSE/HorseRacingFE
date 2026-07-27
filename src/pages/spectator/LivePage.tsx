@@ -174,7 +174,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
             <div className="spectator-section-heading">
               <div>
                 <h3>Danh sách xuất phát</h3>
-                <p>Sắp theo số làn</p>
+                <p>Các ngựa tham gia cuộc đua</p>
               </div>
               <span>{race.participants.length} ngựa</span>
             </div>
@@ -184,7 +184,6 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                 .sort((a, b) => a.laneNumber - b.laneNumber)
                 .map((participant) => (
                   <div className="spectator-lane-item" key={participant.id}>
-                    <span>Làn {participant.laneNumber}</span>
                     <strong>{participant.name}</strong>
                   </div>
                 ))}

@@ -111,7 +111,6 @@ export default function JockeyDashboardPage() {
                 </div>
                 <p style={{ margin: "4px 0 2px" }}>
                   Ngựa: <strong>{race.horseName ?? "—"}</strong>
-                  {race.laneNumber !== undefined ? <span> · Làn {race.laneNumber}</span> : null}
                 </p>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                   {fmtDate(race.date)}{race.distance ? ` · ${race.distance}` : ""}

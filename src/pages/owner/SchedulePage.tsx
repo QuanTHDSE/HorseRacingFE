@@ -28,7 +28,7 @@ function fmtDate(iso?: string): string {
 }
 
 export default function OwnerSchedulePage() {
-  const { appState, isDataLoading, handleRegisterForRace, handleCancelRegistration } = useApp();
+  const { appState, isDataLoading, handleRegisterForRace } = useApp();
 
   // Registration form
   const [selectedTournament, setSelectedTournament] = useState("");
@@ -42,13 +42,10 @@ export default function OwnerSchedulePage() {
   // List filter
   const [filter, setFilter] = useState<RegFilter>("all");
 
-  // Cancel in progress
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const cancelError: string = ""; const setCancelError = fb.error;
-
   const horses      = appState.horses;
   const tournaments = appState.tournaments;
   const regs        = appState.ownerRegistrations;
+  const invitations = appState.invitations;
 
   const racesForTournament = selectedTournament
     ? appState.races.filter((r) => r.tournamentId === selectedTournament && (r.liveStatus === "Upcoming" || r.liveStatus === "Live"))
@@ -75,18 +72,6 @@ export default function OwnerSchedulePage() {
       setRegError(err instanceof Error ? err.message : "Đăng ký thất bại.");
     } finally {
       setRegLoading(false);
-    }
-  }
-
-  async function doCancel(id: string) {
-    setCancellingId(id);
-    setCancelError("");
-    try {
-      await handleCancelRegistration(id);
-    } catch (err: unknown) {
-      setCancelError(err instanceof Error ? err.message : "Hủy thất bại.");
-    } finally {
-      setCancellingId(null);
     }
   }
 
@@ -177,7 +162,6 @@ export default function OwnerSchedulePage() {
           </div>
         }
       >
-        {cancelError && <div className="form-banner form-banner-error" style={{ marginBottom: "10px" }}>{cancelError}</div>}
         <DataTable
           columns={[
             { key: "raceName",  label: "Cuộc đua" },
@@ -195,7 +179,22 @@ export default function OwnerSchedulePage() {
             {
               key: "jockeyName",
               label: "Nài ngựa",
-              render: (row) => row.jockeyName ?? <span style={{ color: "var(--text-muted)" }}>Chưa phân công</span>,
+              render: (row) => {
+                if (row.jockeyName) return row.jockeyName;
+                // Same reasoning as the owner "Thuê nài ngựa" page: a registration
+                // gains its jockey only on acceptance, so pending/declined invites
+                // have to come from the invitation list.
+                const invite = invitations.find(
+                  (i) => i.raceId === row.raceId && i.horseId === row.horseId,
+                );
+                if (invite?.status === "Pending") {
+                  return <Badge tone="warning">Chờ {invite.jockeyName ?? "nài"} phản hồi</Badge>;
+                }
+                if (invite?.status === "Declined") {
+                  return <Badge tone="danger">{invite.jockeyName ?? "Nài"} đã từ chối</Badge>;
+                }
+                return <span style={{ color: "var(--text-muted)" }}>Chưa mời nài</span>;
+              },
             },
             {
               key: "status",
@@ -203,23 +202,6 @@ export default function OwnerSchedulePage() {
               render: (row) => (
                 <Badge tone={STATUS_TONE[row.status] as any ?? "neutral"}>{viRegStatus(row.status)}</Badge>
               ),
-            },
-            {
-              key: "id",
-              label: "Thao tác",
-              render: (row) =>
-                row.status === "Pending" ? (
-                  <button
-                    type="button"
-                    className="table-button is-danger"
-                    disabled={cancellingId === row.id}
-                    onClick={() => doCancel(row.id)}
-                  >
-                    {cancellingId === row.id ? "…" : "Hủy"}
-                  </button>
-                ) : (
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>
-                ),
             },
           ]}
           rows={filtered}

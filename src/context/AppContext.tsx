@@ -353,6 +353,7 @@ function mapInvitation(inv: ApiInvitation): Invitation {
     raceName: inv.race.name,
     raceDate: inv.race.scheduledAt,
     ownerName: inv.owner.fullName,
+    jockeyName: inv.jockey?.fullName,
     raceStatus: RACE_STATUS[inv.race.status] ?? inv.race.status,
     message: inv.message,
   };
@@ -719,12 +720,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           racetracks,
         }));
       } else if (role === "owner") {
-        const [horsesRes, regsRes, tourRes, notiRes] = await Promise.allSettled([
+        const [horsesRes, regsRes, tourRes, notiRes, invRes] = await Promise.allSettled([
           api.horseOwner.listHorses(),
           api.horseOwner.listRegistrations(),
           api.horseOwner.listTournaments(),
           api.horseOwner.listNotifications(),
+          api.horseOwner.listInvitations(),
         ]);
+
+        // Invitations the owner has sent — the only source of "pending" / "declined",
+        // since RaceRegistration.jockeyId is filled in only once a jockey accepts.
+        const invitations =
+          invRes.status === "fulfilled" ? invRes.value.data.map(mapInvitation) : [];
 
         const notifications =
           notiRes.status === "fulfilled"
@@ -772,7 +779,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        setAppState((prev) => ({ ...prev, horses, ownerRegistrations, tournaments, races, notifications }));
+        setAppState((prev) => ({ ...prev, horses, ownerRegistrations, tournaments, races, notifications, invitations }));
       } else if (role === "jockey") {
         const [invRes, racesRes, notiRes] = await Promise.allSettled([
           api.jockey.listInvitations(),
@@ -1225,10 +1232,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     message?: string,
   ): Promise<void> {
     await api.horseOwner.inviteJockey(raceId, horseId, jockeyId, message);
-    const res = await api.horseOwner.listRegistrations();
+    // Refresh both: the registration still has no jockey until the invite is accepted,
+    // so the pending state only shows up through the invitation list.
+    const [regsRes, invRes] = await Promise.allSettled([
+      api.horseOwner.listRegistrations(),
+      api.horseOwner.listInvitations(),
+    ]);
     setAppState((prev) => ({
       ...prev,
-      ownerRegistrations: res.data.map(mapOwnerRegistration),
+      ownerRegistrations:
+        regsRes.status === "fulfilled"
+          ? regsRes.value.data.map(mapOwnerRegistration)
+          : prev.ownerRegistrations,
+      invitations:
+        invRes.status === "fulfilled"
+          ? invRes.value.data.map(mapInvitation)
+          : prev.invitations,
     }));
   }
 

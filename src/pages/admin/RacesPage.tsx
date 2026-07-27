@@ -39,11 +39,12 @@ const EMPTY_FORM = {
   maxParticipants: "12",
 };
 
+// Lanes are not set here: the referee draws them when officiating starts
+// (randomizeActiveParticipantLanes), which overwrites anything assigned earlier.
 const EMPTY_PARTICIPANT = {
   horseId: "",
   jockeyId: "",
   ownerId: "",
-  laneNumber: "",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,7 +66,6 @@ function ParticipantsTable({ participants }: { participants: RaceDetail["partici
   return (
     <DataTable
       columns={[
-        { key: "laneNumber", label: "Làn" },
         { key: "horseName",  label: "Ngựa"  },
         { key: "jockeyName", label: "Nài ngựa" },
         { key: "ownerName",  label: "Chủ ngựa"  },
@@ -270,7 +270,7 @@ export default function RacesPage() {
     const entry = entries.find((e) => e.registrationId === entryId);
     setPForm(
       entry
-        ? { horseId: entry.horseId, jockeyId: entry.jockeyId ?? "", ownerId: entry.ownerId, laneNumber: "" }
+        ? { horseId: entry.horseId, jockeyId: entry.jockeyId ?? "", ownerId: entry.ownerId }
         : EMPTY_PARTICIPANT,
     );
   }
@@ -302,10 +302,9 @@ export default function RacesPage() {
     setPError("");
     try {
       const input: AddParticipantInput = {
-        horseId:    pForm.horseId,
-        jockeyId:   pForm.jockeyId,
-        ownerId:    pForm.ownerId,
-        laneNumber: pForm.laneNumber ? Number(pForm.laneNumber) : undefined,
+        horseId:  pForm.horseId,
+        jockeyId: pForm.jockeyId,
+        ownerId:  pForm.ownerId,
       };
       const updated = await handleAddParticipant(detail.id, input);
       setDetail(updated);
@@ -669,16 +668,6 @@ export default function RacesPage() {
                           </label>
                         )}
 
-                        <label className="field">
-                          <span>Số làn (không bắt buộc)</span>
-                          <input
-                            type="number" min={1} max={detail.maxParticipants}
-                            value={pForm.laneNumber}
-                            onChange={(e) => setPForm((p) => ({ ...p, laneNumber: e.target.value }))}
-                            placeholder="Tự gán nếu để trống"
-                            disabled={pLoading}
-                          />
-                        </label>
                       </div>
                     )}
                     <div className="form-actions" style={{ marginTop: "10px" }}>

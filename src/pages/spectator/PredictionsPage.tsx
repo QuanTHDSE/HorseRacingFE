@@ -107,7 +107,7 @@ export default function PredictionsPage() {
                       }}
                       onClick={() => selectHorse(horse.id)}
                     >
-                      Làn {horse.laneNumber} · {horse.name}
+                      {horse.name}
                     </button>
                   ))}
                 </div>

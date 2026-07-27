@@ -42,7 +42,6 @@ function RaceRow({ race }: { race: Race }) {
         </p>
         <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)" }}>
           Ngựa: <strong>{race.horseName ?? "—"}</strong>
-          {race.laneNumber !== undefined ? ` · Làn ${race.laneNumber}` : ""}
           {race.tournamentName ? ` · ${race.tournamentName}` : ""}
           {race.ownerName ? ` · Chủ ngựa: ${race.ownerName}` : ""}
         </p>

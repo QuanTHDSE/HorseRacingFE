@@ -92,8 +92,6 @@ export default function ChecksPage() {
             ) : (
               <DataTable
                 columns={[
-                  { key: "laneNumber", label: "Lane", render: (r) => `#${r.laneNumber}` },
-                  { key: "clothNumber", label: "Áo số", render: (r) => r.clothNumber ? `#${r.clothNumber}` : "—" },
                   { key: "horseName", label: "Ngựa" },
                   { key: "jockeyName", label: "Nài ngựa" },
                   { key: "ownerName", label: "Chủ ngựa", render: (r) => r.ownerName ?? "Chưa có dữ liệu" },
@@ -210,10 +208,6 @@ export default function ChecksPage() {
                   <div className="detail-item">
                     <span className="detail-label">Nài ngựa</span>
                     <strong>{selected.jockeyName || "—"}</strong>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Vị trí thi đấu</span>
-                    <strong>Làn #{selected.laneNumber} · Áo #{selected.clothNumber ?? "—"}</strong>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Hồ sơ ngựa (PDF)</span>

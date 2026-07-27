@@ -50,7 +50,6 @@ function RaceCard({ race }: { race: Race }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", margin: "8px 0 4px", fontSize: "0.875rem" }}>
         <span><span style={{ color: "var(--text-muted)" }}>Ngựa </span><strong>{race.horseName ?? "—"}</strong></span>
-        <span><span style={{ color: "var(--text-muted)" }}>Làn </span><strong>{race.laneNumber ?? "—"}</strong></span>
         <span><span style={{ color: "var(--text-muted)" }}>Ngày </span>{fmtDate(race.date)}</span>
         <span><span style={{ color: "var(--text-muted)" }}>Cự ly </span>{race.distance}</span>
         <span><span style={{ color: "var(--text-muted)" }}>Giải đấu </span>{race.tournamentName ?? race.track}</span>

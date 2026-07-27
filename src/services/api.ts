@@ -874,6 +874,10 @@ export const api = {
       request<{ success: boolean; message: string }>(`/horse-owner/registrations/${id}`, {
         method: "DELETE",
       }),
+    listInvitations: (status?: string) =>
+      request<{ success: boolean; data: ApiInvitation[] }>(
+        `/horse-owner/invitations${status ? `?status=${status}` : ""}`,
+      ),
     inviteJockey: (raceId: string, horseId: string, jockeyId: string, message?: string) =>
       request<{ success: boolean; data: ApiInvitation }>("/horse-owner/invitations", {
         method: "POST",

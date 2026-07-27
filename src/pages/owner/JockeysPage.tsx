@@ -3,6 +3,7 @@ import { Badge, DataTable, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import { api } from "../../services/api";
+import type { Invitation } from "../../types";
 import { viRegStatus } from "../../utils/viLabels";
 
 const STATUS_TONE: Record<string, string> = {
@@ -17,8 +18,24 @@ interface JockeyResult {
   licenseNumber?: string;
 }
 
+/**
+ * A registration only carries `jockeyName` once the jockey has accepted, so the
+ * invitation list is what tells the owner about pending and declined invites.
+ * Latest invitation per (race, horse) wins — re-inviting after a decline should
+ * show the new pending state, not the old rejection.
+ */
+function buildInviteIndex(invitations: Invitation[]): Map<string, Invitation> {
+  const index = new Map<string, Invitation>();
+  for (const inv of invitations) {
+    const key = `${inv.raceId}:${inv.horseId}`;
+    const seen = index.get(key);
+    if (!seen || (inv.id > seen.id)) index.set(key, inv);
+  }
+  return index;
+}
+
 export default function JockeysPage() {
-  const { appState, isDataLoading, handleInviteJockey } = useApp();
+  const { appState, isDataLoading, handleInviteJockey, handleCancelRegistration } = useApp();
 
   // Search state
   const [searchQuery, setSearchQuery]       = useState("");
@@ -35,7 +52,19 @@ export default function JockeysPage() {
   const invError: string = ""; const setInvError = fb.error;
   const invSuccess: string = ""; const setInvSuccess = fb.success;
 
+  // Cancel in progress
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
   const regs = appState.ownerRegistrations;
+  const inviteIndex = buildInviteIndex(appState.invitations);
+
+  // This page is the owner's "still to do" list. Once a jockey has accepted, the
+  // slot is settled and only needs tracking — it lives on the Lịch đua page from
+  // then on. Declined invites deliberately stay here so the owner can re-invite.
+  const openRegs = regs.filter((r) => {
+    if (r.jockeyName) return false;
+    return inviteIndex.get(`${r.raceId}:${r.horseId}`)?.status !== "Accepted";
+  });
 
   // Eligible to invite: registrations the admin has APPROVED that don't have a jockey yet.
   // (Owner hires a jockey only after the horse entry is approved.)
@@ -76,6 +105,17 @@ export default function JockeysPage() {
     setSelectedJockey(null);
     setSearchQuery("");
     setSearchResults([]);
+  }
+
+  async function doCancel(id: string) {
+    setCancellingId(id);
+    try {
+      await handleCancelRegistration(id);
+    } catch (err: unknown) {
+      setInvError(err instanceof Error ? err.message : "Hủy đăng ký thất bại.");
+    } finally {
+      setCancellingId(null);
+    }
   }
 
   async function doInvite(e: React.FormEvent) {
@@ -121,11 +161,20 @@ export default function JockeysPage() {
                 disabled={invLoading}
               >
                 <option value="">— Chọn đơn đăng ký —</option>
-                {eligibleRegs.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.horseName} → {r.raceName} ({viRegStatus(r.status)})
-                  </option>
-                ))}
+                {eligibleRegs.map((r) => {
+                  const invite = inviteIndex.get(`${r.raceId}:${r.horseId}`);
+                  const note =
+                    invite?.status === "Pending"
+                      ? `đang chờ ${invite.jockeyName ?? "nài"} phản hồi`
+                      : invite?.status === "Declined"
+                        ? `${invite.jockeyName ?? "nài"} đã từ chối`
+                        : viRegStatus(r.status);
+                  return (
+                    <option key={r.id} value={r.id}>
+                      {r.horseName} → {r.raceName} ({note})
+                    </option>
+                  );
+                })}
               </select>
               {eligibleRegs.length === 0 && (
                 <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
@@ -272,8 +321,11 @@ export default function JockeysPage() {
         </form>
       </Panel>
 
-      {/* ── All registrations summary ── */}
-      <Panel title="Tất cả đăng ký" subtitle="Danh sách đầy đủ các suất đua và trạng thái nài ngựa">
+      {/* ── Registrations still needing a jockey ── */}
+      <Panel
+        title="Suất đua chưa chốt nài"
+        subtitle="Đơn chờ duyệt, chưa mời nài, đang chờ phản hồi hoặc bị từ chối. Suất đã có nài nhận xem ở trang Lịch đua."
+      >
         <DataTable
           columns={[
             { key: "raceName",   label: "Cuộc đua" },
@@ -288,13 +340,70 @@ export default function JockeysPage() {
             {
               key: "jockeyName",
               label: "Nài ngựa",
-              render: (row) => row.jockeyName
-                ? <span style={{ color: "var(--text-success)" }}>{row.jockeyName}</span>
-                : <span style={{ color: "var(--text-muted)" }}>Chưa phân công</span>,
+              render: (row) => {
+                // Accepted: the registration itself now carries the jockey.
+                if (row.jockeyName) {
+                  return (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Badge tone="success">Đã nhận</Badge>
+                      <strong>{row.jockeyName}</strong>
+                    </span>
+                  );
+                }
+
+                const invite = inviteIndex.get(`${row.raceId}:${row.horseId}`);
+                if (!invite) {
+                  return <span style={{ color: "var(--c-muted)" }}>Chưa mời nài</span>;
+                }
+
+                const who = invite.jockeyName ?? "nài ngựa";
+                if (invite.status === "Pending") {
+                  return (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Badge tone="warning">Chờ phản hồi</Badge>
+                      <span>{who}</span>
+                    </span>
+                  );
+                }
+                if (invite.status === "Declined") {
+                  return (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Badge tone="danger">Đã từ chối</Badge>
+                      <span style={{ color: "var(--c-muted)" }}>{who} · hãy mời nài khác</span>
+                    </span>
+                  );
+                }
+                // "Accepted" invite but the registration has not caught up yet.
+                return (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <Badge tone="success">Đã nhận</Badge>
+                    <strong>{who}</strong>
+                  </span>
+                );
+              },
+            },
+            {
+              key: "id",
+              label: "Thao tác",
+              // Only an entry the admin has not ruled on yet can be withdrawn —
+              // this mirrors the backend, which deletes pending registrations only.
+              render: (row) =>
+                row.status === "Pending" ? (
+                  <button
+                    type="button"
+                    className="table-button is-danger"
+                    disabled={cancellingId === row.id}
+                    onClick={() => doCancel(row.id)}
+                  >
+                    {cancellingId === row.id ? "…" : "Hủy đăng ký"}
+                  </button>
+                ) : (
+                  <span style={{ color: "var(--c-muted)", fontSize: "0.8rem" }}>—</span>
+                ),
             },
           ]}
-          rows={regs}
-          empty="Chưa có đăng ký nào."
+          rows={openRegs}
+          empty="Mọi suất đua đã có nài nhận. Xem lịch thi đấu ở trang Lịch đua."
           loading={isDataLoading}
         />
       </Panel>

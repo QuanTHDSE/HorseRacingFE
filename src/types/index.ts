@@ -119,6 +119,8 @@ export interface Invitation {
   raceName?: string;
   raceDate?: string;
   ownerName?: string;
+  /** Set for the owner-side view: who the invitation was sent to. */
+  jockeyName?: string;
   raceStatus?: string;
   message?: string;
 }
