@@ -3,6 +3,8 @@ import { Badge, DataTable, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 
+const VND_PER_POINT = 0.01;
+
 const TX_LABELS: Record<string, string> = {
   topup: "Top-up",
   earned_prediction: "Prediction reward",
@@ -20,7 +22,7 @@ const TX_LABELS: Record<string, string> = {
 
 export default function RewardsPage() {
   const { user, appState, handleTopUpPoints, handleCreatePayosTopUp } = useApp();
-  const [topUpPoints, setTopUpPoints] = useState(100);
+  const [topUpPoints, setTopUpPoints] = useState(100000);
   const [filter, setFilter] = useState<"all" | "credit" | "debit" | "prediction" | "topup">("all");
   const fb = useFeedback();
   const topUpError: string = ""; const setTopUpError = fb.error;
@@ -82,7 +84,7 @@ export default function RewardsPage() {
 
   return (
     <div className="page-stack">
-      <Panel title="Point Wallet" subtitle="1000 VND = 1 point · minimum top-up is 100 points">
+      <Panel title="Point Wallet" subtitle="1000 VND = 100000 points · minimum top-up is 100 points">
         <div className="metric-grid three">
           <div className="metric-card">
             <span>Current balance</span>
@@ -126,7 +128,7 @@ export default function RewardsPage() {
             />
           </label>
           <button className="primary-button" type="submit" disabled={submitting}>
-            {submitting ? "Đang xử lý..." : `Nạp ${(topUpPoints * 1000).toLocaleString()} VND`}
+            {submitting ? "Đang xử lý..." : `Nạp ${Math.ceil(topUpPoints * VND_PER_POINT).toLocaleString()} VND`}
           </button>
           <button className="secondary-button" type="button" disabled={submitting} onClick={submitPayosTopUp}>
             Thanh toán qua PayOS
