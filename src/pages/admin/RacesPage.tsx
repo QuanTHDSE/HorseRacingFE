@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Badge, ConfirmDeleteButton, DataTable, LoadingState, MetricCard, Panel, Spinner } from "../../components";
-import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
-import type { AddParticipantInput, Race, RaceDetail, RaceEligibleEntry, RaceSimTimeline } from "../../types";
+import type { AddParticipantInput, Race, RaceDetail, RaceEligibleEntry } from "../../types";
 import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
 
@@ -94,8 +93,6 @@ export default function RacesPage() {
     handleGetRaceById,
     handleAddParticipant,
     handleGetRaceEligibleEntries,
-    handleSimulateRace,
-    handleFinishRace,
     handleAssignRaceReferee,
     handleUpdateRaceStatus,
     handleDeleteRace,
@@ -132,10 +129,6 @@ export default function RacesPage() {
   const [entries, setEntries] = useState<RaceEligibleEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState("");
-
-  // ── Start race (live simulation) ─────────────────────────────────────────────
-  const [simTimeline, setSimTimeline] = useState<RaceSimTimeline | null>(null);
-  const [simLoading, setSimLoading] = useState(false);
 
   // ── Assign referee ───────────────────────────────────────────────────────────
   const [refAssigning, setRefAssigning] = useState(false);
@@ -319,32 +312,6 @@ export default function RacesPage() {
     }
   }
 
-  async function doStartRace() {
-    if (!detail) return;
-    setSimLoading(true);
-    setStatusMsg("");
-    try {
-      const timeline = await handleSimulateRace(detail.id);
-      setSimTimeline(timeline);
-    } catch (err: unknown) {
-      setDetailError(err instanceof Error ? err.message : "Không bắt đầu được cuộc đua.");
-    } finally {
-      setSimLoading(false);
-    }
-  }
-
-  async function onPlayerClose() {
-    const raceId = simTimeline?.raceId ?? detail?.id;
-    setSimTimeline(null);
-    // Kết thúc đua khi đóng màn xem: công bố kết quả + giải đấu trở lại Registration
-    if (raceId) {
-      try { await handleFinishRace(raceId); } catch { /* ignore */ }
-    }
-    if (detail) {
-      try { setDetail(await handleGetRaceById(detail.id)); } catch { /* ignore */ }
-    }
-  }
-
   async function doAssignReferee(refereeId: string) {
     if (!detail) return;
     setRefAssigning(true);
@@ -364,8 +331,6 @@ export default function RacesPage() {
 
   return (
     <div className="page-stack">
-      {simTimeline && <RaceLivePlayer timeline={simTimeline} onClose={onPlayerClose} />}
-
       {/* ── Metrics ── */}
       <div className="metric-grid four">
         <MetricCard label="Tổng số cuộc đua"  value={String(totalCount)}     note="Tất cả cuộc đua trong hệ thống"                     loading={isDataLoading} />
@@ -708,32 +673,8 @@ export default function RacesPage() {
                 </div>
               </div>
 
-              {/* ── Start race (live simulation) ── */}
-              {detail.liveStatus === "Upcoming" && (
-                <div style={{ marginTop: "24px", padding: "16px", background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", borderRadius: "10px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                    <div>
-                      <strong style={{ display: "block" }}>▶ Bắt đầu cuộc đua</strong>
-                      <span style={{ fontSize: "0.8rem", color: "var(--c-muted)" }}>
-                        Mô phỏng cuộc đua trực tiếp — kết quả tự được công bố và đối soát dự đoán.
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="primary-button"
-                      disabled={simLoading || detail.participantCount < 2}
-                      onClick={doStartRace}
-                    >
-                      {simLoading ? "Đang bắt đầu…" : "Bắt đầu cuộc đua"}
-                    </button>
-                  </div>
-                  {detail.participantCount < 2 && (
-                    <p style={{ fontSize: "0.78rem", color: "var(--c-muted)", margin: "8px 0 0" }}>
-                      Cần ít nhất 2 ngựa trong đường đua để bắt đầu.
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Running a race belongs to the assigned referee (Điều hành & Xử phạt),
+                  not to the admin — admin only sets the race up and assigns the referee. */}
 
               {/* ── Status transitions ── */}
               {NEXT_ACTIONS[detail.liveStatus] && (
