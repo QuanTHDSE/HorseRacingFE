@@ -13,9 +13,9 @@ export default function AdminResultsPage() {
       <Panel title="Công bố kết quả và quản lý dự đoán" subtitle="Quản trị viên công bố kết quả sau khi trọng tài xác nhận">
         <DataTable
           columns={[
+            { key: "tournament",        label: "Giải đấu", render: (row) => <strong>{row.tournament}</strong> },
             { key: "race",              label: "Cuộc đua"    },
             { key: "resultStatus",      label: "Kết quả"     },
-            { key: "predictionStatus",  label: "Dự đoán"     },
             {
               key: "publishStatus",
               label: "Trạng thái công bố",

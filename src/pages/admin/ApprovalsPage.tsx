@@ -94,10 +94,11 @@ export default function ApprovalsPage() {
         )}
         <DataTable
           columns={[
+            { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName ?? "Chưa xác định"}</strong> },
+            { key: "raceName",    label: "Cuộc đua",   render: (row) => row.raceName ?? "—" },
             { key: "ownerName",   label: "Chủ ngựa",  render: (row) => row.ownerName ?? row.applicant },
             { key: "horseName",   label: "Ngựa",  render: (row) => row.horseName ?? "—" },
             { key: "horseBreed",  label: "Giống",  render: (row) => row.horseBreed ?? "—" },
-            { key: "raceName",    label: "Cuộc đua",   render: (row) => row.raceName ?? "—" },
             {
               key: "horsePdfUrl",
               label: "PDF",
@@ -189,6 +190,10 @@ export default function ApprovalsPage() {
             </div>
 
             <div className="detail-item">
+              <span className="detail-label">Giải đấu</span>
+              <strong>{selected.tournamentName ?? "Chưa xác định"}</strong>
+            </div>
+            <div className="detail-item">
               <span className="detail-label">Cuộc đua</span>
               <strong>{selected.raceName ?? "—"}</strong>
             </div>
@@ -233,9 +238,10 @@ export default function ApprovalsPage() {
       >
         <DataTable
           columns={[
+            { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName ?? "Chưa xác định"}</strong> },
+            { key: "raceName",   label: "Cuộc đua",   render: (row) => row.raceName ?? "—" },
             { key: "ownerName",  label: "Chủ ngựa",  render: (row) => row.ownerName ?? row.applicant },
             { key: "horseName",  label: "Ngựa",  render: (row) => row.horseName ?? "—" },
-            { key: "raceName",   label: "Cuộc đua",   render: (row) => row.raceName ?? "—" },
             { key: "raceDate",   label: "Ngày đua", render: (row) => fmtDate(row.raceDate) },
             {
               key: "status",
@@ -256,12 +262,13 @@ export default function ApprovalsPage() {
       >
         <DataTable
           columns={[
+            { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName ?? "Chưa xác định"}</strong> },
+            { key: "raceName",   label: "Cuộc đua",   render: (row) => row.raceName ?? "—" },
             { key: "ownerName",  label: "Chủ ngựa",  render: (row) => row.ownerName ?? row.applicant },
             { key: "horseName",  label: "Ngựa",  render: (row) => row.horseName ?? "—" },
             { key: "jockeyName", label: "Nài ngựa", render: (row) => (
               <span style={{ color: "var(--text-success)" }}>{row.jockeyName}</span>
             ) },
-            { key: "raceName",   label: "Cuộc đua",   render: (row) => row.raceName ?? "—" },
             { key: "raceDate",   label: "Ngày đua", render: (row) => fmtDate(row.raceDate) },
             {
               key: "status",

@@ -82,9 +82,9 @@ export default function PerformancePage() {
         )}
         <DataTable
           columns={[
+            { key: "tournament", label: "Giải đấu", render: (row) => <strong>{row.tournament}</strong> },
             { key: "name",       label: "Cuộc đua" },
             { key: "horse",      label: "Ngựa"     },
-            { key: "tournament", label: "Giải đấu" },
             { key: "date",       label: "Ngày"     },
             {
               key: "position",

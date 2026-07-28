@@ -81,7 +81,7 @@ export default function OwnerDashboard() {
                   Ngựa: <strong>{reg.horseName}</strong>
                 </p>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  {fmtDate(reg.raceDate)}
+                  {reg.tournamentName} · {fmtDate(reg.raceDate)}
                   {reg.jockeyName ? ` · Nài: ${reg.jockeyName}` : ""}
                 </span>
               </article>

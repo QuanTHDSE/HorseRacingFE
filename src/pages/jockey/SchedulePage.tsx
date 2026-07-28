@@ -16,8 +16,9 @@ function fmtDate(iso?: string): string {
   });
 }
 
-const GROUPS: { key: string; label: string; tone: "accent" | "success" | "neutral" | "danger" }[] = [
+const GROUPS: { key: string; label: string; tone: "accent" | "success" | "neutral" | "warning" | "danger" }[] = [
   { key: "Live",      label: "Đang diễn ra", tone: "success" },
+  { key: "Ready",     label: "Sẵn sàng",     tone: "warning" },
   { key: "Upcoming",  label: "Sắp diễn ra",  tone: "accent"  },
   { key: "Completed", label: "Đã kết thúc",  tone: "neutral" },
   { key: "Cancelled", label: "Đã hủy",       tone: "danger"  },

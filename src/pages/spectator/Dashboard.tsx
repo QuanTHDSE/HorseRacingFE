@@ -52,8 +52,8 @@ export default function SpectatorDashboard() {
                     {viPredictionStatus(prediction.status)}
                   </Badge>
                 </div>
-                <p>{prediction.raceId}</p>
-                <span>Thưởng {prediction.reward}</span>
+                <p>{prediction.raceName}</p>
+                <span>{prediction.tournamentName} · Thưởng {prediction.reward}</span>
               </article>
             ))}
           </div>

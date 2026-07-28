@@ -158,6 +158,8 @@ export interface Report {
 export interface RefereeRace {
   id: string;
   name: string;
+  tournamentId: string;
+  tournamentName: string;
   round: number;
   scheduledAt: string;
   status: string;
@@ -366,6 +368,7 @@ export interface Prediction {
   spectatorId: string;
   raceId: string;
   raceName: string;
+  tournamentName: string;
   horse: string;
   tickets: string;
   cost: string;
@@ -406,6 +409,8 @@ export interface Approval {
   horsePdfUrl?: string;
   horsePdfName?: string;
   raceName?: string;
+  tournamentId?: string;
+  tournamentName?: string;
   raceRound?: number;
   raceDate?: string;
   raceStatus?: string;
@@ -442,8 +447,8 @@ export interface Assignment {
 export interface PublishItem {
   id: string;
   race: string;
+  tournament: string;
   resultStatus: string;
-  predictionStatus: string;
   publishStatus: string;
 }
 
@@ -532,6 +537,8 @@ export interface OwnerRegistration {
   horseName: string;
   raceId: string;
   raceName: string;
+  tournamentId: string;
+  tournamentName: string;
   raceDate?: string;
   raceStatus?: string;
   jockeyId?: string;

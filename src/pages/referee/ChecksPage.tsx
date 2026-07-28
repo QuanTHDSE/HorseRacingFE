@@ -4,7 +4,8 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RefereeParticipantCheck } from "../../types";
 import { cn } from "../../utils/cn";
-import { viHealth, viRaceStatus } from "../../utils/viLabels";
+import { viHealth } from "../../utils/viLabels";
+import RefereeRaceSelector from "./RefereeRaceSelector";
 
 const HEALTH_TONE: Record<string, "success" | "warning" | "neutral"> = {
   Fit: "success",
@@ -17,7 +18,7 @@ export default function ChecksPage() {
 
   const races = appState.refereeRaces;
   // Pre-race checks are meaningful before/at race time
-  const eligible = races.filter((r) => r.liveStatus === "Upcoming" || r.liveStatus === "Live");
+  const eligible = races.filter((r) => ["Upcoming", "Ready", "Live"].includes(r.liveStatus));
 
   const [raceId, setRaceId] = useState("");
   const [checks, setChecks] = useState<RefereeParticipantCheck[]>([]);
@@ -60,20 +61,12 @@ export default function ChecksPage() {
   return (
     <div className="page-stack">
       <Panel title="Duyệt trước cuộc đua" subtitle="Chọn cuộc đua để kiểm tra thú y và xác nhận xuất phát từng ngựa">
-        <label className="field" style={{ maxWidth: "420px" }}>
-          <span>Cuộc đua</span>
-          <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
-            <option value="">— Chọn cuộc đua —</option>
-            {eligible.map((r) => (
-              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({viRaceStatus(r.liveStatus)})</option>
-            ))}
-          </select>
-          {eligible.length === 0 && (
-            <span style={{ fontSize: "0.78rem", color: "var(--c-muted)" }}>
-              Không có cuộc đua sắp/đang diễn ra để duyệt.
-            </span>
-          )}
-        </label>
+        <RefereeRaceSelector
+          races={eligible}
+          value={raceId}
+          onChange={setRaceId}
+          emptyMessage="Không có cuộc đua sắp/đang diễn ra để duyệt."
+        />
       </Panel>
 
       {error && <div className="form-banner form-banner-error">{error}</div>}

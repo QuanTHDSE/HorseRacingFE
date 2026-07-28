@@ -4,6 +4,7 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceViolation, RefereeResultStatus, ResultRankingInput } from "../../types";
 import { viRaceStatus } from "../../utils/viLabels";
+import RefereeRaceSelector from "./RefereeRaceSelector";
 
 interface Entry {
   horseId: string;
@@ -174,20 +175,12 @@ export default function ResultsPage() {
   return (
     <div className="page-stack">
       <Panel title="Xếp hạng & xác nhận kết quả" subtitle="Chọn cuộc đua đang/đã diễn ra, điều chỉnh thứ hạng rồi xác nhận">
-        <label className="field" style={{ maxWidth: "420px" }}>
-          <span>Cuộc đua</span>
-          <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
-            <option value="">— Chọn cuộc đua —</option>
-            {eligible.map((r) => (
-              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({viRaceStatus(r.liveStatus)})</option>
-            ))}
-          </select>
-          {eligible.length === 0 && (
-            <span style={{ fontSize: "0.78rem", color: "var(--c-muted)" }}>
-              Không có cuộc đua đang/đã diễn ra để nhập kết quả.
-            </span>
-          )}
-        </label>
+        <RefereeRaceSelector
+          races={eligible}
+          value={raceId}
+          onChange={setRaceId}
+          emptyMessage="Không có cuộc đua đang/đã diễn ra để nhập kết quả."
+        />
       </Panel>
 
       {error && <div className="form-banner form-banner-error">{error}</div>}

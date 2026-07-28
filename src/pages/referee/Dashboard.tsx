@@ -12,7 +12,7 @@ function fmtDate(iso?: string): string {
 }
 
 const STATUS_TONE: Record<string, string> = {
-  Upcoming: "accent", Live: "success", Completed: "neutral", Cancelled: "danger",
+  Upcoming: "accent", Ready: "warning", Live: "success", Completed: "neutral", Cancelled: "danger",
 };
 
 export default function RefereeDashboard() {
@@ -21,6 +21,7 @@ export default function RefereeDashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
 
   const races = appState.refereeRaces;
+  const tournamentCount = new Set(races.map((race) => race.tournamentId)).size;
 
   useEffect(() => {
     let alive = true;
@@ -58,9 +59,17 @@ export default function RefereeDashboard() {
         <MetricCard label="Chờ xác nhận kết quả" value={String(pending)} note="Có kết quả, chưa xác nhận" tone="warning" loading={metricsLoading} />
       </div>
 
-      <Panel title="Các cuộc đua bạn phụ trách" subtitle={`${races.length} cuộc đua`}>
+      <Panel
+        title="Các cuộc đua bạn phụ trách"
+        subtitle={`${tournamentCount} giải đấu · ${races.length} cuộc đua`}
+      >
         <DataTable
           columns={[
+            {
+              key: "tournamentName",
+              label: "Giải đấu",
+              render: (r) => <strong>{r.tournamentName || "Chưa xác định"}</strong>,
+            },
             { key: "name", label: "Cuộc đua" },
             { key: "round", label: "Vòng", render: (r) => `#${r.round}` },
             { key: "scheduledAt", label: "Thời gian", render: (r) => fmtDate(r.scheduledAt) },

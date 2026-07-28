@@ -41,7 +41,7 @@ export default function OwnerResultsPage() {
       jockeyName:  reg.jockeyName ?? "—",
       raceDate:    fmtDate(reg.raceDate),
       distance:    race?.distance ?? "—",
-      tournament:  race ? (appState.tournaments.find((t) => t.id === race.tournamentId)?.name ?? "—") : "—",
+      tournament:  reg.tournamentName || (race ? (appState.tournaments.find((t) => t.id === race.tournamentId)?.name ?? "Chưa xác định") : "Chưa xác định"),
     };
   });
 
@@ -83,10 +83,10 @@ export default function OwnerResultsPage() {
         ) : (
           <DataTable
             columns={[
+              { key: "tournament", label: "Giải đấu", render: (row) => <strong>{row.tournament}</strong> },
               { key: "raceName",   label: "Cuộc đua"   },
               { key: "horseName",  label: "Ngựa"       },
               { key: "jockeyName", label: "Nài ngựa"   },
-              { key: "tournament", label: "Giải đấu"   },
               { key: "distance",   label: "Cự ly"      },
               { key: "raceDate",   label: "Ngày"       },
               {
@@ -114,6 +114,7 @@ export default function OwnerResultsPage() {
         <Panel title="Thành tích nài ngựa" subtitle="Các cuộc đua ngựa của bạn có nài được phân công">
           <DataTable
             columns={[
+              { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName}</strong> },
               { key: "raceName",   label: "Cuộc đua" },
               { key: "horseName",  label: "Ngựa"     },
               { key: "jockeyName", label: "Nài ngựa" },
@@ -121,6 +122,7 @@ export default function OwnerResultsPage() {
             ]}
             rows={completedRegs.filter((r) => r.jockeyName).map((reg) => ({
               id:          reg.id,
+              tournamentName: reg.tournamentName,
               raceName:    reg.raceName,
               horseName:   reg.horseName,
               jockeyName:  reg.jockeyName!,

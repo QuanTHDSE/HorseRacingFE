@@ -30,7 +30,7 @@ export default function JockeyDashboardPage() {
   if (!user) return null;
 
   const pendingInvites  = stats?.pendingInvitations ?? appState.invitations.filter((i) => i.status === "Pending").length;
-  const upcomingRaces   = stats?.upcomingRaces      ?? appState.races.filter((r) => r.liveStatus === "Upcoming").length;
+  const upcomingRaces   = stats?.upcomingRaces      ?? appState.races.filter((r) => ["Upcoming", "Ready", "Live"].includes(r.liveStatus)).length;
   const completedRaces  = stats?.completedRaces     ?? appState.races.filter((r) => r.liveStatus === "Completed").length;
 
   const recentInvites = appState.invitations.slice(0, 5);
@@ -107,7 +107,7 @@ export default function JockeyDashboardPage() {
               <article key={race.id} className="info-card">
                 <div className="card-head">
                   <strong>{race.name}</strong>
-                  <Badge tone={race.liveStatus === "Live" ? "success" : "neutral"}>{viRaceStatus(race.liveStatus)}</Badge>
+                  <Badge tone={race.liveStatus === "Live" ? "success" : race.liveStatus === "Ready" ? "warning" : "neutral"}>{viRaceStatus(race.liveStatus)}</Badge>
                 </div>
                 <p style={{ margin: "4px 0 2px" }}>
                   Ngựa: <strong>{race.horseName ?? "—"}</strong>

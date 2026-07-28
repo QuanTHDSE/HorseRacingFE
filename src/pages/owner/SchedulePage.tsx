@@ -15,6 +15,7 @@ const STATUS_TONE: Record<string, string> = {
 
 const RACE_STATUS_TONE: Record<string, string> = {
   Upcoming:  "accent",
+  Ready:     "warning",
   Live:      "success",
   Completed: "neutral",
   Cancelled: "danger",
@@ -48,7 +49,7 @@ export default function OwnerSchedulePage() {
   const invitations = appState.invitations;
 
   const racesForTournament = selectedTournament
-    ? appState.races.filter((r) => r.tournamentId === selectedTournament && (r.liveStatus === "Upcoming" || r.liveStatus === "Live"))
+    ? appState.races.filter((r) => r.tournamentId === selectedTournament && ["Upcoming", "Ready", "Live"].includes(r.liveStatus))
     : [];
 
   const fitHorses = horses.filter((h) => h.health === "Fit");
@@ -164,6 +165,7 @@ export default function OwnerSchedulePage() {
       >
         <DataTable
           columns={[
+            { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName}</strong> },
             { key: "raceName",  label: "Cuộc đua" },
             { key: "horseName", label: "Ngựa"     },
             { key: "raceDate",  label: "Ngày",        render: (row) => fmtDate(row.raceDate)    },

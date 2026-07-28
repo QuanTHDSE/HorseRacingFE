@@ -24,6 +24,7 @@ function fmtTime(ms?: number): string {
 
 const STATUS_TONE: Record<string, string> = {
   Upcoming:  "neutral",
+  Ready:     "warning",
   Live:      "success",
   Completed: "accent",
   Cancelled: "danger",

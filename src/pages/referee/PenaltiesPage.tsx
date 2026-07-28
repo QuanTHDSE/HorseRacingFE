@@ -4,6 +4,7 @@ import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
+import RefereeRaceSelector from "./RefereeRaceSelector";
 
 const DQ_PENALTIES = ["disqualify", "disqualification"];
 
@@ -208,15 +209,7 @@ export default function PenaltiesPage() {
         />
       )}
       <Panel title="Điều hành trận đấu" subtitle="Chọn cuộc đua, bắt đầu điều hành và theo dõi trạng thái trước khi lập biên bản xử phạt">
-        <label className="field" style={{ maxWidth: "440px" }}>
-          <span>Cuộc đua</span>
-          <select value={raceId} onChange={(e) => setRaceId(e.target.value)}>
-            <option value="">— Chọn cuộc đua —</option>
-            {races.map((r) => (
-              <option key={r.id} value={r.id}>{r.name} · vòng {r.round} ({r.liveStatus})</option>
-            ))}
-          </select>
-        </label>
+        <RefereeRaceSelector races={races} value={raceId} onChange={setRaceId} />
       </Panel>
 
       {error && <div className="form-banner form-banner-error">{error}</div>}

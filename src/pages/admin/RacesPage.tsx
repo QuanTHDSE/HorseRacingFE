@@ -10,6 +10,7 @@ import { viRaceStatus } from "../../utils/viLabels";
 
 const STATUS_TONE: Record<string, string> = {
   Upcoming:  "accent",
+  Ready:     "warning",
   Live:      "success",
   Completed: "neutral",
   Cancelled: "danger",
@@ -107,7 +108,7 @@ export default function RacesPage() {
 
   // ── List filters ───────────────────────────────────────────────────────────
   const [filterTournament, setFilterTournament] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "Upcoming" | "Live" | "Completed" | "Cancelled">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "Upcoming" | "Ready" | "Live" | "Completed" | "Cancelled">("all");
 
   // ── Detail panel ───────────────────────────────────────────────────────────
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -455,7 +456,7 @@ export default function RacesPage() {
               {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
             <div className="filter-tabs">
-              {(["all", "Upcoming", "Live", "Completed", "Cancelled"] as const).map((s) => (
+              {(["all", "Upcoming", "Ready", "Live", "Completed", "Cancelled"] as const).map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -471,12 +472,12 @@ export default function RacesPage() {
       >
         <DataTable
           columns={[
-            { key: "name", label: "Cuộc đua" },
             {
               key: "tournamentId",
               label: "Giải đấu",
-              render: (row) => tournaments.find((t) => t.id === row.tournamentId)?.name ?? "—",
+              render: (row) => <strong>{tournaments.find((t) => t.id === row.tournamentId)?.name ?? "Chưa xác định"}</strong>,
             },
+            { key: "name", label: "Cuộc đua" },
             { key: "date",     label: "Ngày",     render: (row) => fmtDate(row.date) },
             { key: "distance", label: "Cự ly" },
             { key: "round",    label: "Vòng",    render: (row) => `#${row.round}` },

@@ -169,6 +169,7 @@ export default function PredictionsPage() {
       <Panel title="Dự đoán của bạn" subtitle={`${myPredictions.length} dự đoán`}>
         <DataTable
           columns={[
+            { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName}</strong> },
             { key: "raceName", label: "Cuộc đua"   },
             { key: "horse",  label: "Ngựa đã chọn" },
             { key: "tickets", label: "Số vé" },

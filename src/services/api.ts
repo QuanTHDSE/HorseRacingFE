@@ -161,7 +161,14 @@ export interface ApiRegistration {
   id: string;
   status: "pending" | "approved" | "rejected";
   horse: { id: string; name: string; healthStatus: string; breed?: string; age?: number; profilePdfUrl?: string; profilePdfName?: string };
-  race: { id: string; name: string; round: number; status: string; scheduledAt?: string };
+  race: {
+    id: string;
+    name: string;
+    round: number;
+    status: string;
+    scheduledAt?: string;
+    tournament?: { id: string; name: string };
+  };
   owner?: { id: string; fullName: string } | null;
   jockey?: { id: string; fullName: string } | null;
   processedBy?: { id: string; fullName: string } | null;
@@ -174,6 +181,8 @@ export interface ApiRegistration {
 export interface ApiPublishQueueItem {
   raceId: string;
   raceName: string;
+  tournamentId: string;
+  tournamentName: string;
   confirmedAt: string | null;
   publishedAt: string | null;
 }
@@ -226,9 +235,11 @@ export interface ApiRefereeDashboard {
 export interface ApiRefereeRace {
   id: string;
   name: string;
+  tournamentId: string;
+  tournamentName: string;
   round: number;
   scheduledAt: string;
-  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  status: "scheduled" | "ready" | "ongoing" | "completed" | "cancelled";
   participantCount: number;
   hasResult: boolean;
   confirmedAt: string | null;
@@ -531,7 +542,7 @@ export interface ApiSpectatorRace {
   name: string;
   round: number;
   scheduledAt: string;
-  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  status: "scheduled" | "ready" | "ongoing" | "completed" | "cancelled";
   distance?: number;
   tournament: { id: string; name: string };
   participants: Array<{ id: string; name: string; laneNumber: number; ticketCount: number }>;
@@ -617,7 +628,7 @@ export interface ApiJockeyRace {
   name: string;
   round: number;
   scheduledAt: string;
-  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  status: "scheduled" | "ready" | "ongoing" | "completed" | "cancelled";
   distance?: number;
   tournament: { id: string; name: string };
   participant: {
@@ -641,7 +652,7 @@ export interface ApiRace {
   name: string;
   round: number;
   scheduledAt: string;
-  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  status: "scheduled" | "ready" | "ongoing" | "completed" | "cancelled";
   distance?: number;
   tournamentId?: string;
   refereeId?: string;

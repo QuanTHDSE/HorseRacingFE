@@ -263,6 +263,8 @@ function mapOwnerRegistration(r: ApiRegistration): OwnerRegistration {
     horseName: r.horse.name,
     raceId: r.race.id,
     raceName: r.race.name,
+    tournamentId: r.race.tournament?.id ?? "",
+    tournamentName: r.race.tournament?.name ?? "Chưa xác định",
     raceDate: r.race.scheduledAt,
     raceStatus: ({ scheduled: "Upcoming", ready: "Ready", ongoing: "Live", completed: "Completed", cancelled: "Cancelled" } as Record<string, string>)[r.race.status] ?? r.race.status,
     jockeyId: r.jockey?.id,
@@ -313,6 +315,8 @@ function mapRegistrationToApproval(r: ApiRegistration) {
     horsePdfUrl: r.horse.profilePdfUrl,
     horsePdfName: r.horse.profilePdfName,
     raceName: r.race.name,
+    tournamentId: r.race.tournament?.id,
+    tournamentName: r.race.tournament?.name ?? "Chưa xác định",
     raceRound: r.race.round,
     raceDate: r.race.scheduledAt,
     raceStatus: raceStatusMap[r.race.status] ?? r.race.status,
@@ -329,8 +333,8 @@ function mapPublishQueueItem(q: ApiPublishQueueItem): PublishItem {
   return {
     id: q.raceId,
     race: q.raceName,
+    tournament: q.tournamentName,
     resultStatus: q.confirmedAt ? "Referee confirmed" : "Pending",
-    predictionStatus: "—",
     publishStatus: q.publishedAt ? "Published" : "Pending publish",
   };
 }
@@ -402,6 +406,7 @@ function mapPrediction(p: ApiPrediction, spectatorId: string): Prediction {
     spectatorId,
     raceId: p.raceId,
     raceName: p.raceName,
+    tournamentName: p.tournamentName,
     horse: firstHorse,
     tickets: `${p.ticketCount ?? 1}`,
     cost: `${p.contribution ?? 0} pts`,
@@ -475,6 +480,8 @@ function mapRefereeRace(r: ApiRefereeRace): RefereeRace {
   return {
     id: r.id,
     name: r.name,
+    tournamentId: r.tournamentId,
+    tournamentName: r.tournamentName,
     round: r.round,
     scheduledAt: r.scheduledAt,
     status: r.status,
@@ -927,6 +934,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .catch(() => { /* ignore */ });
     }, 8000);
     return () => clearInterval(interval);
+  }, [user?.id, user?.role]);
+
+  // Keep tournament status synchronized when a referee changes a race in
+  // another browser/session. Only fetch lists the current role can access.
+  useEffect(() => {
+    if (!user || !["admin", "owner", "spectator"].includes(user.role)) return;
+
+    let active = true;
+    let refreshing = false;
+
+    const refreshTournamentStatuses = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        let tournaments: Tournament[];
+        if (user.role === "admin") {
+          const response = await api.tournaments.list();
+          tournaments = response.items.map(mapTournamentItem);
+        } else if (user.role === "owner") {
+          const response = await api.horseOwner.listTournaments();
+          tournaments = response.items.map(mapTournamentItem);
+        } else {
+          const response = await api.spectator.listTournaments();
+          tournaments = response.tournaments.map(mapTournamentDto);
+        }
+
+        if (active) {
+          setAppState((previous) => ({ ...previous, tournaments }));
+        }
+      } catch {
+        // Keep the last successful state and retry on the next poll/focus.
+      } finally {
+        refreshing = false;
+      }
+    };
+
+    const handleFocus = () => { void refreshTournamentStatuses(); };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void refreshTournamentStatuses();
+    };
+    const interval = window.setInterval(() => { void refreshTournamentStatuses(); }, 8000);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [user?.id, user?.role]);
 
   // ─── Login ────────────────────────────────────────────────────────────────

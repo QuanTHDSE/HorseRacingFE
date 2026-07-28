@@ -328,6 +328,7 @@ export default function JockeysPage() {
       >
         <DataTable
           columns={[
+            { key: "tournamentName", label: "Giải đấu", render: (row) => <strong>{row.tournamentName}</strong> },
             { key: "raceName",   label: "Cuộc đua" },
             { key: "horseName",  label: "Ngựa"     },
             {
