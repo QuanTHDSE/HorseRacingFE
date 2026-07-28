@@ -36,6 +36,24 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function requestFormData<T>(path: string, body: FormData): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body,
+  });
+  if (!res.ok) {
+    let msg = `${res.status} ${res.statusText}`;
+    try {
+      const responseBody = (await res.json()) as { message?: string };
+      if (responseBody?.message) msg = responseBody.message;
+    } catch { /* ignore */ }
+    throw new Error(msg);
+  }
+  return res.json() as Promise<T>;
+}
+
 // ─── Response DTOs ────────────────────────────────────────────────────────────
 
 export type ApiRole = "horse_owner" | "jockey" | "referee" | "spectator" | "admin";
@@ -71,11 +89,34 @@ export interface ApiUser {
   phone?: string;
   avatarUrl?: string;
   penaltyStatus?: ApiPenaltyStatus;
+  licenseNumber?: string;
+  licenseExpiry?: string | null;
 }
 
 export interface ApiAuthResponse {
   token: string;
   user: ApiUser;
+}
+
+export interface ApiJockeyRegistrationResponse {
+  message: string;
+  approvalRequired: true;
+  applicationStatus: "pending";
+}
+
+export interface ApiJockeyApplication {
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string | null;
+  status: "pending" | "approved" | "rejected";
+  applicationPdfUrl: string;
+  applicationPdfName: string;
+  appliedAt: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  adminNote: string | null;
+  isActive: boolean;
 }
 
 export interface ApiAdminUser {
@@ -647,17 +688,41 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ email, password }),
       }),
-    register: (
+    register: async (
       email: string,
       password: string,
       fullName: string,
+      phone: string,
       role: Extract<ApiRole, "spectator" | "jockey">,
-    ) =>
-      request<ApiAuthResponse>("/auth/register", {
+      applicationPdf?: File | null,
+    ): Promise<ApiAuthResponse | ApiJockeyRegistrationResponse> => {
+      if (role === "jockey") {
+        if (!applicationPdf) throw new Error("Vui lòng chọn hồ sơ PDF của Jockey.");
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("password", password);
+        formData.append("fullName", fullName);
+        formData.append("phone", phone);
+        formData.append("role", role);
+        formData.append("file", applicationPdf);
+        return requestFormData<ApiJockeyRegistrationResponse>("/auth/register", formData);
+      }
+      return request<ApiAuthResponse>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password, fullName, role }),
-      }),
+        body: JSON.stringify({ email, password, fullName, phone, role }),
+      });
+    },
     me: () => request<{ user: ApiUser }>("/auth/me"),
+    updateProfile: (data: { fullName?: string; phone?: string }) =>
+      request<{ user: ApiUser }>("/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    changePassword: (oldPassword: string, newPassword: string) =>
+      request<{ message: string }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ oldPassword, newPassword }),
+      }),
     forgotPassword: (email: string) =>
       request<{ message: string }>("/auth/forgot-password", {
         method: "POST",
@@ -671,6 +736,19 @@ export const api = {
   },
 
   admin: {
+    listJockeyApplications: (status?: "pending" | "approved" | "rejected") =>
+      request<{ applications: ApiJockeyApplication[] }>(
+        `/admin/jockey-applications${status ? `?status=${status}` : ""}`,
+      ),
+    reviewJockeyApplication: (
+      id: string,
+      status: "approved" | "rejected",
+      adminNote?: string,
+    ) =>
+      request<{ application: ApiJockeyApplication }>(`/admin/jockey-applications/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, ...(adminNote ? { adminNote } : {}) }),
+      }),
     listUsers: () => request<{ users: ApiAdminUser[] }>("/admin/users"),
     createUser: (data: ApiAdminCreateUserInput) =>
       request<{ user: ApiAdminUser }>("/admin/users", {

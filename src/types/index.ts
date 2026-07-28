@@ -704,8 +704,10 @@ export interface LoginForm {
 export interface RegisterForm {
   name: string;
   email: string;
+  phone: string;
   password: string;
   role: Extract<Role, "spectator" | "jockey">;
+  applicationPdf: File | null;
 }
 
 export interface AppContextValue {
@@ -713,6 +715,7 @@ export interface AppContextValue {
   appState: AppState;
   authMode: AuthMode;
   authError: string;
+  authMessage: string;
   /** An auth request (login / register) is in flight. */
   isLoading: boolean;
   /** The stored token is being exchanged for a session on first paint. */
@@ -725,6 +728,8 @@ export interface AppContextValue {
   setRegisterForm: React.Dispatch<React.SetStateAction<RegisterForm>>;
   handleLoginSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   handleRegisterSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  handleUpdateMyProfile: (data: { fullName: string; phone?: string }) => Promise<void>;
+  handleChangeMyPassword: (oldPassword: string, newPassword: string) => Promise<string>;
   handleAction: (type: string, id: string, value?: string) => void;
   handleCreateRacetrack: (data: Omit<Racetrack, "id">) => Promise<void>;
   handleCreateRace: (data: NewRaceInput) => void;

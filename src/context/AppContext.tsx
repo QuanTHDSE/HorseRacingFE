@@ -612,6 +612,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [appState, setAppState] = useState<AppState>(EMPTY_STATE);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authError, setAuthError] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   // Start in "booting" only when there is a token worth restoring, so a signed-out
   // visitor never sees the splash.
@@ -621,8 +622,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [registerForm, setRegisterForm] = useState<RegisterForm>({
     name: "",
     email: "",
+    phone: "",
     password: "",
     role: "spectator",
+    applicationPdf: null,
   });
 
   // ─── Fetch role-specific data after login ─────────────────────────────────
@@ -932,6 +935,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     setIsLoading(true);
     setAuthError("");
+    setAuthMessage("");
     try {
       const { token, user: apiUser } = await api.auth.login(
         loginForm.email.trim(),
@@ -952,27 +956,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function handleRegisterSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!registerForm.name || !registerForm.email || registerForm.password.length < 8) {
+    if (!registerForm.name || !registerForm.email || !registerForm.phone || registerForm.password.length < 8) {
       setAuthError(
-        "Please fill in all fields and use a password of at least 8 characters.",
+        "Vui lòng nhập đầy đủ thông tin và sử dụng mật khẩu có ít nhất 8 ký tự.",
       );
       return;
     }
+    const normalizedPhone = registerForm.phone.replace(/[\s.-]/g, "");
+    if (!/^\+?\d{9,15}$/.test(normalizedPhone)) {
+      setAuthError("Số điện thoại phải có từ 9 đến 15 chữ số.");
+      return;
+    }
+    if (registerForm.role === "jockey") {
+      const pdf = registerForm.applicationPdf;
+      if (!pdf || (pdf.type !== "application/pdf" && !pdf.name.toLowerCase().endsWith(".pdf"))) {
+        setAuthError("Vui lòng chọn đúng hồ sơ Jockey định dạng PDF.");
+        return;
+      }
+      if (pdf.size > 10 * 1024 * 1024) {
+        setAuthError("Hồ sơ Jockey không được vượt quá 10MB.");
+        return;
+      }
+    }
     setIsLoading(true);
     setAuthError("");
+    setAuthMessage("");
     try {
-      const { token, user: apiUser } = await api.auth.register(
+      const result = await api.auth.register(
         registerForm.email.trim(),
         registerForm.password,
         registerForm.name.trim(),
+        registerForm.phone.trim(),
         registerForm.role,
+        registerForm.applicationPdf,
       );
-      setToken(token);
-      const account = mapApiUserToAccount(apiUser);
+      if ("approvalRequired" in result) {
+        setAuthMessage(result.message);
+        setAuthMode("login");
+        setRegisterForm({ name: "", email: "", phone: "", password: "", role: "spectator", applicationPdf: null });
+        return;
+      }
+
+      setToken(result.token);
+      const account = mapApiUserToAccount(result.user);
       setUser(account);
       await fetchDataForUser(account);
-      setAuthMode("login");
-      setRegisterForm({ name: "", email: "", password: "", role: "spectator" });
+      setRegisterForm({ name: "", email: "", phone: "", password: "", role: "spectator", applicationPdf: null });
     } catch (err: unknown) {
       setAuthError(
         err instanceof Error ? err.message : "Registration failed. Please try again.",
@@ -980,6 +1009,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleUpdateMyProfile(data: { fullName: string; phone?: string }): Promise<void> {
+    const { user: updatedUser } = await api.auth.updateProfile(data);
+    setUser((current) => current ? { ...current, name: updatedUser.fullName } : current);
+  }
+
+  async function handleChangeMyPassword(oldPassword: string, newPassword: string): Promise<string> {
+    const result = await api.auth.changePassword(oldPassword, newPassword);
+    return result.message;
   }
 
   // ─── Actions (mutations) ──────────────────────────────────────────────────
@@ -1597,6 +1636,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function handleModeChange(mode: AuthMode) {
     setAuthError("");
+    setAuthMessage("");
     setAuthMode(mode);
   }
 
@@ -1605,6 +1645,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     appState,
     authMode,
     authError,
+    authMessage,
     isLoading,
     isBooting,
     isDataLoading,
@@ -1614,6 +1655,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRegisterForm,
     handleLoginSubmit,
     handleRegisterSubmit,
+    handleUpdateMyProfile,
+    handleChangeMyPassword,
     handleAction,
     handleCreateRacetrack,
     handleCreateRace,

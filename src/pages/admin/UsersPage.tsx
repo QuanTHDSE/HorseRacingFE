@@ -48,7 +48,6 @@ export default function UsersPage() {
     password: "Demo@123",
     phone: "",
     role: "horse_owner" as CreateRole,
-    licenseNumber: "",
     licenseExpiry: "",
     certificationId: "",
   });
@@ -109,7 +108,6 @@ export default function UsersPage() {
         fullName: form.fullName.trim(),
         role: form.role,
         phone: form.phone.trim() || undefined,
-        licenseNumber: form.role === "jockey" ? form.licenseNumber.trim() || undefined : undefined,
         licenseExpiry: form.role === "jockey" ? form.licenseExpiry || null : undefined,
         certificationId: form.role === "referee" ? form.certificationId.trim() || undefined : undefined,
       });
@@ -118,7 +116,6 @@ export default function UsersPage() {
         fullName: "",
         email: "",
         phone: "",
-        licenseNumber: "",
         licenseExpiry: "",
         certificationId: "",
       }));
@@ -227,7 +224,7 @@ export default function UsersPage() {
               <>
                 <label className="field">
                   <span>Số giấy phép</span>
-                  <input value={form.licenseNumber} onChange={(e) => set("licenseNumber", e.target.value)} />
+                  <input value="Hệ thống tự động cấp khi tạo tài khoản" disabled />
                 </label>
                 <label className="field">
                   <span>Ngày hết hạn giấy phép</span>

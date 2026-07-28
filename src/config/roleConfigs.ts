@@ -11,6 +11,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "jockeys", label: "Thuê nài ngựa", abbr: "TN" },
       { id: "schedule", label: "Lịch đua", abbr: "LĐ" },
       { id: "results", label: "Kết quả & Thưởng", abbr: "KT" },
+      { id: "account", label: "Tài khoản của tôi", abbr: "CN" },
     ],
   },
   jockey: {
@@ -23,6 +24,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "assigned", label: "Cuộc đua được giao", abbr: "CĐ" },
       { id: "schedule", label: "Lịch của tôi", abbr: "LT" },
       { id: "performance", label: "Thành tích", abbr: "TT" },
+      { id: "account", label: "Tài khoản của tôi", abbr: "CN" },
     ],
   },
   referee: {
@@ -34,6 +36,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "checks", label: "Kiểm tra trước đua", abbr: "KT" },
       { id: "penalties", label: "Điều hành & Xử phạt", abbr: "XP" },
       { id: "results", label: "Kết quả", abbr: "KQ" },
+      { id: "account", label: "Tài khoản của tôi", abbr: "CN" },
     ],
   },
   spectator: {
@@ -46,6 +49,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "live", label: "Kết quả trực tiếp", abbr: "TT" },
       { id: "predictions", label: "Dự đoán", abbr: "DĐ" },
       { id: "rewards", label: "Ví điểm", abbr: "VD" },
+      { id: "account", label: "Tài khoản của tôi", abbr: "CN" },
     ],
   },
   admin: {
@@ -59,8 +63,10 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "races", label: "Thiết lập đua", abbr: "TL" },
       { id: "tournaments", label: "Giải đấu", abbr: "GĐ" },
       { id: "approvals", label: "Duyệt đơn", abbr: "DU" },
+      { id: "jockey-approvals", label: "Duyệt Jockey", abbr: "DJ" },
       { id: "violation-rules", label: "Luật vi phạm", abbr: "LV" },
       { id: "results", label: "Kết quả & Dự đoán", abbr: "KD" },
+      { id: "account", label: "Tài khoản của tôi", abbr: "CN" },
     ],
   },
 };

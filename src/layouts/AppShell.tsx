@@ -9,6 +9,7 @@ import JockeyPages from "../pages/jockey";
 import RefereePages from "../pages/referee";
 import SpectatorPages from "../pages/spectator";
 import AdminPages from "../pages/admin";
+import AccountPage from "../pages/AccountPage";
 import type { Role } from "../types";
 
 interface RolePagesProps {
@@ -17,6 +18,8 @@ interface RolePagesProps {
 }
 
 function RolePages({ role, page }: RolePagesProps) {
+  if (page === "account") return <AccountPage />;
+
   switch (role) {
     case "owner":     return <OwnerPages     page={page} />;
     case "jockey":    return <JockeyPages    page={page} />;

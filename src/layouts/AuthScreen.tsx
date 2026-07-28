@@ -39,6 +39,7 @@ export default function AuthScreen() {
     setRegisterForm,
     authMode,
     authError,
+    authMessage,
     isLoading,
     handleLoginSubmit,
     handleRegisterSubmit,
@@ -158,6 +159,7 @@ export default function AuthScreen() {
                   </button>
                 </div>
               ) : null}
+              {authMessage ? <div className="form-success">{authMessage}</div> : null}
               {authError ? <div className="form-error">{authError}</div> : null}
               <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
                 {isLoading ? "Đang đăng nhập…" : "Đăng nhập →"}
@@ -178,7 +180,11 @@ export default function AuthScreen() {
                       key={opt.value}
                       type="button"
                       className={cn("auth-role-option", registerForm.role === opt.value && "is-active")}
-                      onClick={() => setRegisterForm((prev) => ({ ...prev, role: opt.value }))}
+                      onClick={() => setRegisterForm((prev) => ({
+                        ...prev,
+                        role: opt.value,
+                        applicationPdf: opt.value === "jockey" ? prev.applicationPdf : null,
+                      }))}
                       disabled={isLoading}
                     >
                       <span className="auth-role-icon"><opt.icon size={18} strokeWidth={2} /></span>
@@ -212,6 +218,20 @@ export default function AuthScreen() {
                 />
               </label>
               <label className="field">
+                <span>Số điện thoại</span>
+                <input
+                  name="phone"
+                  type="tel"
+                  value={registerForm.phone}
+                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Ví dụ: 0912345678"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  disabled={isLoading}
+                  required
+                />
+              </label>
+              <label className="field">
                 <span>Mật khẩu</span>
                 <input
                   name="password"
@@ -223,6 +243,26 @@ export default function AuthScreen() {
                   disabled={isLoading}
                 />
               </label>
+              {registerForm.role === "jockey" ? (
+                <label className="field">
+                  <span>Hồ sơ năng lực Jockey (PDF)</span>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setRegisterForm((prev) => ({ ...prev, applicationPdf: file }));
+                    }}
+                    disabled={isLoading}
+                    required
+                  />
+                  <small>
+                    {registerForm.applicationPdf
+                      ? `Đã chọn: ${registerForm.applicationPdf.name}`
+                      : "Tải giấy phép hoặc hồ sơ chuyên môn định dạng PDF, tối đa 10MB."}
+                  </small>
+                </label>
+              ) : null}
               {authError ? <div className="form-error">{authError}</div> : null}
               <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
                 {isLoading ? "Đang tạo tài khoản…" : "Tạo tài khoản →"}
