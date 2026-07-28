@@ -967,14 +967,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAuthError("Số điện thoại phải có từ 9 đến 15 chữ số.");
       return;
     }
-    if (registerForm.role === "jockey") {
+    if (registerForm.role === "jockey" || registerForm.role === "owner") {
       const pdf = registerForm.applicationPdf;
       if (!pdf || (pdf.type !== "application/pdf" && !pdf.name.toLowerCase().endsWith(".pdf"))) {
-        setAuthError("Vui lòng chọn đúng hồ sơ Jockey định dạng PDF.");
+        setAuthError(registerForm.role === "jockey"
+          ? "Vui lòng chọn đúng hồ sơ Jockey định dạng PDF."
+          : "Vui lòng chọn đúng hồ sơ Chủ ngựa định dạng PDF.");
         return;
       }
       if (pdf.size > 10 * 1024 * 1024) {
-        setAuthError("Hồ sơ Jockey không được vượt quá 10MB.");
+        setAuthError(registerForm.role === "jockey"
+          ? "Hồ sơ Jockey không được vượt quá 10MB."
+          : "Hồ sơ Chủ ngựa không được vượt quá 10MB.");
         return;
       }
     }
@@ -982,12 +986,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAuthError("");
     setAuthMessage("");
     try {
+      const apiRole = registerForm.role === "owner" ? "horse_owner" : registerForm.role;
       const result = await api.auth.register(
         registerForm.email.trim(),
         registerForm.password,
         registerForm.name.trim(),
         registerForm.phone.trim(),
-        registerForm.role,
+        apiRole,
         registerForm.applicationPdf,
       );
       if ("approvalRequired" in result) {
@@ -1004,7 +1009,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setRegisterForm({ name: "", email: "", phone: "", password: "", role: "spectator", applicationPdf: null });
     } catch (err: unknown) {
       setAuthError(
-        err instanceof Error ? err.message : "Registration failed. Please try again.",
+        err instanceof Error ? err.message : "Đăng ký thất bại. Vui lòng thử lại.",
       );
     } finally {
       setIsLoading(false);

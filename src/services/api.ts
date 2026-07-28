@@ -98,13 +98,13 @@ export interface ApiAuthResponse {
   user: ApiUser;
 }
 
-export interface ApiJockeyRegistrationResponse {
+export interface ApiRegistrationApplicationResponse {
   message: string;
   approvalRequired: true;
   applicationStatus: "pending";
 }
 
-export interface ApiJockeyApplication {
+export interface ApiAccountApplication {
   id: string;
   email: string;
   fullName: string;
@@ -118,6 +118,9 @@ export interface ApiJockeyApplication {
   adminNote: string | null;
   isActive: boolean;
 }
+
+export type ApiJockeyApplication = ApiAccountApplication;
+export type ApiOwnerApplication = ApiAccountApplication;
 
 export interface ApiAdminUser {
   id: string;
@@ -693,11 +696,15 @@ export const api = {
       password: string,
       fullName: string,
       phone: string,
-      role: Extract<ApiRole, "spectator" | "jockey">,
+      role: Extract<ApiRole, "spectator" | "jockey" | "horse_owner">,
       applicationPdf?: File | null,
-    ): Promise<ApiAuthResponse | ApiJockeyRegistrationResponse> => {
-      if (role === "jockey") {
-        if (!applicationPdf) throw new Error("Vui lòng chọn hồ sơ PDF của Jockey.");
+    ): Promise<ApiAuthResponse | ApiRegistrationApplicationResponse> => {
+      if (role === "jockey" || role === "horse_owner") {
+        if (!applicationPdf) {
+          throw new Error(role === "jockey"
+            ? "Vui lòng chọn hồ sơ PDF của Jockey."
+            : "Vui lòng chọn hồ sơ PDF của Chủ ngựa.");
+        }
         const formData = new FormData();
         formData.append("email", email);
         formData.append("password", password);
@@ -705,7 +712,7 @@ export const api = {
         formData.append("phone", phone);
         formData.append("role", role);
         formData.append("file", applicationPdf);
-        return requestFormData<ApiJockeyRegistrationResponse>("/auth/register", formData);
+        return requestFormData<ApiRegistrationApplicationResponse>("/auth/register", formData);
       }
       return request<ApiAuthResponse>("/auth/register", {
         method: "POST",
@@ -746,6 +753,19 @@ export const api = {
       adminNote?: string,
     ) =>
       request<{ application: ApiJockeyApplication }>(`/admin/jockey-applications/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, ...(adminNote ? { adminNote } : {}) }),
+      }),
+    listOwnerApplications: (status?: "pending" | "approved" | "rejected") =>
+      request<{ applications: ApiOwnerApplication[] }>(
+        `/admin/owner-applications${status ? `?status=${status}` : ""}`,
+      ),
+    reviewOwnerApplication: (
+      id: string,
+      status: "approved" | "rejected",
+      adminNote?: string,
+    ) =>
+      request<{ application: ApiOwnerApplication }>(`/admin/owner-applications/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ status, ...(adminNote ? { adminNote } : {}) }),
       }),
@@ -932,6 +952,9 @@ export const api = {
       weight?: number;
       color?: string;
       trainerName?: string;
+      registrationId?: string;
+      profilePdfUrl?: string;
+      profilePdfName?: string;
     }) =>
       request<{ success: boolean; data: ApiHorse }>("/horse-owner/horses", {
         method: "POST",
@@ -939,7 +962,7 @@ export const api = {
       }),
     updateHorse: (
       id: string,
-      data: Partial<{ name: string; breed: string; age: number; weight: number; color: string; trainerName: string; registrationId: string }>,
+      data: Partial<{ name: string; breed: string; age: number; weight: number; color: string; trainerName: string; registrationId: string; profilePdfUrl: string; profilePdfName: string }>,
     ) =>
       request<{ success: boolean; data: ApiHorse }>(`/horse-owner/horses/${id}`, {
         method: "PATCH",

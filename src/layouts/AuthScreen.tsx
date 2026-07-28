@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Eye, Gauge, type LucideIcon } from "lucide-react";
+import { Eye, Gauge, ShieldCheck, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { api } from "../services/api";
@@ -7,7 +7,7 @@ import { cn } from "../utils/cn";
 import bgImage from "../../assets/race-bg.jpg";
 
 const ROLE_OPTIONS: {
-  value: "spectator" | "jockey";
+  value: "spectator" | "jockey" | "owner";
   label: string;
   desc: string;
   icon: LucideIcon;
@@ -23,6 +23,12 @@ const ROLE_OPTIONS: {
     label: "Nài ngựa",
     desc: "Nhận lời mời thi đấu và quản lý các cuộc đua được giao",
     icon: Gauge,
+  },
+  {
+    value: "owner",
+    label: "Chủ ngựa",
+    desc: "Tự đăng ký hồ sơ, quản lý ngựa và gửi đơn tham gia giải đấu",
+    icon: ShieldCheck,
   },
 ];
 
@@ -183,7 +189,7 @@ export default function AuthScreen() {
                       onClick={() => setRegisterForm((prev) => ({
                         ...prev,
                         role: opt.value,
-                        applicationPdf: opt.value === "jockey" ? prev.applicationPdf : null,
+                        applicationPdf: opt.value === "jockey" || opt.value === "owner" ? prev.applicationPdf : null,
                       }))}
                       disabled={isLoading}
                     >
@@ -243,9 +249,9 @@ export default function AuthScreen() {
                   disabled={isLoading}
                 />
               </label>
-              {registerForm.role === "jockey" ? (
+              {registerForm.role === "jockey" || registerForm.role === "owner" ? (
                 <label className="field">
-                  <span>Hồ sơ năng lực Jockey (PDF)</span>
+                  <span>{registerForm.role === "jockey" ? "Hồ sơ năng lực Jockey (PDF)" : "Hồ sơ Chủ ngựa (PDF)"}</span>
                   <input
                     type="file"
                     accept=".pdf,application/pdf"
@@ -259,7 +265,9 @@ export default function AuthScreen() {
                   <small>
                     {registerForm.applicationPdf
                       ? `Đã chọn: ${registerForm.applicationPdf.name}`
-                      : "Tải giấy phép hoặc hồ sơ chuyên môn định dạng PDF, tối đa 10MB."}
+                      : registerForm.role === "jockey"
+                        ? "Tải giấy phép hoặc hồ sơ chuyên môn định dạng PDF, tối đa 10MB."
+                        : "Tải hồ sơ đăng ký Chủ ngựa định dạng PDF, tối đa 10MB."}
                   </small>
                 </label>
               ) : null}

@@ -45,7 +45,7 @@ function PdfUploadField({
 
   return (
     <label className="field" style={{ gridColumn: "1 / -1" }}>
-      <span>Hồ sơ ngựa (PDF) — để admin xem &amp; duyệt</span>
+      <span>Hồ sơ ngựa (PDF) <span className="required">*</span></span>
       <input ref={inputRef} type="file" accept="application/pdf" onChange={onPick} disabled={disabled || uploading} />
       {uploading && (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.78rem", color: "var(--c-muted)" }}>
@@ -55,7 +55,7 @@ function PdfUploadField({
       {err && <span style={{ fontSize: "0.78rem", color: "var(--c-danger)" }}>{err}</span>}
       {url && !uploading && (
         <span style={{ display: "inline-flex", gap: "10px", alignItems: "center", marginTop: "4px" }}>
-          <a className="secondary-button btn-xs" href={url} target="_blank" rel="noreferrer">📄 {name || "Xem PDF"}</a>
+          <a className="secondary-button btn-xs" href={url} target="_blank" rel="noreferrer">{name || "Xem PDF"}</a>
           <button type="button" className="table-button is-danger" disabled={disabled} onClick={onClear}>Gỡ</button>
         </span>
       )}
@@ -138,9 +138,12 @@ export default function HorsesPage() {
   async function doCreate(e: React.FormEvent) {
     e.preventDefault();
     const errs: string[] = [];
-    if (!cForm.name.trim()) errs.push("Name is required.");
-    if (!cForm.breed.trim()) errs.push("Breed is required.");
-    if (!cForm.age || cForm.age < 1) errs.push("Age must be at least 1.");
+    if (!cForm.name.trim()) errs.push("Tên ngựa là bắt buộc.");
+    if (!cForm.breed.trim()) errs.push("Giống ngựa là bắt buộc.");
+    if (!cForm.age || cForm.age < 1) errs.push("Tuổi ngựa phải từ 1 trở lên.");
+    if (!cForm.profilePdfUrl?.trim() || !cForm.profilePdfName?.trim()) {
+      errs.push("Vui lòng tải hồ sơ ngựa định dạng PDF trước khi đăng ký.");
+    }
     if (errs.length) { setCErrors(errs); return; }
 
     setCLoading(true);
@@ -157,11 +160,11 @@ export default function HorsesPage() {
         profilePdfName: cForm.profilePdfName?.trim() || undefined,
       });
       setCForm(EMPTY_FORM);
-      setCSuccess("Horse registered successfully!");
+      setCSuccess("Đã đăng ký hồ sơ ngựa. Vui lòng chờ quản trị viên xét duyệt khi gửi đơn tham gia giải.");
       setShowCreate(false);
       setTimeout(() => setCSuccess(""), 4000);
     } catch (err: unknown) {
-      setCErrors([err instanceof Error ? err.message : "Failed to register horse."]);
+      setCErrors([err instanceof Error ? err.message : "Không thể đăng ký hồ sơ ngựa."]);
     } finally {
       setCLoading(false);
     }
@@ -202,10 +205,10 @@ export default function HorsesPage() {
       if (eForm.profilePdfName !== undefined) payload.profilePdfName = eForm.profilePdfName.trim();
 
       await handleUpdateHorse(editHorse.id, payload);
-      setEMsg("Horse updated!");
+      setEMsg("Đã cập nhật hồ sơ ngựa.");
       setEditHorse(null);
     } catch (err: unknown) {
-      setEMsg(err instanceof Error ? err.message : "Update failed.");
+      setEMsg(err instanceof Error ? err.message : "Cập nhật hồ sơ ngựa thất bại.");
     } finally {
       setELoading(false);
     }

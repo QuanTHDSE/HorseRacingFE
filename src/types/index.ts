@@ -706,7 +706,7 @@ export interface RegisterForm {
   email: string;
   phone: string;
   password: string;
-  role: Extract<Role, "spectator" | "jockey">;
+  role: Extract<Role, "spectator" | "jockey" | "owner">;
   applicationPdf: File | null;
 }
 
