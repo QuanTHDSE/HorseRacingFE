@@ -43,12 +43,11 @@ const STATUS_TONE: Record<string, "accent" | "success" | "neutral" | "danger"> =
 
 const PENALTY_LABEL: Record<string, string> = {
   warning: "Cảnh cáo",
-  demote: "Tụt hạng",
-  disqualify: "Tước quyền",
-  disqualification: "Tước quyền",
-  restart: "Chạy lại",
+  result_void: "Hủy kết quả",
+  disqualify: "Hủy kết quả",
+  disqualification: "Hủy kết quả",
   time_ban: "Cấm có thời hạn",
-  permanent_ban: "Cấm vĩnh viễn",
+  permanent_ban: "Cấm vô thời hạn",
 };
 
 function RankBadge({ rank }: { rank: number }) {
@@ -239,7 +238,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
                       <td className="spectator-result-number">{fmtPrize(ranking.prize)}</td>
                       <td>
                         {ranking.isDisqualified
-                          ? <Badge tone="danger">Tước quyền</Badge>
+                          ? <Badge tone="danger">Hủy kết quả</Badge>
                           : <Badge tone="success">Hợp lệ</Badge>}
                       </td>
                     </tr>
