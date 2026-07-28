@@ -4,6 +4,7 @@ import { ToastProvider } from "./context/ToastContext";
 import { BootScreen } from "./components";
 import Homepage from "./layouts/Homepage";
 import AuthScreen from "./layouts/AuthScreen";
+import ResetPasswordScreen from "./layouts/ResetPasswordScreen";
 import AppShell from "./layouts/AppShell";
 
 // While the stored token is being exchanged for a session, `user` is still null.
@@ -39,6 +40,7 @@ export default function App() {
           <Routes>
             <Route path="/"       element={<HomeRoute />}      />
             <Route path="/login"  element={<LoginRoute />}     />
+            <Route path="/reset-password" element={<ResetPasswordScreen />} />
             <Route path="/:page"  element={<ProtectedRoute />} />
             <Route path="*"       element={<Navigate to="/dashboard" replace />} />
           </Routes>

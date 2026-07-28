@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Eye, Gauge, type LucideIcon } from "lucide-react";
+import { useState } from "react";
 import { useApp } from "../context/AppContext";
+import { api } from "../services/api";
 import { cn } from "../utils/cn";
 import bgImage from "../../assets/race-bg.jpg";
 
@@ -25,6 +27,11 @@ const ROLE_OPTIONS: {
 ];
 
 export default function AuthScreen() {
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
   const {
     loginForm,
     setLoginForm,
@@ -37,6 +44,20 @@ export default function AuthScreen() {
     handleRegisterSubmit,
     handleModeChange,
   } = useApp();
+
+  async function handleForgotSubmit() {
+    setForgotMessage("");
+    setForgotError("");
+    setForgotLoading(true);
+    try {
+      const result = await api.auth.forgotPassword(forgotEmail.trim());
+      setForgotMessage(result.message);
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : "Không thể gửi email đặt lại mật khẩu.");
+    } finally {
+      setForgotLoading(false);
+    }
+  }
 
   return (
     <div className="auth-page">
@@ -104,6 +125,39 @@ export default function AuthScreen() {
                   disabled={isLoading}
                 />
               </label>
+              <button
+                type="button"
+                className="auth-link-button"
+                onClick={() => {
+                  setForgotOpen((open) => !open);
+                  setForgotEmail(loginForm.email);
+                  setForgotMessage("");
+                  setForgotError("");
+                }}
+              >
+                Quên mật khẩu?
+              </button>
+              {forgotOpen ? (
+                <div className="reset-inline-panel">
+                  <strong>ĐẶT LẠI MẬT KHẨU</strong>
+                  <p>Nhập email tài khoản, hệ thống sẽ gửi link đặt mật khẩu mới.</p>
+                  <label className="field">
+                    <span>Email nhận link</span>
+                    <input
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="you@example.vn"
+                      autoComplete="email"
+                      disabled={forgotLoading}
+                    />
+                  </label>
+                  {forgotMessage ? <div className="form-success">{forgotMessage}</div> : null}
+                  {forgotError ? <div className="form-error">{forgotError}</div> : null}
+                  <button className="secondary-button" type="button" onClick={handleForgotSubmit} disabled={forgotLoading}>
+                    {forgotLoading ? "Đang gửi email..." : "Gửi link đặt lại"}
+                  </button>
+                </div>
+              ) : null}
               {authError ? <div className="form-error">{authError}</div> : null}
               <button className="primary-button" type="submit" style={{ width: "100%" }} disabled={isLoading}>
                 {isLoading ? "Đang đăng nhập…" : "Đăng nhập →"}
