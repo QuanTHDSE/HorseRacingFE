@@ -347,6 +347,8 @@ export interface LeaderboardJockey {
   name: string;
   points: number;
   wins: number;
+  winRate: number;
+  totalRaces: number;
 }
 
 export interface LivePosition {
@@ -669,6 +671,7 @@ export interface AppState {
   violations: Violation[];
   reports: Report[];
   tournaments: Tournament[];
+  featuredTournaments: Tournament[];
   leaderboardHorses: LeaderboardHorse[];
   leaderboardJockeys: LeaderboardJockey[];
   liveBoard: LiveBoard;
@@ -738,6 +741,7 @@ export interface AppContextValue {
   handleRegisterSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   handleUpdateMyProfile: (data: { fullName: string; phone?: string }) => Promise<void>;
   handleChangeMyPassword: (oldPassword: string, newPassword: string) => Promise<string>;
+  handleRespondJockeyInvitation: (id: string, action: "Accepted" | "Declined") => Promise<void>;
   handleAction: (type: string, id: string, value?: string) => void;
   handleCreateRacetrack: (data: Omit<Racetrack, "id">) => Promise<void>;
   handleCreateRace: (data: NewRaceInput) => void;

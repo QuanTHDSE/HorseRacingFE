@@ -4,6 +4,7 @@ import { Badge, NotificationBell, Panel, PointChangeNotifier } from "../componen
 import { roleConfigs } from "../config/roleConfigs";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
+import { viTournamentStatus } from "../utils/viLabels";
 import OwnerPages from "../pages/owner";
 import JockeyPages from "../pages/jockey";
 import RefereePages from "../pages/referee";
@@ -15,6 +16,12 @@ import type { Role } from "../types";
 interface RolePagesProps {
   role: Role;
   page: string;
+}
+
+function formatSidebarDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Chưa cập nhật";
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function RolePages({ role, page }: RolePagesProps) {
@@ -31,7 +38,7 @@ function RolePages({ role, page }: RolePagesProps) {
 
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, appState, handleLogout } = useApp();
+  const { user, appState, handleLogout, isDataLoading } = useApp();
   const { page } = useParams<{ page: string }>();
   const navigate = useNavigate();
 
@@ -46,6 +53,18 @@ export default function AppShell() {
   }, [validPage, role, navigate]);
 
   const notifications = appState.notifications.filter((n) => n.userId === user.id);
+  const featuredTournaments = (
+    appState.featuredTournaments.length > 0
+      ? appState.featuredTournaments
+      : appState.tournaments.filter((tournament) => ["Live", "Registration"].includes(tournament.status))
+  )
+    .slice()
+    .sort((a, b) => {
+      if (a.status === "Live" && b.status !== "Live") return -1;
+      if (a.status !== "Live" && b.status === "Live") return 1;
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    })
+    .slice(0, 3);
 
   return (
     <div className={cn("dashboard-layout", collapsed && "sidebar-collapsed")}>
@@ -132,15 +151,20 @@ export default function AppShell() {
           <aside className="workspace-side">
             <Panel title="Giải đấu nổi bật" subtitle="Giải đang diễn ra và các cuộc đua sắp tới">
               <div className="compact-list">
-                {appState.tournaments.map((t) => (
+                {featuredTournaments.map((t) => (
                   <article key={t.id} className="compact-row">
                     <div>
                       <strong>{t.name}</strong>
-                      <p>{t.location} • {t.range}</p>
+                      <p>{t.location} • {formatSidebarDate(t.startDate)} – {formatSidebarDate(t.endDate)}</p>
                     </div>
-                    <Badge tone={t.status === "Live" ? "success" : "neutral"}>{t.status}</Badge>
+                    <Badge tone={t.status === "Live" ? "success" : "accent"}>{viTournamentStatus(t.status)}</Badge>
                   </article>
                 ))}
+                {featuredTournaments.length === 0 && (
+                  <p className="compact-empty-state" role="status">
+                    {isDataLoading ? "Đang tải giải đấu…" : "Chưa có giải đấu đang diễn ra hoặc sắp tới."}
+                  </p>
+                )}
               </div>
             </Panel>
 
@@ -158,19 +182,29 @@ export default function AppShell() {
                       <b>{item.points} thắng</b>
                     </div>
                   ))}
+                  {appState.leaderboardHorses.length === 0 && (
+                    <p className="compact-empty-state" role="status">
+                      {isDataLoading ? "Đang tải xếp hạng…" : "Chưa có kết quả ngựa đã công bố."}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <p className="mini-title">Top jockeys</p>
+                  <p className="mini-title">Nài ngựa dẫn đầu</p>
                   {appState.leaderboardJockeys.map((item, i) => (
                     <div key={item.id} className="compact-rank">
                       <span>{i + 1}</span>
                       <div>
                         <strong>{item.name}</strong>
-                        <p>{item.wins} thắng</p>
+                        <p>{item.wins} thắng • {item.winRate}% • {item.totalRaces} cuộc</p>
                       </div>
-                      <b>{item.points}</b>
+                      <b>{item.wins} thắng</b>
                     </div>
                   ))}
+                  {appState.leaderboardJockeys.length === 0 && (
+                    <p className="compact-empty-state" role="status">
+                      {isDataLoading ? "Đang tải xếp hạng…" : "Chưa có kết quả nài ngựa đã công bố."}
+                    </p>
+                  )}
                 </div>
               </div>
             </Panel>

@@ -226,6 +226,26 @@ export interface ApiHorseLeaderboardItem {
   latestRaceName: string | null;
 }
 
+export interface ApiJockeyLeaderboardItem {
+  rank: number;
+  jockeyId: string;
+  jockeyName: string;
+  firstPlaceWins: number;
+  totalPublishedRaces: number;
+  winRate: number;
+  latestWinAt: string | null;
+  latestRaceName: string | null;
+}
+
+export interface ApiSidebarOverview {
+  tournaments: ApiTournamentDto[];
+  leaderboard: {
+    horses: ApiHorseLeaderboardItem[];
+    jockeys: ApiJockeyLeaderboardItem[];
+  };
+  generatedAt: string;
+}
+
 export interface ApiRefereeDashboard {
   upcomingRaces: number;
   completedRaces: number;
@@ -1082,6 +1102,11 @@ export const api = {
 
   points: {
     getMine: () => request<{ points: ApiSpectatorPoints }>("/points/me"),
+  },
+
+  overview: {
+    getSidebar: (limit = 3) =>
+      request<ApiSidebarOverview>(`/overview/sidebar?limit=${limit}`),
   },
 
   referee: {

@@ -10,6 +10,7 @@ import {
   type ApiAdminUser,
   type ApiHorse,
   type ApiHorseLeaderboardItem,
+  type ApiJockeyLeaderboardItem,
   type ApiInvitation,
   type ApiJockeyRace,
   type ApiNotification,
@@ -84,6 +85,7 @@ const EMPTY_STATE: AppState = {
   violations: [],
   reports: [],
   tournaments: [],
+  featuredTournaments: [],
   leaderboardHorses: [],
   leaderboardJockeys: [],
   liveBoard: { raceId: "", title: "", phase: "", updatedAt: "", positions: [] },
@@ -223,6 +225,17 @@ function mapHorseLeaderboardCard(item: ApiHorseLeaderboardItem) {
     name: item.horseName,
     points: item.firstPlaceWins,
     stable: `${item.firstPlaceWins} thắng • ${item.winRate}% • ${item.totalPublishedRaces} cuộc`,
+  };
+}
+
+function mapJockeyLeaderboardCard(item: ApiJockeyLeaderboardItem) {
+  return {
+    id: item.jockeyId,
+    name: item.jockeyName,
+    points: item.firstPlaceWins,
+    wins: item.firstPlaceWins,
+    winRate: item.winRate,
+    totalRaces: item.totalPublishedRaces,
   };
 }
 
@@ -639,6 +652,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const fetchDataForUser = useCallback(async (account: Account) => {
     const role = account.role;
+    const sidebarOverviewPromise = api.overview.getSidebar(3).catch(() => null);
     setIsDataLoading(true);
     try {
       if (role === "admin") {
@@ -814,13 +828,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setAppState((prev) => ({ ...prev, invitations, races, notifications }));
       } else if (role === "spectator") {
-        const [tourRes, racesRes, predsRes, ptsRes, notiRes, horseLeaderboardRes] = await Promise.allSettled([
+        const [tourRes, racesRes, predsRes, ptsRes, notiRes] = await Promise.allSettled([
           api.spectator.listTournaments(),
           api.spectator.listRaces(),
           api.spectator.listPredictions(account.id),
           api.spectator.getPoints(),
           api.spectator.listNotifications(),
-          api.spectator.listHorseLeaderboard(5),
         ]);
 
         const tournaments =
@@ -851,11 +864,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const spectatorPoints =
           ptsRes.status === "fulfilled" ? mapPointsSummary(ptsRes.value.points) : null;
 
-        const leaderboardHorses =
-          horseLeaderboardRes.status === "fulfilled"
-            ? horseLeaderboardRes.value.items.map(mapHorseLeaderboardCard)
-            : [];
-
         setAppState((prev) => ({
           ...prev,
           tournaments,
@@ -864,7 +872,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           rewards,
           notifications,
           spectatorPoints,
-          leaderboardHorses,
         }));
       } else if (role === "referee") {
         const [racesRes, notiRes] = await Promise.allSettled([
@@ -884,12 +891,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setAppState((prev) => ({ ...prev, refereeRaces, notifications }));
       }
+
+      const sidebarOverview = await sidebarOverviewPromise;
+      if (sidebarOverview) {
+        setAppState((prev) => ({
+          ...prev,
+          featuredTournaments: sidebarOverview.tournaments.map(mapTournamentDto),
+          leaderboardHorses: sidebarOverview.leaderboard.horses.map(mapHorseLeaderboardCard),
+          leaderboardJockeys: sidebarOverview.leaderboard.jockeys.map(mapJockeyLeaderboardCard),
+        }));
+      }
     } catch (err) {
       console.error("fetchDataForUser failed:", err);
     } finally {
       setIsDataLoading(false);
     }
   }, []);
+
+  // Sidebar data is shared by every role, so it must come from one common source.
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+    let refreshing = false;
+
+    const refreshSidebarOverview = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const overview = await api.overview.getSidebar(3);
+        if (active) {
+          setAppState((previous) => ({
+            ...previous,
+            featuredTournaments: overview.tournaments.map(mapTournamentDto),
+            leaderboardHorses: overview.leaderboard.horses.map(mapHorseLeaderboardCard),
+            leaderboardJockeys: overview.leaderboard.jockeys.map(mapJockeyLeaderboardCard),
+          }));
+        }
+      } catch {
+        // Keep the last successful shared snapshot and retry later.
+      } finally {
+        refreshing = false;
+      }
+    };
+
+    const handleFocus = () => { void refreshSidebarOverview(); };
+    const interval = window.setInterval(() => { void refreshSidebarOverview(); }, 15000);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [user?.id]);
 
   // ─── On mount: restore session from token ─────────────────────────────────
 
@@ -1085,17 +1140,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ─── Actions (mutations) ──────────────────────────────────────────────────
 
+  async function handleRespondJockeyInvitation(
+    id: string,
+    action: "Accepted" | "Declined",
+  ): Promise<void> {
+    await api.jockey.respondInvitation(id, action === "Accepted" ? "accept" : "decline");
+    const res = await api.jockey.listInvitations();
+    setAppState((prev) => ({
+      ...prev,
+      invitations: res.invitations.map(mapInvitation),
+    }));
+  }
+
   function handleAction(type: string, id: string, value?: string): void {
     const doAction = async () => {
       if (type === "jockeyInvite") {
-        const action = value === "Accepted" ? "accept" : "decline";
-        await api.jockey.respondInvitation(id, action);
-        // Refresh invitations
-        const res = await api.jockey.listInvitations();
-        setAppState((prev) => ({
-          ...prev,
-          invitations: res.invitations.map(mapInvitation),
-        }));
+        await handleRespondJockeyInvitation(id, value === "Accepted" ? "Accepted" : "Declined");
         return;
       }
 
@@ -1719,6 +1779,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleRegisterSubmit,
     handleUpdateMyProfile,
     handleChangeMyPassword,
+    handleRespondJockeyInvitation,
     handleAction,
     handleCreateRacetrack,
     handleCreateRace,

@@ -1,84 +1,115 @@
-import { useState } from "react";
-import { Badge, LoadingState, Panel, SuspensionBanner } from "../../components";
+import { useMemo, useState } from "react";
+import { Badge, LoadingState, MetricCard, Panel, SuspensionBanner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
+import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
+import {
+  formatRaceDateTime,
+  JOCKEY_RACE_STATUS_TONE,
+  sortJockeyRaces,
+} from "./jockeyUi";
 
-function fmtDate(iso?: string): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
-}
+type Filter = "all" | "upcoming" | "live" | "completed";
 
-function fmtPrize(n?: number): string {
-  if (!n) return "—";
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B VND`;
-  if (n >= 1_000_000)     return `${(n / 1_000_000).toFixed(0)}M VND`;
-  return `${n.toLocaleString()} VND`;
-}
-
-function fmtTime(ms?: number): string {
-  if (!ms) return "—";
-  const secs = (ms / 1000).toFixed(2);
-  return `${secs}s`;
-}
-
-const STATUS_TONE: Record<string, string> = {
-  Upcoming:  "neutral",
-  Ready:     "warning",
-  Live:      "success",
-  Completed: "accent",
-  Cancelled: "danger",
+const FILTER_LABEL: Record<Filter, string> = {
+  all: "Tất cả",
+  upcoming: "Sắp tới",
+  live: "Đang diễn ra",
+  completed: "Đã hoàn thành",
 };
 
+function formatPrize(value?: number): string {
+  if (value === undefined || value === null) return "Chưa cập nhật";
+  return `${value.toLocaleString("vi-VN")} VND`;
+}
+
+function formatFinishTime(value?: number): string {
+  if (value === undefined || value === null) return "Chưa cập nhật";
+  return `${(value / 1000).toFixed(2)} giây`;
+}
+
 function ResultBadge({ rank }: { rank?: number }) {
-  if (!rank) return null;
+  if (!rank) return <Badge tone="neutral">Chưa có thứ hạng</Badge>;
   if (rank === 1) return <Badge tone="success">Hạng 1</Badge>;
   if (rank === 2) return <Badge tone="accent">Hạng 2</Badge>;
   if (rank === 3) return <Badge tone="info">Hạng 3</Badge>;
-  return <Badge tone="neutral">#{rank}</Badge>;
+  return <Badge tone="neutral">Hạng {rank}</Badge>;
 }
 
 function RaceCard({ race }: { race: Race }) {
-  const [open, setOpen] = useState(false);
   const hasResult = race.liveStatus === "Completed" && race.result !== undefined && race.result !== null;
 
   return (
-    <article className="info-card">
-      <div className="card-head">
-        <strong>{race.name}</strong>
-        <Badge tone={STATUS_TONE[race.liveStatus] as any ?? "neutral"}>{viRaceStatus(race.liveStatus)}</Badge>
+    <article className={cn("jockey-card jockey-race-card", `is-${race.liveStatus.toLowerCase()}`)}>
+      <div className="jockey-card-topline">
+        <span>{race.tournamentName ?? race.track ?? "Giải đấu chưa cập nhật"}</span>
+        <Badge tone={JOCKEY_RACE_STATUS_TONE[race.liveStatus] ?? "neutral"}>
+          {viRaceStatus(race.liveStatus)}
+        </Badge>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", margin: "8px 0 4px", fontSize: "0.875rem" }}>
-        <span><span style={{ color: "var(--text-muted)" }}>Ngựa </span><strong>{race.horseName ?? "—"}</strong></span>
-        <span><span style={{ color: "var(--text-muted)" }}>Ngày </span>{fmtDate(race.date)}</span>
-        <span><span style={{ color: "var(--text-muted)" }}>Cự ly </span>{race.distance}</span>
-        <span><span style={{ color: "var(--text-muted)" }}>Giải đấu </span>{race.tournamentName ?? race.track}</span>
-        <span><span style={{ color: "var(--text-muted)" }}>Chủ ngựa </span>{race.ownerName ?? "—"}</span>
+      <div className="jockey-card-heading">
+        <h3>{race.name}</h3>
+        <p>{race.round ? `Vòng ${race.round}` : "Vòng đấu chưa cập nhật"}</p>
       </div>
+
+      <div className="jockey-race-highlight">
+        <span>Ngựa bạn sẽ cưỡi</span>
+        <strong>{race.horseName ?? "Chưa cập nhật"}</strong>
+      </div>
+
+      <dl className="jockey-detail-grid">
+        <div>
+          <dt>Thời gian thi đấu</dt>
+          <dd>{formatRaceDateTime(race.date)}</dd>
+        </div>
+        <div>
+          <dt>Cự ly</dt>
+          <dd>{race.distance || "Chưa cập nhật"}</dd>
+        </div>
+        <div>
+          <dt>Chủ ngựa</dt>
+          <dd>{race.ownerName ?? "Chưa cập nhật"}</dd>
+        </div>
+        <div>
+          <dt>Làn xuất phát</dt>
+          <dd>{race.laneNumber ? `Làn ${race.laneNumber}` : "Chưa phân làn"}</dd>
+        </div>
+      </dl>
+
+      {race.liveStatus === "Live" && (
+        <div className="jockey-status-note is-live">
+          <span className="jockey-live-dot" />
+          Cuộc đua đang diễn ra
+        </div>
+      )}
+
+      {race.liveStatus === "Ready" && (
+        <div className="jockey-status-note is-ready">Hãy có mặt và chuẩn bị tại khu vực xuất phát.</div>
+      )}
 
       {hasResult && race.result && (
-        <>
-          <button
-            type="button"
-            className="secondary-button btn-xs"
-            style={{ marginTop: "8px" }}
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? "Ẩn kết quả" : "Xem kết quả"}
-          </button>
-          {open && (
-            <div style={{ marginTop: "10px", padding: "10px 12px", background: "var(--surface-2)", borderRadius: "8px", fontSize: "0.875rem" }}>
-              <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
-                <ResultBadge rank={race.result.rank} />
-                {race.result.finishTime !== undefined && (
-                  <span><span style={{ color: "var(--text-muted)" }}>Thời gian </span>{fmtTime(race.result.finishTime)}</span>
-                )}
-                <span><span style={{ color: "var(--text-muted)" }}>Giải thưởng </span>{fmtPrize(race.result.prize)}</span>
-              </div>
+        <div className="jockey-result-panel">
+          <div className="jockey-result-heading">
+            <strong>Kết quả của bạn</strong>
+            <ResultBadge rank={race.result.rank} />
+          </div>
+          <dl>
+            <div>
+              <dt>Thời gian về đích</dt>
+              <dd>{formatFinishTime(race.result.finishTime)}</dd>
             </div>
-          )}
-        </>
+            <div>
+              <dt>Giải thưởng</dt>
+              <dd>{formatPrize(race.result.prize)}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
+
+      {race.liveStatus === "Completed" && !hasResult && (
+        <div className="jockey-status-note">Kết quả đang được cập nhật.</div>
       )}
     </article>
   );
@@ -86,21 +117,77 @@ function RaceCard({ race }: { race: Race }) {
 
 export default function AssignedPage() {
   const { appState, isDataLoading } = useApp();
+  const [filter, setFilter] = useState<Filter>("all");
   const races = appState.races;
 
+  const upcomingCount = races.filter((race) => ["Upcoming", "Ready"].includes(race.liveStatus)).length;
+  const liveCount = races.filter((race) => race.liveStatus === "Live").length;
+  const completedCount = races.filter((race) => race.liveStatus === "Completed").length;
+  const tournamentCount = new Set(races.map((race) => race.tournamentId).filter(Boolean)).size;
+
+  const filtered = useMemo(() => sortJockeyRaces(races.filter((race) => {
+    if (filter === "upcoming") return ["Upcoming", "Ready"].includes(race.liveStatus);
+    if (filter === "live") return race.liveStatus === "Live";
+    if (filter === "completed") return race.liveStatus === "Completed";
+    return true;
+  })), [filter, races]);
+
   return (
-    <div className="page-stack">
+    <div className="page-stack jockey-page">
       <SuspensionBanner />
+
+      <div className="metric-grid three">
+        <MetricCard
+          label="Cần chuẩn bị"
+          value={String(upcomingCount)}
+          note="Cuộc đua sắp tới và sẵn sàng"
+          tone="warning"
+          loading={isDataLoading && races.length === 0}
+        />
+        <MetricCard
+          label="Đang diễn ra"
+          value={String(liveCount)}
+          note="Cuộc đua đang hoạt động"
+          tone="success"
+          loading={isDataLoading && races.length === 0}
+        />
+        <MetricCard
+          label="Đã hoàn thành"
+          value={String(completedCount)}
+          note="Có thể xem lại kết quả"
+          tone="accent"
+          loading={isDataLoading && races.length === 0}
+        />
+      </div>
+
       <Panel
         title="Cuộc đua được giao"
-        subtitle={`${races.length} cuộc đua được giao`}
+        subtitle={`${tournamentCount} giải đấu · ${races.length} cuộc đua`}
+        action={
+          <div className="filter-tabs jockey-filter-tabs" aria-label="Lọc cuộc đua được giao">
+            {(["all", "upcoming", "live", "completed"] as Filter[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={cn("filter-tab", filter === item && "is-active")}
+                onClick={() => setFilter(item)}
+              >
+                {FILTER_LABEL[item]}
+              </button>
+            ))}
+          </div>
+        }
       >
         {isDataLoading && races.length === 0 && <LoadingState label="Đang tải cuộc đua được giao…" />}
-        {!isDataLoading && races.length === 0 && (
-          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa được giao cuộc đua nào.</p>
+        {!isDataLoading && filtered.length === 0 && (
+          <div className="empty-state jockey-empty-state">
+            <strong>Không có cuộc đua phù hợp</strong>
+            <p>Hãy chọn bộ lọc khác hoặc quay lại sau khi có phân công mới.</p>
+          </div>
         )}
-        <div className="card-list">
-          {races.map((race) => <RaceCard key={race.id} race={race} />)}
+
+        <div className="jockey-card-grid">
+          {filtered.map((race) => <RaceCard key={race.id} race={race} />)}
         </div>
       </Panel>
     </div>

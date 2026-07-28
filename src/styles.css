@@ -922,6 +922,7 @@ a {
 
 .workspace-shell {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
   min-width: 0;
   background: var(--c-bg);
@@ -971,6 +972,8 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 0;
+  width: 100%;
+  min-width: 0;
   min-height: calc(100vh - 65px);
 }
 
@@ -1644,7 +1647,7 @@ button:disabled {
 
 @media (max-width: 1100px) {
   .workspace-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .workspace-side {
@@ -1678,17 +1681,20 @@ button:disabled {
 
 @media (max-width: 820px) {
   .dashboard-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .sidebar {
     height: auto;
     position: relative;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
     padding: 14px 16px;
+  }
+
+  .sidebar-toggle {
+    display: none;
   }
 
   .brand-block {
@@ -1696,12 +1702,23 @@ button:disabled {
   }
 
   .side-menu {
-    flex-direction: row;
-    flex: 1;
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .side-menu::-webkit-scrollbar {
+    display: none;
   }
 
   .menu-item {
+    flex: 0 0 auto;
     min-height: 38px;
+    padding-inline: 12px;
   }
 
   .sidebar-footer {
@@ -1730,6 +1747,25 @@ button:disabled {
 
   .workspace-main {
     padding: 20px;
+  }
+
+  .topbar {
+    position: relative;
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px 20px;
+  }
+
+  .topbar h2 {
+    max-width: none;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
   }
 
   .hero-card {
@@ -3671,5 +3707,1952 @@ button:disabled {
 
   .skeleton::after {
     display: none;
+  }
+}
+
+.compact-row > div {
+  min-width: 0;
+}
+
+.compact-row > .badge {
+  flex-shrink: 0;
+}
+
+.compact-empty-state {
+  margin: 0;
+  padding: 13px 0;
+  color: var(--c-muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+/* ── Jockey workspace: invitations, assignments and schedule ─────────────── */
+.jockey-page .panel-header {
+  align-items: stretch;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.jockey-page,
+.jockey-page > .panel {
+  min-width: 0;
+}
+
+.jockey-filter-tabs {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.jockey-filter-tabs .filter-tab {
+  flex: 1 0 auto;
+  white-space: nowrap;
+}
+
+.jockey-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.jockey-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+  transition: border-color var(--dur-s) var(--ease-std),
+    box-shadow var(--dur-s) var(--ease-std),
+    transform var(--dur-s) var(--spring);
+}
+
+.jockey-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: transparent;
+}
+
+.jockey-card:hover {
+  border-color: rgba(192, 56, 10, .18);
+  box-shadow: var(--elev-1);
+  transform: translateY(-2px);
+}
+
+.jockey-card.is-pending::before,
+.jockey-race-card.is-ready::before {
+  background: var(--c-warning);
+}
+
+.jockey-race-card.is-live::before {
+  background: var(--c-success);
+}
+
+.jockey-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.jockey-card-topline > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--c-primary);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.jockey-card-heading h3 {
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.jockey-card-heading p {
+  margin: 4px 0 0;
+  color: var(--c-muted);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.jockey-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 18px 0 0;
+}
+
+.jockey-detail-grid div,
+.jockey-result-panel dl div {
+  min-width: 0;
+}
+
+.jockey-detail-grid dt,
+.jockey-result-panel dt {
+  margin-bottom: 4px;
+  color: var(--c-muted);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.jockey-detail-grid dd,
+.jockey-result-panel dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--c-on-surface);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.jockey-invitation-message {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--c-primary);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: var(--c-primary-c);
+  color: var(--c-on-primary-c);
+  font-size: .82rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.jockey-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.jockey-action-button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: .84rem;
+}
+
+.jockey-action-button:disabled {
+  cursor: wait;
+  opacity: .58;
+  transform: none;
+}
+
+.jockey-race-highlight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-lg);
+  background: var(--c-primary-c);
+}
+
+.jockey-race-highlight span {
+  color: var(--c-secondary);
+  font-size: .76rem;
+}
+
+.jockey-race-highlight strong {
+  min-width: 0;
+  color: var(--c-on-primary-c);
+  font-size: .92rem;
+  text-align: right;
+}
+
+.jockey-status-note {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--c-surf-high);
+  color: var(--c-muted);
+  font-size: .8rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.jockey-status-note.is-ready {
+  background: var(--c-warning-c);
+  color: var(--c-on-warning-c);
+}
+
+.jockey-status-note.is-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c-success-c);
+  color: var(--c-success);
+}
+
+.jockey-live-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--c-success);
+  box-shadow: 0 0 0 4px rgba(26, 122, 76, .12);
+}
+
+.jockey-result-panel {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(26, 122, 76, .14);
+  border-radius: var(--r-lg);
+  background: var(--c-success-c);
+}
+
+.jockey-result-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.jockey-result-heading > strong {
+  color: var(--c-on-success-c);
+  font-size: .86rem;
+}
+
+.jockey-result-panel dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.jockey-empty-state strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--c-on-surface);
+}
+
+.jockey-empty-state p {
+  margin: 0;
+}
+
+.jockey-schedule-list {
+  display: grid;
+  gap: 24px;
+}
+
+.jockey-schedule-day {
+  min-width: 0;
+}
+
+.jockey-schedule-day-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.jockey-schedule-day-heading h3 {
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: .92rem;
+  text-transform: capitalize;
+}
+
+.jockey-schedule-day-heading span {
+  color: var(--c-muted);
+  font-size: .76rem;
+}
+
+.jockey-schedule-day-items {
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surface);
+}
+
+.jockey-schedule-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  min-width: 0;
+  padding: 17px 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+  transition: background var(--dur-s) var(--ease-std);
+}
+
+.jockey-schedule-item:last-child {
+  border-bottom: 0;
+}
+
+.jockey-schedule-item:hover {
+  background: var(--c-surf-low);
+}
+
+.jockey-schedule-item.is-live {
+  background: var(--c-success-c);
+}
+
+.jockey-schedule-item.is-live::before,
+.jockey-schedule-item.is-ready::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: var(--c-success);
+}
+
+.jockey-schedule-item.is-ready::before {
+  background: var(--c-warning);
+}
+
+.jockey-schedule-time {
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  min-height: 54px;
+  padding-right: 16px;
+  border-right: 1px solid var(--c-outline-var);
+}
+
+.jockey-schedule-time strong {
+  color: var(--c-on-surface);
+  font-size: 1.05rem;
+}
+
+.jockey-schedule-time span {
+  color: var(--c-muted);
+  font-size: .75rem;
+}
+
+.jockey-schedule-content {
+  min-width: 0;
+}
+
+.jockey-schedule-tournament {
+  display: block;
+  margin-bottom: 5px;
+  overflow: hidden;
+  color: var(--c-primary);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.jockey-schedule-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jockey-schedule-title-row h4 {
+  min-width: 0;
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: .92rem;
+  line-height: 1.4;
+}
+
+.jockey-schedule-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 7px;
+  color: var(--c-muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.jockey-schedule-meta b {
+  color: var(--c-secondary);
+  font-weight: 650;
+}
+
+.jockey-schedule-rank {
+  display: grid;
+  gap: 3px;
+  min-width: 74px;
+  text-align: right;
+}
+
+.jockey-schedule-rank span {
+  color: var(--c-muted);
+  font-size: .7rem;
+  text-transform: uppercase;
+}
+
+.jockey-schedule-rank strong {
+  color: var(--c-on-surface);
+  font-size: .86rem;
+}
+
+@media (max-width: 1050px) {
+  .jockey-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .jockey-page .panel-header {
+    align-items: stretch;
+  }
+
+  .jockey-filter-tabs {
+    width: 100%;
+  }
+
+  .jockey-schedule-item {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .jockey-schedule-rank {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .jockey-card {
+    padding: 16px;
+  }
+
+  .jockey-detail-grid,
+  .jockey-result-panel dl,
+  .jockey-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .jockey-card-actions .primary-button {
+    grid-row: 1;
+  }
+
+  .jockey-race-highlight {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .jockey-race-highlight strong {
+    text-align: left;
+  }
+
+  .jockey-schedule-item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .jockey-schedule-time {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-height: 0;
+    padding: 0 0 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--c-outline-var);
+  }
+
+  .jockey-schedule-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .jockey-schedule-rank {
+    grid-column: 1;
+  }
+}
+
+/* ── Jockey performance ─────────────────────────────────────────────────── */
+.performance-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.performance-progress-list {
+  display: grid;
+  gap: 18px;
+  align-content: center;
+  padding: 6px 0;
+}
+
+.performance-progress-item > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.performance-progress-item span {
+  color: var(--c-muted);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.performance-progress-item strong {
+  color: var(--c-on-surface);
+  font-size: .92rem;
+}
+
+.performance-progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--r-full);
+  background: var(--c-surf-high);
+}
+
+.performance-progress-track > span {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--c-primary), var(--c-tertiary));
+  transition: width var(--dur-l) var(--ease-std);
+}
+
+.performance-progress-track.is-podium > span {
+  background: linear-gradient(90deg, var(--c-success), #55a979);
+}
+
+.performance-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.performance-highlight-grid article {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.performance-highlight-grid span {
+  color: var(--c-muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.performance-highlight-grid strong {
+  overflow-wrap: anywhere;
+  color: var(--c-on-surface);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.performance-highlight-grid p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.performance-result-list {
+  display: grid;
+  gap: 12px;
+}
+
+.performance-result-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  min-width: 0;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+  transition: border-color var(--dur-s) var(--ease-std),
+    box-shadow var(--dur-s) var(--ease-std),
+    transform var(--dur-s) var(--spring);
+}
+
+.performance-result-card:hover {
+  border-color: rgba(192, 56, 10, .16);
+  box-shadow: var(--elev-1);
+  transform: translateY(-1px);
+}
+
+.performance-result-card.is-winner {
+  border-color: rgba(26, 122, 76, .16);
+  background: linear-gradient(90deg, var(--c-success-c), var(--c-surf-low) 42%);
+}
+
+.performance-result-card.is-winner::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: var(--c-success);
+}
+
+.performance-rank-block {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  padding-right: 14px;
+  border-right: 1px solid var(--c-outline-var);
+}
+
+.performance-rank-block > span {
+  color: var(--c-muted);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.performance-rank-block > strong {
+  color: var(--c-on-surface);
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.performance-result-content {
+  min-width: 0;
+}
+
+.performance-result-tournament {
+  display: block;
+  margin-bottom: 4px;
+  overflow: hidden;
+  color: var(--c-primary);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.performance-result-content h3 {
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: .92rem;
+  line-height: 1.4;
+}
+
+.performance-result-content > p {
+  margin: 3px 0 0;
+  color: var(--c-muted);
+  font-size: .76rem;
+}
+
+.performance-result-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 20px;
+  margin: 12px 0 0;
+}
+
+.performance-result-details div {
+  min-width: 120px;
+}
+
+.performance-result-details dt {
+  margin-bottom: 2px;
+  color: var(--c-muted);
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.performance-result-details dd {
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: .8rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.performance-leaderboard-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.performance-leaderboard-anchor {
+  min-width: 0;
+  scroll-margin-top: 88px;
+}
+
+.performance-race-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.performance-race-select span {
+  flex: 0 0 auto;
+  color: var(--c-muted);
+  font-size: .76rem;
+  font-weight: 600;
+}
+
+.performance-race-select select {
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 36px 0 13px;
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+  color: var(--c-on-surface);
+  font: inherit;
+  font-size: .8rem;
+}
+
+.performance-race-select select:focus {
+  border-color: var(--c-primary);
+  outline: 2px solid rgba(192, 56, 10, .12);
+}
+
+@media (max-width: 820px) {
+  .jockey-page .metric-grid.four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jockey-page .metric-grid.four .metric-card {
+    padding: 18px;
+  }
+
+  .performance-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-result-card {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .performance-leaderboard-button {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .performance-highlight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-result-card {
+    grid-template-columns: 1fr;
+    gap: 13px;
+    padding: 16px;
+  }
+
+  .performance-rank-block {
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    justify-items: start;
+    padding: 0 0 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--c-outline-var);
+  }
+
+  .performance-rank-block > strong {
+    font-size: 1.15rem;
+  }
+
+  .performance-leaderboard-button {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .performance-race-select {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+/* ── Spectator predictions and point wallet ─────────────────────────────── */
+.spectator-friendly-page,
+.spectator-friendly-page > .panel {
+  min-width: 0;
+}
+
+.spectator-friendly-page .panel-header {
+  align-items: stretch;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.spectator-friendly-tabs {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.spectator-friendly-tabs .filter-tab {
+  flex: 1 0 auto;
+  white-space: nowrap;
+}
+
+.spectator-empty-state strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--c-on-surface);
+}
+
+.spectator-empty-state p {
+  margin: 0;
+}
+
+.spectator-prediction-builder {
+  display: grid;
+  gap: 24px;
+}
+
+.spectator-prediction-step {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.spectator-prediction-step + .spectator-prediction-step {
+  padding-top: 22px;
+  border-top: 1px solid rgba(0, 0, 0, .07);
+}
+
+.spectator-step-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.spectator-step-heading > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.spectator-step-heading h3 {
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: .92rem;
+}
+
+.spectator-step-heading p {
+  margin: 3px 0 0;
+  color: var(--c-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.spectator-prediction-races {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.spectator-prediction-race {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+  text-align: left;
+  transition: border-color var(--dur-s) var(--ease-std),
+    background var(--dur-s) var(--ease-std),
+    transform var(--dur-s) var(--spring);
+}
+
+.spectator-prediction-race:hover {
+  border-color: rgba(192, 56, 10, .2);
+  transform: translateY(-1px);
+}
+
+.spectator-prediction-race.is-selected {
+  border-color: var(--c-primary);
+  background: var(--c-primary-c);
+  box-shadow: 0 0 0 2px rgba(192, 56, 10, .08);
+}
+
+.spectator-prediction-race > span,
+.spectator-prediction-history-main > span,
+.spectator-wallet-transaction-main > span {
+  overflow: hidden;
+  color: var(--c-primary);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.spectator-prediction-race > strong {
+  color: var(--c-on-surface);
+  font-size: .9rem;
+  line-height: 1.4;
+}
+
+.spectator-prediction-race > p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.spectator-prediction-race > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-top: 5px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(0, 0, 0, .06);
+}
+
+.spectator-prediction-race small {
+  color: var(--c-secondary);
+  font-size: .72rem;
+  font-weight: 650;
+}
+
+.spectator-prediction-horses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.spectator-prediction-horse {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  text-align: left;
+  transition: border-color var(--dur-s) var(--ease-std), background var(--dur-s) var(--ease-std);
+}
+
+.spectator-prediction-horse:hover,
+.spectator-prediction-horse.is-selected {
+  border-color: var(--c-primary);
+  background: var(--c-primary-c);
+}
+
+.spectator-prediction-horse > span {
+  color: var(--c-primary);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.spectator-prediction-horse > strong {
+  color: var(--c-on-surface);
+  font-size: .88rem;
+}
+
+.spectator-prediction-horse > small {
+  color: var(--c-muted);
+  font-size: .72rem;
+}
+
+.spectator-ticket-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(260px, 1.1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.spectator-ticket-picker {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.spectator-ticket-picker > label,
+.spectator-topup-inputs > label {
+  color: var(--c-on-surface);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.spectator-ticket-counter {
+  display: grid;
+  grid-template-columns: 44px minmax(80px, 1fr) 44px;
+  overflow: hidden;
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+}
+
+.spectator-ticket-counter button {
+  min-height: 44px;
+  background: var(--c-surf-high);
+  color: var(--c-on-surface);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.spectator-ticket-counter button:hover {
+  background: var(--c-surf-highest);
+}
+
+.spectator-ticket-counter input {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+  font-weight: 700;
+}
+
+.spectator-ticket-quick,
+.spectator-topup-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.spectator-ticket-quick button,
+.spectator-topup-presets button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--r-full);
+  background: var(--c-surf-high);
+  color: var(--c-muted);
+  font-size: .76rem;
+  font-weight: 650;
+}
+
+.spectator-ticket-quick button:hover,
+.spectator-ticket-quick button.is-selected,
+.spectator-topup-presets button:hover,
+.spectator-topup-presets button.is-selected {
+  background: var(--c-primary-c);
+  color: var(--c-on-primary-c);
+}
+
+.spectator-inline-error {
+  margin: 0;
+  color: var(--c-danger);
+  font-size: .76rem;
+  line-height: 1.4;
+}
+
+.spectator-prediction-summary {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(192, 56, 10, .13);
+  border-radius: var(--r-xl);
+  background: var(--c-primary-c);
+}
+
+.spectator-prediction-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.spectator-prediction-summary span {
+  color: var(--c-secondary);
+  font-size: .75rem;
+}
+
+.spectator-prediction-summary strong {
+  color: var(--c-on-primary-c);
+  font-size: .8rem;
+  text-align: right;
+}
+
+.spectator-prediction-summary .is-total {
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(192, 56, 10, .14);
+}
+
+.spectator-prediction-summary .is-total strong {
+  font-size: .96rem;
+}
+
+.spectator-prediction-summary strong.is-negative {
+  color: var(--c-danger);
+}
+
+.spectator-prediction-history,
+.spectator-wallet-history {
+  display: grid;
+  gap: 10px;
+}
+
+.spectator-prediction-history-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr) auto;
+  gap: 18px;
+  align-items: center;
+  min-width: 0;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.spectator-prediction-history-item.is-won {
+  border-color: rgba(26, 122, 76, .16);
+  background: linear-gradient(90deg, var(--c-success-c), var(--c-surf-low) 48%);
+}
+
+.spectator-prediction-history-item.is-won::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: var(--c-success);
+}
+
+.spectator-prediction-history-main {
+  min-width: 0;
+}
+
+.spectator-prediction-history-main h3,
+.spectator-wallet-transaction-main h3 {
+  margin: 4px 0 0;
+  color: var(--c-on-surface);
+  font-size: .88rem;
+  line-height: 1.4;
+}
+
+.spectator-prediction-history-main p,
+.spectator-wallet-transaction-main p {
+  margin: 4px 0 0;
+  color: var(--c-muted);
+  font-size: .76rem;
+}
+
+.spectator-prediction-history-item dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.spectator-prediction-history-item dt {
+  margin-bottom: 3px;
+  color: var(--c-muted);
+  font-size: .66rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.spectator-prediction-history-item dd {
+  margin: 0;
+  color: var(--c-on-surface);
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.spectator-prediction-history-actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.spectator-wallet-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.spectator-wallet-insights article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 17px 18px;
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: var(--r-xl);
+  background: var(--c-surface);
+  box-shadow: var(--elev-1);
+}
+
+.spectator-wallet-insights article.is-positive {
+  border-color: rgba(26, 122, 76, .14);
+  background: var(--c-success-c);
+}
+
+.spectator-wallet-insights article.is-negative {
+  border-color: rgba(180, 43, 30, .14);
+  background: var(--c-danger-c);
+}
+
+.spectator-wallet-insights span {
+  color: var(--c-muted);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.spectator-wallet-insights strong {
+  overflow-wrap: anywhere;
+  color: var(--c-on-surface);
+  font-size: 1.05rem;
+}
+
+.spectator-wallet-insights p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: .74rem;
+  line-height: 1.45;
+}
+
+.spectator-topup-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.spectator-topup-inputs {
+  display: grid;
+  gap: 11px;
+  align-content: center;
+}
+
+.spectator-topup-field {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+}
+
+.spectator-topup-field input {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.spectator-topup-field > span {
+  padding-right: 18px;
+  color: var(--c-muted);
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.spectator-topup-summary {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  padding: 20px;
+  border-radius: var(--r-xl);
+  background: var(--c-primary-c);
+}
+
+.spectator-topup-summary > span {
+  color: var(--c-secondary);
+  font-size: .75rem;
+  font-weight: 650;
+}
+
+.spectator-topup-summary > strong {
+  color: var(--c-on-primary-c);
+  font-size: 1.55rem;
+  line-height: 1.2;
+}
+
+.spectator-topup-summary > p,
+.spectator-topup-summary > small {
+  margin: 0;
+  color: var(--c-secondary);
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.spectator-topup-summary > small {
+  margin-top: 2px;
+  color: var(--c-muted);
+}
+
+.spectator-topup-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.spectator-topup-actions .primary-button,
+.spectator-topup-actions .secondary-button {
+  min-height: 44px;
+  padding-inline: 14px;
+  font-size: .8rem;
+}
+
+.spectator-wallet-transaction {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(180px, auto) auto;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+  padding: 15px 17px;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.spectator-wallet-transaction.is-credit {
+  border-color: rgba(26, 122, 76, .13);
+}
+
+.spectator-wallet-direction {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c-surf-high);
+  color: var(--c-muted);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.spectator-wallet-transaction.is-credit .spectator-wallet-direction {
+  background: var(--c-success-c);
+  color: var(--c-success);
+}
+
+.spectator-wallet-transaction.is-debit .spectator-wallet-direction {
+  background: var(--c-danger-c);
+  color: var(--c-danger);
+}
+
+.spectator-wallet-transaction-main {
+  min-width: 0;
+}
+
+.spectator-wallet-amount {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.spectator-wallet-amount strong {
+  color: var(--c-on-surface);
+  font-size: .88rem;
+}
+
+.spectator-wallet-transaction.is-credit .spectator-wallet-amount strong {
+  color: var(--c-success);
+}
+
+.spectator-wallet-transaction.is-debit .spectator-wallet-amount strong {
+  color: var(--c-danger);
+}
+
+.spectator-wallet-amount span {
+  color: var(--c-muted);
+  font-size: .7rem;
+}
+
+@media (max-width: 1050px) {
+  .spectator-ticket-layout,
+  .spectator-topup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .spectator-prediction-history-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .spectator-prediction-history-item dl {
+    grid-column: 1;
+  }
+
+  .spectator-prediction-history-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .spectator-wallet-transaction {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+  }
+
+  .spectator-wallet-amount {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .spectator-wallet-transaction > .badge {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 820px) {
+  .spectator-wallet-insights {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .spectator-prediction-races,
+  .spectator-prediction-horses {
+    grid-template-columns: 1fr;
+  }
+
+  .spectator-prediction-summary > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .spectator-prediction-summary strong {
+    text-align: left;
+  }
+
+  .spectator-prediction-history-item,
+  .spectator-wallet-transaction {
+    grid-template-columns: 1fr;
+    gap: 11px;
+    padding: 15px;
+  }
+
+  .spectator-prediction-history-item dl {
+    grid-template-columns: 1fr;
+    grid-column: 1;
+  }
+
+  .spectator-prediction-history-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-items: start;
+  }
+
+  .spectator-wallet-direction {
+    display: none;
+  }
+
+  .spectator-wallet-amount,
+  .spectator-wallet-transaction > .badge {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .spectator-wallet-transaction > .badge {
+    justify-self: start;
+  }
+
+  .spectator-topup-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Spectator dashboard */
+.spectator-dashboard-page,
+.spectator-dashboard-content,
+.spectator-dashboard-content > .panel {
+  min-width: 0;
+}
+
+.spectator-dashboard-hero {
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, .62) 0 8%, transparent 30%),
+    linear-gradient(135deg, var(--c-primary-c) 0%, var(--c-tertiary-c) 100%);
+}
+
+.spectator-dashboard-hero::after {
+  position: absolute;
+  right: -80px;
+  bottom: -120px;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(192, 56, 10, .12);
+  border-radius: 50%;
+  content: "";
+}
+
+.spectator-dashboard-hero > div {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.spectator-dashboard-hero h3 {
+  max-width: 28ch;
+}
+
+.spectator-dashboard-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.spectator-dashboard-hero-actions .primary-button,
+.spectator-dashboard-hero-actions .secondary-button {
+  min-height: 40px;
+  padding-inline: 17px;
+  font-size: .8rem;
+}
+
+.spectator-dashboard-hero-mark {
+  display: grid;
+  flex: 0 0 168px;
+  place-items: center;
+  min-height: 150px;
+  padding: 18px;
+  border: 1px solid rgba(192, 56, 10, .14);
+  border-radius: var(--r-2xl);
+  background: rgba(255, 255, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+  text-align: center;
+}
+
+.spectator-dashboard-hero-mark span {
+  color: var(--c-primary);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.spectator-dashboard-hero-mark strong {
+  color: var(--c-on-primary-c);
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.spectator-dashboard-hero-mark small {
+  color: var(--c-secondary);
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.spectator-dashboard-content > .panel {
+  align-self: stretch;
+}
+
+.spectator-dashboard-content .panel-header {
+  align-items: flex-start;
+}
+
+.spectator-dashboard-content .panel-header .secondary-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.spectator-dashboard-live-wrap,
+.spectator-dashboard-live-races,
+.spectator-dashboard-predictions {
+  display: grid;
+  gap: 10px;
+}
+
+.spectator-dashboard-live-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  border: 1px solid rgba(26, 122, 76, .13);
+  border-radius: var(--r-xl);
+  background: var(--c-success-c);
+}
+
+.spectator-dashboard-live-head strong,
+.spectator-dashboard-live-head p {
+  display: block;
+}
+
+.spectator-dashboard-live-head strong {
+  color: var(--c-on-success-c);
+  font-size: .86rem;
+}
+
+.spectator-dashboard-live-head p {
+  margin-top: 2px;
+  color: var(--c-success);
+  font-size: .74rem;
+}
+
+.spectator-dashboard-race-card {
+  display: grid;
+  gap: 9px;
+  padding: 17px;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.spectator-dashboard-race-card.is-live {
+  border-color: rgba(26, 122, 76, .15);
+  background: linear-gradient(135deg, var(--c-success-c), var(--c-surface));
+}
+
+.spectator-dashboard-race-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--c-success);
+  font-size: .72rem;
+}
+
+.spectator-dashboard-race-card h3 {
+  font-size: .96rem;
+}
+
+.spectator-dashboard-race-card > p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: .78rem;
+}
+
+.spectator-dashboard-race-facts,
+.spectator-dashboard-prediction-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.spectator-dashboard-race-facts span,
+.spectator-dashboard-prediction-meta span {
+  padding: 5px 9px;
+  border-radius: var(--r-full);
+  background: rgba(0, 0, 0, .045);
+  color: var(--c-muted);
+  font-size: .7rem;
+  font-weight: 650;
+}
+
+.spectator-dashboard-race-card > button {
+  justify-self: start;
+  margin-top: 3px;
+}
+
+.spectator-dashboard-prediction-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-height: 250px;
+  padding: 24px;
+  border: 1px dashed var(--c-outline-var);
+  border-radius: var(--r-xl);
+  background: linear-gradient(180deg, var(--c-surf-low), var(--c-surface));
+  text-align: center;
+}
+
+.spectator-dashboard-prediction-empty {
+  align-content: center;
+}
+
+.spectator-dashboard-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: var(--c-primary-c);
+  color: var(--c-primary);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+
+.spectator-dashboard-prediction-empty > strong {
+  color: var(--c-on-surface);
+  font-size: .92rem;
+}
+
+.spectator-dashboard-prediction-empty > p {
+  max-width: 42ch;
+  margin: 4px auto 0;
+  color: var(--c-muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.spectator-dashboard-upcoming-list {
+  display: grid;
+  gap: 8px;
+}
+
+.spectator-dashboard-upcoming-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.spectator-dashboard-upcoming-row:first-child {
+  border-color: rgba(192, 56, 10, .14);
+  background: var(--c-primary-c);
+}
+
+.spectator-dashboard-schedule-order {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: var(--c-surf-high);
+  color: var(--c-muted);
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.spectator-dashboard-upcoming-row:first-child .spectator-dashboard-schedule-order {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.spectator-dashboard-upcoming-row > div {
+  min-width: 0;
+}
+
+.spectator-dashboard-upcoming-row strong,
+.spectator-dashboard-upcoming-row p,
+.spectator-dashboard-upcoming-row time {
+  display: block;
+}
+
+.spectator-dashboard-upcoming-row strong {
+  overflow: hidden;
+  color: var(--c-on-surface);
+  font-size: .84rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spectator-dashboard-upcoming-row p {
+  overflow: hidden;
+  margin: 2px 0 3px;
+  color: var(--c-muted);
+  font-size: .7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spectator-dashboard-upcoming-row time {
+  color: var(--c-muted);
+  font-size: .68rem;
+}
+
+.spectator-dashboard-upcoming-row > .badge {
+  white-space: nowrap;
+}
+
+.spectator-dashboard-schedule-empty {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px;
+  border: 1px dashed var(--c-outline-var);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.spectator-dashboard-schedule-empty strong {
+  display: block;
+  color: var(--c-on-surface);
+  font-size: .86rem;
+}
+
+.spectator-dashboard-schedule-empty p {
+  margin: 3px 0 0;
+  color: var(--c-muted);
+  font-size: .74rem;
+}
+
+.spectator-dashboard-prediction-card {
+  display: grid;
+  gap: 8px;
+  padding: 15px 16px;
+  border: 1px solid rgba(0, 0, 0, .07);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.spectator-dashboard-prediction-card .card-head > div {
+  min-width: 0;
+}
+
+.spectator-dashboard-prediction-card .card-head span,
+.spectator-dashboard-prediction-card .card-head strong {
+  display: block;
+}
+
+.spectator-dashboard-prediction-card .card-head span {
+  margin-bottom: 3px;
+  color: var(--c-primary);
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.spectator-dashboard-prediction-card .card-head strong {
+  font-size: .9rem;
+}
+
+.spectator-dashboard-prediction-card > p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: .76rem;
+}
+
+@media (max-width: 820px) {
+  .spectator-dashboard-hero-mark {
+    width: 100%;
+    min-height: 116px;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+  }
+
+  .spectator-dashboard-hero-mark span {
+    grid-column: 1 / -1;
+  }
+
+  .spectator-dashboard-hero-mark strong {
+    justify-self: end;
+  }
+
+  .spectator-dashboard-hero-mark small {
+    justify-self: start;
+    max-width: 14ch;
+    text-align: left;
+  }
+}
+
+@media (max-width: 1280px) {
+  .spectator-dashboard-content .panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spectator-dashboard-content .panel-header .secondary-button {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .spectator-dashboard-hero-actions,
+  .spectator-dashboard-hero-actions .primary-button,
+  .spectator-dashboard-hero-actions .secondary-button {
+    width: 100%;
+  }
+
+  .spectator-dashboard-content .panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spectator-dashboard-content .panel-header .secondary-button {
+    width: 100%;
+  }
+
+  .spectator-dashboard-prediction-empty {
+    min-height: 220px;
+    padding: 19px 15px;
+  }
+
+  .spectator-dashboard-upcoming-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .spectator-dashboard-upcoming-row > .badge {
+    grid-column: 2;
+    justify-self: start;
   }
 }
