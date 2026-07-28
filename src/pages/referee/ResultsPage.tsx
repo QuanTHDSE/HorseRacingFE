@@ -17,7 +17,7 @@ interface Entry {
   finishTime?: number | "";
 }
 
-const DQ_PENALTIES = ["disqualify", "disqualification"];
+const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "disqualify", "disqualification"];
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
@@ -55,8 +55,7 @@ export default function ResultsPage() {
   const published = !!status?.publishedAt;
   const confirmed = !!status?.confirmedAt;
   const locked = published || confirmed; // can't edit once confirmed/published
-  const demoteCount = violations.filter((v) => v.penaltyApplied === "demote").length;
-  const disqualifiedCount = violations.filter((v) => v.penaltyApplied && DQ_PENALTIES.includes(v.penaltyApplied)).length;
+  const resultVoidedCount = violations.filter((v) => v.penaltyApplied && RESULT_VOIDING_PENALTIES.includes(v.penaltyApplied)).length;
 
   useEffect(() => {
     if (!raceId) { setEntries([]); setStatus(null); return; }
@@ -71,7 +70,7 @@ export default function ResultsPage() {
 
         const disqualifiedHorseIds = new Set(
           raceViolations
-            .filter((v) => v.horseId && v.penaltyApplied && DQ_PENALTIES.includes(v.penaltyApplied))
+            .filter((v) => v.horseId && v.penaltyApplied && RESULT_VOIDING_PENALTIES.includes(v.penaltyApplied))
             .map((v) => v.horseId as string),
         );
 
@@ -88,17 +87,6 @@ export default function ResultsPage() {
             ownerName: c.ownerName,
             laneNumber: c.laneNumber,
           }));
-
-        for (const v of raceViolations) {
-          if (v.penaltyApplied !== "demote" || !v.horseId || !v.affectedHorseId) continue;
-          const penalizedIndex = rows.findIndex((e) => e.horseId === v.horseId);
-          const affectedIndex = rows.findIndex((e) => e.horseId === v.affectedHorseId);
-          if (penalizedIndex === -1 || affectedIndex === -1) continue;
-          const [penalized] = rows.splice(penalizedIndex, 1);
-          if (!penalized) continue;
-          const nextAffectedIndex = rows.findIndex((e) => e.horseId === v.affectedHorseId);
-          rows.splice(nextAffectedIndex + 1, 0, penalized);
-        }
 
         if (st?.rankings?.length) {
           const byHorseId = new Map(rows.map((row) => [row.horseId, row]));
@@ -258,9 +246,9 @@ export default function ResultsPage() {
               </div>
             )}
 
-            {(demoteCount > 0 || disqualifiedCount > 0) && (
+            {resultVoidedCount > 0 && (
               <p className="pc-hint" style={{ marginTop: "12px" }}>
-                Đã áp dụng {demoteCount} án tụt hạng và {disqualifiedCount} án tước quyền từ biên bản xử phạt. Không cập nhật thời gian phạt ở bước này.
+                Đã áp dụng {resultVoidedCount} án hủy kết quả từ biên bản xử phạt. Không cập nhật thời gian phạt ở bước này.
               </p>
             )}
 

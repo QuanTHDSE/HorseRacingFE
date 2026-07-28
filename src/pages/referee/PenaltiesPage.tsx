@@ -5,25 +5,23 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
 
-const DQ_PENALTIES = ["disqualify", "disqualification"];
+const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "disqualify", "disqualification"];
 
 // Nhãn + tông màu cho từng hình thức xử phạt của BE.
 const PENALTY_LABEL: Record<string, string> = {
   warning: "Cảnh cáo",
-  demote: "Tụt hạng",
-  disqualify: "Tước quyền",
-  disqualification: "Tước quyền",
+  result_void: "Hủy kết quả",
+  disqualify: "Hủy kết quả",
+  disqualification: "Hủy kết quả",
   time_ban: "Cấm thi đấu",
-  permanent_ban: "Cấm vĩnh viễn",
-  restart: "Chạy lại",
+  permanent_ban: "Cấm vô thời hạn",
 };
 function penaltyLabel(p?: string | null): string {
   return p ? PENALTY_LABEL[p] ?? p : "—";
 }
 function penaltyTone(p?: string | null): "danger" | "warning" | "info" {
   if (!p) return "info";
-  if (DQ_PENALTIES.includes(p) || p === "time_ban" || p === "permanent_ban") return "danger";
-  if (p === "demote") return "warning";
+  if (RESULT_VOIDING_PENALTIES.includes(p)) return "danger";
   return "info";
 }
 
@@ -70,7 +68,6 @@ export default function PenaltiesPage() {
   const [cTarget, setCTarget] = useState<"horse" | "jockey">("jockey");
   const [cHorseId, setCHorseId] = useState(""); // participant chọn theo horseId (khóa của hàng)
   const [cRuleId, setCRuleId] = useState("");
-  const [cAffectedHorseId, setCAffectedHorseId] = useState(""); // chỉ dùng cho luật tụt hạng (demote)
   const [cNotes, setCNotes] = useState("");
 
   const isUpcoming = race?.liveStatus === "Upcoming";
@@ -83,15 +80,10 @@ export default function PenaltiesPage() {
   // Chỉ hiện luật áp dụng cho đúng đối tượng đang chọn (hoặc luật dùng chung).
   const visibleRules = rules.filter((r) => r.appliesTo === cTarget || r.appliesTo === "both");
   const selectedRule = rules.find((r) => r.id === cRuleId) ?? null;
-  const isDemote = selectedRule?.penaltyApplied === "demote";
-  const isDQ = DQ_PENALTIES.includes(selectedRule?.penaltyApplied ?? "");
 
   function participantOf(horseId: string) {
     return checks.find((c) => c.horseId === horseId) ?? null;
   }
-  const violatingParticipant = participantOf(cHorseId);
-  const affectedParticipant = participantOf(cAffectedHorseId);
-
   // Load violation rules once
   useEffect(() => {
     handleGetViolationRules().then(setRules).catch(() => {});
@@ -166,7 +158,6 @@ export default function PenaltiesPage() {
     const p = participantOf(cHorseId);
     if (!p) { setError("Chọn ngựa / nài vi phạm."); return; }
     if (!cRuleId) { setError("Chọn luật vi phạm."); return; }
-    if (isDemote && !cAffectedHorseId) { setError("Luật tụt hạng cần chọn ngựa bị ảnh hưởng."); return; }
     setBusy(true); setError(""); setMsg("");
     try {
       await handlePenalize(raceId, {
@@ -174,13 +165,12 @@ export default function PenaltiesPage() {
         target: cTarget,
         horseId: p.horseId,
         jockeyId: p.jockeyId,
-        affectedHorseId: isDemote ? cAffectedHorseId : undefined,
         notes: cNotes.trim() || undefined,
       });
       setMsg(cTarget === "horse"
         ? `Đã lập biên bản cho ngựa ${p.horseName} (${penaltyLabel(selectedRule?.penaltyApplied)}) — chủ ngựa sẽ nhận thông báo.`
         : `Đã lập biên bản cho nài ${p.jockeyName} (${penaltyLabel(selectedRule?.penaltyApplied)}) — nài ngựa sẽ nhận thông báo.`);
-      setCRuleId(""); setCAffectedHorseId(""); setCNotes("");
+      setCRuleId(""); setCNotes("");
       await reload(raceId);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Lập biên bản thất bại");
@@ -272,7 +262,7 @@ export default function PenaltiesPage() {
           {/* Conduct penalty */}
           <Panel
             title="Lập biên bản vi phạm"
-            subtitle={canPenalize ? "Áp dụng cảnh cáo / tụt hạng / tước quyền / cấm thi đấu theo luật — người bị phạt sẽ nhận thông báo" : "Cần bắt đầu điều hành (hoặc còn kết quả nháp chưa xác nhận) mới lập được biên bản"}
+            subtitle={canPenalize ? "Áp dụng cảnh cáo / hủy kết quả / cấm thi đấu theo luật — người bị phạt sẽ nhận thông báo" : "Cần bắt đầu điều hành (hoặc còn kết quả nháp chưa xác nhận) mới lập được biên bản"}
           >
             {!canPenalize ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>
@@ -286,7 +276,7 @@ export default function PenaltiesPage() {
                   <span>Đối tượng bị lập biên bản <span className="required">*</span></span>
                   <select
                     value={cTarget}
-                    onChange={(e) => { setCTarget(e.target.value as "horse" | "jockey"); setCRuleId(""); setCAffectedHorseId(""); }}
+                    onChange={(e) => { setCTarget(e.target.value as "horse" | "jockey"); setCRuleId(""); }}
                     disabled={busy}
                   >
                     <option value="jockey">🏇 Nài ngựa</option>
@@ -295,7 +285,7 @@ export default function PenaltiesPage() {
                 </label>
                 <label className="field">
                   <span>{cTarget === "horse" ? "Ngựa vi phạm" : "Nài ngựa vi phạm"} <span className="required">*</span></span>
-                  <select value={cHorseId} onChange={(e) => { setCHorseId(e.target.value); setCAffectedHorseId(""); }} disabled={busy}>
+                  <select value={cHorseId} onChange={(e) => setCHorseId(e.target.value)} disabled={busy}>
                     <option value="">— Chọn —</option>
                     {checks.map((c) => (
                       <option key={c.horseId} value={c.horseId}>{participantLabel(c)}</option>
@@ -304,41 +294,22 @@ export default function PenaltiesPage() {
                 </label>
                 <label className="field">
                   <span>Luật vi phạm <span className="required">*</span></span>
-                  <select value={cRuleId} onChange={(e) => { setCRuleId(e.target.value); setCAffectedHorseId(""); }} disabled={busy}>
+                  <select value={cRuleId} onChange={(e) => setCRuleId(e.target.value)} disabled={busy}>
                     <option value="">— Chọn luật —</option>
                     {visibleRules.map((r) => (
                       <option key={r.id} value={r.id}>{r.code} · {r.name} ({penaltyLabel(r.penaltyApplied)})</option>
                     ))}
                   </select>
                 </label>
-                {isDemote && (
-                  <label className="field">
-                    <span>Ngựa bị ảnh hưởng <span className="required">*</span></span>
-                    <select value={cAffectedHorseId} onChange={(e) => setCAffectedHorseId(e.target.value)} disabled={busy}>
-                      <option value="">— Chọn ngựa bị chèn ép / làm chậm —</option>
-                      {checks.filter((c) => c.horseId !== cHorseId).map((c) => (
-                        <option key={c.horseId} value={c.horseId}>{participantLabel(c)}</option>
-                      ))}
-                    </select>
-                  </label>
-                )}
                 <label className="field">
                   <span>Ghi chú</span>
                   <input value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Diễn giải tình huống…" disabled={busy} />
                 </label>
               </div>
             )}
-            {isDQ && (
+            {selectedRule && RESULT_VOIDING_PENALTIES.includes(selectedRule.penaltyApplied) && (
               <p style={{ color: "var(--c-danger)", fontSize: "0.8rem", marginTop: "8px" }}>
-                ⚠️ Luật này sẽ <strong>tước quyền</strong> — ngựa bị loại khỏi bảng xếp hạng (có thể kèm cấm thi đấu tuỳ luật).
-              </p>
-            )}
-            {isDemote && (
-              <p style={{ color: "var(--c-accent, #b58900)", fontSize: "0.8rem", marginTop: "8px" }}>
-                ↓ <strong>Tụt hạng</strong>:{" "}
-                {violatingParticipant && affectedParticipant
-                  ? `${violatingParticipant.horseName} sẽ bị xếp ngay sau ${affectedParticipant.horseName} trong kết quả nháp.`
-                  : "chọn ngựa vi phạm và ngựa bị ảnh hưởng — ngựa vi phạm sẽ bị xếp ngay sau ngựa bị ảnh hưởng."}
+                Luật này sẽ <strong>hủy kết quả của cuộc đua hiện tại</strong>; nếu là cấm có thời hạn hoặc cấm vô thời hạn thì hệ thống mới chặn thi đấu ở các trận sau.
               </p>
             )}
             <div className="form-actions" style={{ marginTop: "12px" }}>
@@ -402,7 +373,7 @@ export default function PenaltiesPage() {
           </Panel>
 
           <div className="form-banner" style={{ background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", color: "var(--c-muted)", fontSize: "0.8rem" }}>
-            Quy trình: <strong>Bắt đầu điều hành</strong> → <strong>Chạy đua &amp; xem trực tiếp</strong> → lập biên bản cho <strong>ngựa</strong> hoặc <strong>nài ngựa</strong> theo luật (cảnh cáo / tụt hạng / tước quyền / cấm thi đấu) — người bị phạt nhận thông báo → sang trang <strong>Results</strong> để xác nhận. Sau khi xác nhận thì không lập/hoàn tác biên bản được nữa.
+            Quy trình: <strong>Bắt đầu điều hành</strong> → <strong>Chạy đua &amp; xem trực tiếp</strong> → lập biên bản cho <strong>ngựa</strong> hoặc <strong>nài ngựa</strong> theo luật (cảnh cáo / hủy kết quả / cấm thi đấu) — người bị phạt nhận thông báo → sang trang <strong>Results</strong> để xác nhận. Sau khi xác nhận thì không lập/hoàn tác biên bản được nữa.
           </div>
         </>
       )}

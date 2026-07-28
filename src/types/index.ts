@@ -211,6 +211,7 @@ export interface ViolationRule {
   category: string;
   severity: string;
   penaltyApplied: string;
+  requiresBanDuration?: boolean;
   banDurationDays: number;
   appliesTo: "horse" | "jockey" | "both";
 }

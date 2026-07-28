@@ -20,10 +20,24 @@ const CATEGORY_LABEL: Record<ApiViolationCategory, string> = {
 };
 
 const SEVERITY_LABEL: Record<ApiViolationSeverity, string> = {
-  low: "Thấp",
+  low: "Nhẹ",
   medium: "Trung bình",
   high: "Cao",
   critical: "Nghiêm trọng",
+};
+
+const PENALTY_BY_SEVERITY: Record<ApiViolationSeverity, ApiViolationPenalty> = {
+  low: "warning",
+  medium: "result_void",
+  high: "time_ban",
+  critical: "permanent_ban",
+};
+
+const SEVERITY_BY_PENALTY: Record<ApiViolationPenalty, ApiViolationSeverity> = {
+  warning: "low",
+  result_void: "medium",
+  time_ban: "high",
+  permanent_ban: "critical",
 };
 
 const TARGET_LABEL = {
@@ -34,12 +48,9 @@ const TARGET_LABEL = {
 
 const PENALTY_LABEL: Record<ApiViolationPenalty, string> = {
   warning: "Cảnh cáo",
-  demote: "Tụt hạng",
-  disqualify: "Tước quyền",
-  disqualification: "Tước quyền",
-  restart: "Chạy lại",
+  result_void: "Hủy kết quả",
   time_ban: "Cấm có thời hạn",
-  permanent_ban: "Cấm vĩnh viễn",
+  permanent_ban: "Cấm vô thời hạn",
 };
 
 const EMPTY_FORM: ApiViolationRuleInput = {
@@ -49,7 +60,8 @@ const EMPTY_FORM: ApiViolationRuleInput = {
   category: "race_conduct",
   severity: "medium",
   appliesTo: "both",
-  penaltyApplied: "warning",
+  penaltyApplied: "result_void",
+  requiresBanDuration: false,
   banDurationDays: 0,
   isActive: true,
 };
@@ -110,7 +122,17 @@ export default function ViolationRulesPage() {
   ) {
     setForm((current) => {
       const next = { ...current, [key]: value };
-      if (key === "penaltyApplied" && value !== "time_ban") {
+      if (key === "severity") {
+        next.penaltyApplied = PENALTY_BY_SEVERITY[value as ApiViolationSeverity];
+      }
+      if (key === "penaltyApplied") {
+        next.severity = SEVERITY_BY_PENALTY[value as ApiViolationPenalty];
+      }
+      next.requiresBanDuration = next.penaltyApplied === "time_ban";
+      if (next.requiresBanDuration && next.banDurationDays <= 0) {
+        next.banDurationDays = 14;
+      }
+      if (!next.requiresBanDuration) {
         next.banDurationDays = 0;
       }
       return next;
@@ -132,6 +154,7 @@ export default function ViolationRulesPage() {
       severity: rule.severity,
       appliesTo: rule.appliesTo,
       penaltyApplied: rule.penaltyApplied,
+      requiresBanDuration: rule.requiresBanDuration ?? rule.penaltyApplied === "time_ban",
       banDurationDays: rule.banDurationDays,
       isActive: rule.isActive,
     });
@@ -146,6 +169,10 @@ export default function ViolationRulesPage() {
     }
     if (form.penaltyApplied === "time_ban" && form.banDurationDays <= 0) {
       feedback.error("Luật cấm có thời hạn phải có số ngày cấm lớn hơn 0.");
+      return;
+    }
+    if (form.penaltyApplied !== PENALTY_BY_SEVERITY[form.severity]) {
+      feedback.error("Mức độ và hình thức xử phạt chưa khớp quy định.");
       return;
     }
 
@@ -284,7 +311,11 @@ export default function ViolationRulesPage() {
                 ))}
               </select>
             </label>
-            {form.penaltyApplied === "time_ban" && (
+            <label className="field">
+              <span>Yêu cầu ngày</span>
+              <input value={form.requiresBanDuration ? "Có" : "Không"} disabled readOnly />
+            </label>
+            {form.requiresBanDuration && (
               <label className="field">
                 <span>Số ngày cấm <span className="required">*</span></span>
                 <input
@@ -378,12 +409,17 @@ export default function ViolationRulesPage() {
             },
             { key: "appliesTo", label: "Áp dụng", render: (rule) => TARGET_LABEL[rule.appliesTo] },
             {
+              key: "requiresBanDuration",
+              label: "Yêu cầu ngày",
+              render: (rule) => rule.requiresBanDuration ? "Có" : "Không",
+            },
+            {
               key: "penaltyApplied",
               label: "Hình phạt",
               render: (rule) => (
                 <span>
-                  {PENALTY_LABEL[rule.penaltyApplied]}
-                  {rule.penaltyApplied === "time_ban" && ` (${rule.banDurationDays} ngày)`}
+                  {PENALTY_LABEL[rule.penaltyApplied] ?? rule.penaltyApplied}
+                  {rule.requiresBanDuration && ` (${rule.banDurationDays} ngày)`}
                 </span>
               ),
             },

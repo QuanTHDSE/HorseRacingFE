@@ -292,10 +292,7 @@ export type ApiViolationSeverity = "low" | "medium" | "high" | "critical";
 
 export type ApiViolationPenalty =
   | "warning"
-  | "demote"
-  | "disqualify"
-  | "disqualification"
-  | "restart"
+  | "result_void"
   | "time_ban"
   | "permanent_ban";
 
@@ -309,6 +306,7 @@ export interface ApiAdminViolationRule {
   severity: ApiViolationSeverity;
   appliesTo: "horse" | "jockey" | "both";
   penaltyApplied: ApiViolationPenalty;
+  requiresBanDuration: boolean;
   banDurationDays: number;
   isActive: boolean;
   createdBy?: { _id?: string; fullName?: string; email?: string } | string | null;
@@ -324,6 +322,7 @@ export interface ApiViolationRuleInput {
   severity: ApiViolationSeverity;
   appliesTo: "horse" | "jockey" | "both";
   penaltyApplied: ApiViolationPenalty;
+  requiresBanDuration: boolean;
   banDurationDays: number;
   isActive: boolean;
 }
