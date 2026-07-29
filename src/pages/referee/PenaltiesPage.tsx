@@ -7,14 +7,12 @@ import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeRe
 import { viRaceStatus } from "../../utils/viLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
 
-const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "disqualify", "disqualification"];
+const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban"];
 
 // Nhãn + tông màu cho từng hình thức xử phạt của BE.
 const PENALTY_LABEL: Record<string, string> = {
   warning: "Cảnh cáo",
   result_void: "Hủy kết quả",
-  disqualify: "Hủy kết quả",
-  disqualification: "Hủy kết quả",
   time_ban: "Cấm thi đấu",
   permanent_ban: "Cấm vô thời hạn",
 };

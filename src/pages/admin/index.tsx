@@ -8,6 +8,7 @@ import ResultsPage from "./ResultsPage";
 import ViolationRulesPage from "./ViolationRulesPage";
 import JockeyApprovalsPage from "./JockeyApprovalsPage";
 import OwnerApprovalsPage from "./OwnerApprovalsPage";
+import PenaltyReviewPage from "./PenaltyReviewPage";
 
 export default function AdminPages({ page }: { page: string }) {
   switch (page) {
@@ -20,6 +21,7 @@ export default function AdminPages({ page }: { page: string }) {
     case "owner-approvals": return <OwnerApprovalsPage />;
     case "results":     return <ResultsPage />;
     case "violation-rules": return <ViolationRulesPage />;
+    case "penalty-review": return <PenaltyReviewPage />;
     default:            return <Dashboard />;
   }
 }
