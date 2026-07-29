@@ -1728,6 +1728,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return res.timeline;
   }
 
+  async function handleGetRefereeRaceReplay(
+    raceId: string,
+  ): Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }> {
+    return api.referee.getReplay(raceId);
+  }
+
   async function handleFinishRefereeRace(raceId: string): Promise<void> {
     await api.referee.finishRace(raceId);
     await handleRefreshRefereeRaces();
@@ -1846,6 +1852,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleToggleRefereeCheck,
     handleStartRefereeRace,
     handleSimulateRefereeDraft,
+    handleGetRefereeRaceReplay,
     handleFinishRefereeRace,
     handleGetViolationRules,
     handleGetRaceViolations,

@@ -4975,7 +4975,7 @@ button:disabled {
 
 .spectator-prediction-history-item dl {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 12px;
   margin: 0;
 }
@@ -4994,6 +4994,14 @@ button:disabled {
   font-size: .78rem;
   font-weight: 700;
   line-height: 1.4;
+}
+
+.spectator-prediction-history-item .is-loss dd {
+  color: var(--c-danger);
+}
+
+.spectator-prediction-history-item .is-zero-reward dd {
+  color: var(--c-muted);
 }
 
 .spectator-prediction-history-actions {

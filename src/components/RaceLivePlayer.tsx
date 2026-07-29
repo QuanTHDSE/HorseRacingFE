@@ -241,10 +241,12 @@ export default function RaceLivePlayer({
   timeline,
   onClose,
   showRaceNotes = false,
+  reviewMode = false,
 }: {
   timeline: RaceSimTimeline;
   onClose: () => void;
   showRaceNotes?: boolean;
+  reviewMode?: boolean;
 }) {
   const weights = useMemo(() => {
     const map: Record<string, number[]> = {};
@@ -253,13 +255,18 @@ export default function RaceLivePlayer({
   }, [timeline]);
 
   const [frame, setFrame] = useState<RaceFrame>(() =>
-    computeFrame(timeline.horses, weights, 0, timeline.durationMs),
+    computeFrame(
+      timeline.horses,
+      weights,
+      reviewMode ? timeline.durationMs : 0,
+      timeline.durationMs,
+    ),
   );
   const [speed, setSpeed] = useState<number>(1);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(reviewMode);
 
   const wrapRef = useRef<HTMLDivElement>(null);
-  const elapsedRef = useRef(0);
+  const elapsedRef = useRef(reviewMode ? timeline.durationMs : 0);
   const speedRef = useRef(1);
   const lastTsRef = useRef<number | null>(null);
   const prevLeadRef = useRef({ p: 0, t: 0 });
@@ -279,6 +286,14 @@ export default function RaceLivePlayer({
   }, []);
 
   useEffect(() => {
+    if (reviewMode) {
+      elapsedRef.current = timeline.durationMs;
+      setFrame(computeFrame(timeline.horses, weights, timeline.durationMs, timeline.durationMs));
+      setDone(true);
+      setSpeedPct(0);
+      return;
+    }
+
     let raf = 0;
     // bắt đầu lại đồng hồ mỗi lần mount (tránh nhảy do timestamp cũ / StrictMode)
     lastTsRef.current = null;
@@ -312,7 +327,7 @@ export default function RaceLivePlayer({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [timeline, weights]);
+  }, [reviewMode, timeline, weights]);
 
   const leader = frame.leader;
   const distRemaining = Math.max(0, Math.round((1 - frame.leaderProgress) * timeline.distance));
@@ -321,7 +336,9 @@ export default function RaceLivePlayer({
   const maxFinish = Math.max(...timeline.horses.map((horse) => horse.finishTime), 1);
   const elapsedProgress = Math.min(1, frame.raceTimeSec / maxFinish);
   const visibleNotes = showRaceNotes
-    ? raceNotes.filter((note) => note.progress <= elapsedProgress + 0.001)
+    ? reviewMode
+      ? raceNotes
+      : raceNotes.filter((note) => note.progress <= elapsedProgress + 0.001)
     : [];
   const visibleViolationCount = visibleNotes.filter(
     (note) => note.tone === "violation",
@@ -355,24 +372,27 @@ export default function RaceLivePlayer({
           <div style={S.headChip}><span style={S.headLabel}>DIST</span> <b style={{ color: "#ffd24a" }}>{timeline.distance}m</b></div>
           <div style={S.headChip}><span style={S.headLabel}>TIME</span> <b style={{ color: "#ffd24a" }}>{fmtClock(frame.raceTimeSec)}</b></div>
           <div style={S.headChip}><span style={S.headLabel}>LAP</span> <b style={{ color: "#ffd24a" }}>1 / {timeline.laps}</b></div>
-          <button type="button" style={S.closeBtn} onClick={onClose}>✕</button>
+          {reviewMode && <div style={S.reviewChip}>XEM LẠI NHẬT KÝ</div>}
+          <button type="button" style={S.closeBtn} onClick={onClose} title={reviewMode ? "Đóng nhật ký" : "Đóng màn hình đua"}>✕</button>
         </div>
 
         <div style={S.body}>
           {/* ── Track + speed controls ── */}
           <div style={{ position: "relative" }}>
-            <div style={S.speedCtrl}>
-              {SPEEDS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  style={{ ...S.speedBtn, ...(speed === s ? S.speedBtnOn : {}) }}
-                  onClick={() => setSpeed(s)}
-                >
-                  {s}x
-                </button>
-              ))}
-            </div>
+            {!reviewMode && (
+              <div style={S.speedCtrl}>
+                {SPEEDS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    style={{ ...S.speedBtn, ...(speed === s ? S.speedBtnOn : {}) }}
+                    onClick={() => setSpeed(s)}
+                  >
+                    {s}x
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div style={{ ...S.field, background: theme.field, borderColor: theme.rail }}>
               <div style={{ ...S.dirt, background: theme.track }} />
@@ -524,7 +544,7 @@ export default function RaceLivePlayer({
         )}
 
         {/* ── Finish overlay ── */}
-        {done && (
+        {done && !reviewMode && (
           <div style={S.finishCard}>
             <h3 style={{ margin: "0 0 4px", color: "#ffd24a" }}>🏆 Kết quả chung cuộc — {timeline.name}</h3>
             <p style={{ margin: "0 0 12px", fontSize: "0.85rem", color: "#cbd2db" }}>
@@ -567,6 +587,10 @@ const S: Record<string, React.CSSProperties> = {
   headChip: { display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", color: "#9aa2ad", letterSpacing: "0.04em" },
   headLabel: { fontSize: "0.68rem", color: "#7c8694", fontWeight: 700 },
   closeBtn: { marginLeft: "auto", background: "#2c3744", color: "#fff", border: "none", borderRadius: 8, width: 30, height: 30, cursor: "pointer" },
+  reviewChip: {
+    marginLeft: "auto", padding: "6px 10px", border: "1px solid #3f5369", borderRadius: 999,
+    background: "#263444", color: "#9ed0ff", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.05em",
+  },
   body: { display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 14, padding: 16 },
   speedCtrl: { position: "absolute", top: 8, left: 8, zIndex: 2, display: "flex", flexDirection: "column", gap: 4 },
   speedBtn: { background: "#161d26", color: "#cbd2db", border: "1px solid #2c3744", borderRadius: 6, width: 36, height: 28, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700 },

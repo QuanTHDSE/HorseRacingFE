@@ -305,7 +305,13 @@ export default function PredictionsPage() {
               <dl>
                 <div><dt>Số vé</dt><dd>{prediction.tickets}</dd></div>
                 <div><dt>Chi phí</dt><dd>{formatPointText(prediction.cost)}</dd></div>
-                <div><dt>Phần thưởng</dt><dd>{formatPointText(prediction.reward)}</dd></div>
+                {prediction.status === "Lost" && (
+                  <div className="is-loss"><dt>Điểm bị mất</dt><dd>{formatPointText(prediction.cost)}</dd></div>
+                )}
+                <div className={cn(prediction.status === "Lost" && "is-zero-reward")}>
+                  <dt>Phần thưởng</dt>
+                  <dd>{prediction.status === "Lost" ? "0 điểm" : formatPointText(prediction.reward)}</dd>
+                </div>
               </dl>
               <div className="spectator-prediction-history-actions">
                 <Badge tone={predictionTone(prediction.status)}>{viPredictionStatus(prediction.status)}</Badge>

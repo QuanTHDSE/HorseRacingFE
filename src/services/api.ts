@@ -1132,6 +1132,8 @@ export const api = {
       request<{ ok: boolean }>(`/referee/races/${raceId}/start`, { method: "POST" }),
     simulateDraft: (raceId: string) =>
       request<{ success: boolean; message: string; timeline: ApiRaceSimTimeline }>(`/referee/races/${raceId}/start-simulation`, { method: "POST" }),
+    getReplay: (raceId: string) =>
+      request<ApiRaceReplayResponse>(`/referee/races/${raceId}/replay`),
     finishRace: (raceId: string) =>
       request<{ ok: boolean }>(`/referee/races/${raceId}/finish`, { method: "POST" }),
     listViolationRules: () =>

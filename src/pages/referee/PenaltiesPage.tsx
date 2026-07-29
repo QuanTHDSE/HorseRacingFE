@@ -49,6 +49,7 @@ export default function PenaltiesPage() {
     handleGetRefereeChecks,
     handleStartRefereeRace,
     handleSimulateRefereeDraft,
+    handleGetRefereeRaceReplay,
     handleFinishRefereeRace,
     handleGetViolationRules,
     handleGetRaceViolations,
@@ -71,6 +72,7 @@ export default function PenaltiesPage() {
   const msg = ""; const setMsg = fb.success;
   const [busy, setBusy] = useState(false);
   const [simTimeline, setSimTimeline] = useState<RaceSimTimeline | null>(null);
+  const [playerMode, setPlayerMode] = useState<"live" | "review" | null>(null);
 
   // Form lập biên bản
   const [cTarget, setCTarget] = useState<"horse" | "jockey">("jockey");
@@ -118,6 +120,8 @@ export default function PenaltiesPage() {
   }
 
   useEffect(() => {
+    setSimTimeline(null);
+    setPlayerMode(null);
     if (!raceId) { setChecks([]); setViolations([]); setResult(null); return; }
     void reload(raceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,6 +141,7 @@ export default function PenaltiesPage() {
     setBusy(true); setError(""); setMsg("");
     try {
       const timeline = await handleSimulateRefereeDraft(raceId);
+      setPlayerMode("live");
       setSimTimeline(timeline); // mở màn xem đua trực tiếp
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Chạy đua thất bại");
@@ -145,10 +150,31 @@ export default function PenaltiesPage() {
 
   async function onPlayerClose() {
     setSimTimeline(null);
+    if (playerMode === "review") {
+      setPlayerMode(null);
+      return;
+    }
+    setPlayerMode(null);
     // Xem xong → chốt cuộc đua sang 'completed' (kết quả tạm thời hiển thị).
     try { await handleFinishRefereeRace(raceId); } catch { /* bỏ qua nếu đã hoàn tất */ }
     await reload(raceId);
     setMsg("Đã chốt kết quả tạm thời (cuộc đua hoàn tất). Lập biên bản nếu cần, rồi sang trang Results để xác nhận.");
+  }
+
+  async function openRaceLog() {
+    setBusy(true); setError(""); setMsg("");
+    try {
+      const replay = await handleGetRefereeRaceReplay(raceId);
+      if (!replay.available || !replay.timeline) {
+        setError("Cuộc đua này chưa có dữ liệu mô phỏng để xem lại.");
+        return;
+      }
+      setPlayerMode("review");
+      setSimTimeline(replay.timeline);
+      setMsg("Đã mở toàn bộ nhật ký và kết quả mô phỏng đã lưu.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Không thể tải nhật ký cuộc đua");
+    } finally { setBusy(false); }
   }
 
   // Kết thúc khi race đang Live nhưng màn xem đã đóng (vd: sau khi refresh trang).
@@ -204,6 +230,7 @@ export default function PenaltiesPage() {
           timeline={simTimeline}
           onClose={onPlayerClose}
           showRaceNotes
+          reviewMode={playerMode === "review"}
         />
       )}
       <Panel
@@ -268,6 +295,11 @@ export default function PenaltiesPage() {
               {isLive && (
                 <button type="button" className="primary-button" disabled={busy} onClick={finishRun}>
                   Kết thúc &amp; chốt kết quả tạm thời
+                </button>
+              )}
+              {isCompleted && (
+                <button type="button" className="primary-button" disabled={busy} onClick={openRaceLog}>
+                  {busy ? <><Spinner size="sm" onPrimary /> Đang tải nhật ký…</> : "Xem lại nhật ký cuộc đua"}
                 </button>
               )}
               </div>

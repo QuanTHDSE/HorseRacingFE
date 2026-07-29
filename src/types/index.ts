@@ -805,6 +805,7 @@ export interface AppContextValue {
   handleToggleRefereeCheck: (raceId: string, horseId: string, field: "confirmedAt") => Promise<RefereeParticipantCheck[]>;
   handleStartRefereeRace: (raceId: string) => Promise<void>;
   handleSimulateRefereeDraft: (raceId: string) => Promise<RaceSimTimeline>;
+  handleGetRefereeRaceReplay: (raceId: string) => Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }>;
   handleFinishRefereeRace: (raceId: string) => Promise<void>;
   handleGetViolationRules: () => Promise<ViolationRule[]>;
   handleGetRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
