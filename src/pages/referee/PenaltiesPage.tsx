@@ -5,6 +5,7 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
 import { viRaceStatus } from "../../utils/viLabels";
+import { penaltyLabel, penaltyTone, isResultVoidingPenalty } from "../../utils/penaltyLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
 
 const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban"];
@@ -362,7 +363,7 @@ export default function PenaltiesPage() {
                 </label>
               </div>
             )}
-            {selectedRule && RESULT_VOIDING_PENALTIES.includes(selectedRule.penaltyApplied) && (
+            {selectedRule && isResultVoidingPenalty(selectedRule.penaltyApplied) && (
               <p className="referee-inline-alert is-danger">
                 Luật này sẽ <strong>hủy kết quả của cuộc đua hiện tại</strong>; nếu là cấm có thời hạn hoặc cấm vô thời hạn thì hệ thống mới chặn thi đấu ở các trận sau.
               </p>

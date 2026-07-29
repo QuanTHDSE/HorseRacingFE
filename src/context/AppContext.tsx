@@ -544,11 +544,15 @@ const RACE_STATUS: Record<string, string> = {
 
 function mapJockeyRace(r: ApiJockeyRace): Race {
   let result: Race["result"];
+  let violations: Race["violations"];
   if (r.result) {
     const myRank = r.result.rankings.find((rk) => rk.horse.id === r.participant.horse.id);
     result = myRank
-      ? { rank: myRank.rank, finishTime: myRank.finishTime, prize: myRank.prize }
+      ? { rank: myRank.rank, finishTime: myRank.finishTime, prize: myRank.prize, isDisqualified: myRank.isDisqualified }
       : null;
+    violations = (r.result.violations ?? []).filter(
+      (v) => v.horseId === r.participant.horse.id || v.jockeyId === myRank?.jockey.id,
+    );
   } else if (r.result === null) {
     result = null;
   }
@@ -573,6 +577,7 @@ function mapJockeyRace(r: ApiJockeyRace): Race {
     laneNumber: r.participant.laneNumber,
     tournamentName: r.tournament.name,
     result,
+    violations,
   };
 }
 
@@ -1439,10 +1444,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function handleGetRaceLeaderboard(raceId: string): Promise<RaceLeaderboard> {
     const res = await api.leaderboards.get(raceId);
-    return {
-      ...res.leaderboard,
-      rankings: res.leaderboard.rankings.filter((r) => !r.isDisqualified),
-    };
+    return res.leaderboard;
   }
 
   async function handleAddParticipant(raceId: string, data: AddParticipantInput): Promise<RaceDetail> {
