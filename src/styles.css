@@ -1314,6 +1314,201 @@ a {
   margin-top: 6px;
 }
 
+/* Admin dashboard — race operations */
+.admin-operation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.admin-operation-stat {
+  padding: 11px 12px;
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-lg);
+  background: var(--c-surf-low);
+}
+
+.admin-operation-stat.is-assigned {
+  background: color-mix(in srgb, var(--c-success) 9%, var(--c-surf-low));
+}
+
+.admin-operation-stat.is-unassigned {
+  background: color-mix(in srgb, var(--c-warning) 12%, var(--c-surf-low));
+}
+
+.admin-operation-stat.is-publish {
+  background: color-mix(in srgb, var(--c-primary) 9%, var(--c-surf-low));
+}
+
+.admin-operation-stat span {
+  display: block;
+  color: var(--c-muted);
+  font-size: .7rem;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.admin-operation-stat strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--c-on-surface);
+  font-size: 1.25rem;
+}
+
+.admin-operation-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-queue-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-queue-card {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 14px 13px 17px;
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.admin-queue-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--c-warning);
+  content: "";
+}
+
+.admin-queue-card.is-publish::before {
+  background: var(--c-primary);
+}
+
+.admin-queue-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-queue-head strong {
+  display: block;
+  color: var(--c-on-surface);
+  font-size: .88rem;
+}
+
+.admin-queue-category {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--c-muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.admin-queue-description {
+  margin: 9px 0 0;
+  color: var(--c-on-surface);
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.admin-queue-detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--c-outline-var);
+  color: var(--c-muted);
+  font-size: .74rem;
+}
+
+.admin-operation-card {
+  padding: 14px;
+  border: 1px solid var(--c-outline-var);
+  border-radius: var(--r-xl);
+  background: var(--c-surf-low);
+}
+
+.admin-operation-head,
+.admin-operation-assignment {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-operation-head strong,
+.admin-operation-assignment strong {
+  display: block;
+  color: var(--c-on-surface);
+  font-size: .86rem;
+}
+
+.admin-operation-tournament {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--c-primary);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.admin-operation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin: 10px 0;
+  color: var(--c-muted);
+  font-size: .76rem;
+}
+
+.admin-operation-meta span + span::before {
+  content: "•";
+  margin-right: 12px;
+  color: var(--c-outline);
+}
+
+.admin-operation-assignment {
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-outline-var);
+}
+
+.admin-operation-assignment div > span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--c-muted);
+  font-size: .7rem;
+}
+
+.admin-operation-empty {
+  padding: 24px;
+  border: 1px dashed var(--c-outline-var);
+  border-radius: var(--r-xl);
+  text-align: center;
+}
+
+.admin-operation-empty strong {
+  color: var(--c-on-surface);
+}
+
+.admin-operation-empty p {
+  margin: 5px 0 0;
+  color: var(--c-muted);
+  font-size: .82rem;
+}
+
+@media (max-width: 640px) {
+  .admin-operation-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Data Table (M3) ──────────────────────────────────────────── */
 
 .table-shell {

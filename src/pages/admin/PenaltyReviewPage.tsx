@@ -224,7 +224,7 @@ export default function PenaltyReviewPage() {
               </option>
               {tournamentRaces.map((race) => (
                 <option key={race.id} value={race.id}>
-                  {race.name} · Vòng {race.round} · {fmtDate(race.date)} · {viRaceStatus(race.liveStatus)}
+                  {race.name} · Số vòng {race.round} · {fmtDate(race.date)} · {viRaceStatus(race.liveStatus)}
                 </option>
               ))}
             </select>

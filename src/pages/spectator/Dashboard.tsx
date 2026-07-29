@@ -134,7 +134,7 @@ export default function SpectatorDashboard() {
                     <strong>Đang diễn ra</strong>
                   </div>
                   <h3>{race.name}</h3>
-                  <p>{race.tournamentName} · Vòng {race.round}</p>
+                  <p>{race.tournamentName} · Số vòng {race.round}</p>
                   <div className="spectator-dashboard-race-facts">
                     <span>{formatRaceTime(race.scheduledAt)}</span>
                     <span>{race.participants.length} ngựa</span>
@@ -153,7 +153,7 @@ export default function SpectatorDashboard() {
                   <span className="spectator-dashboard-schedule-order" aria-hidden="true">{index + 1}</span>
                   <div>
                     <strong>{race.name}</strong>
-                    <p>{race.tournamentName} · Vòng {race.round}</p>
+                    <p>{race.tournamentName} · Số vòng {race.round}</p>
                     <time>{formatRaceTime(race.scheduledAt)}</time>
                   </div>
                   <Badge tone={race.canPredict ? "accent" : "neutral"}>{race.participants.length} ngựa</Badge>

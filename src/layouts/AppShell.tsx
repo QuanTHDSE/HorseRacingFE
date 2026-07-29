@@ -142,7 +142,6 @@ export default function AppShell() {
               role={user.role}
               onPointsChange={handleSyncPointWallet}
             />
-            <Badge tone="neutral">Phiên đang hoạt động</Badge>
             <NotificationBell notifications={notifications} />
           </div>
         </header>

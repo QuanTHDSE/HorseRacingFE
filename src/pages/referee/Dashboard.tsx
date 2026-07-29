@@ -71,7 +71,7 @@ export default function RefereeDashboard() {
               render: (r) => <strong>{r.tournamentName || "Chưa xác định"}</strong>,
             },
             { key: "name", label: "Cuộc đua" },
-            { key: "round", label: "Vòng", render: (r) => `#${r.round}` },
+            { key: "round", label: "Số vòng", render: (r) => r.round },
             { key: "scheduledAt", label: "Thời gian", render: (r) => fmtDate(r.scheduledAt) },
             { key: "participantCount", label: "Số ngựa" },
             {

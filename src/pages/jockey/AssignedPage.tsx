@@ -53,7 +53,7 @@ function RaceCard({ race }: { race: Race }) {
 
       <div className="jockey-card-heading">
         <h3>{race.name}</h3>
-        <p>{race.round ? `Vòng ${race.round}` : "Vòng đấu chưa cập nhật"}</p>
+        <p>{race.round ? `Số vòng ${race.round}` : "Số vòng đấu chưa cập nhật"}</p>
       </div>
 
       <div className="jockey-race-highlight">

@@ -198,7 +198,7 @@ export default function ApprovalsPage() {
               <strong>{selected.raceName ?? "—"}</strong>
             </div>
             <div className="detail-item">
-              <span className="detail-label">Vòng</span>
+              <span className="detail-label">Số vòng</span>
               <strong>{selected.raceRound ?? "—"}</strong>
             </div>
             <div className="detail-item">

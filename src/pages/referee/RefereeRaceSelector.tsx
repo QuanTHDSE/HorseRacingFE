@@ -131,7 +131,7 @@ export default function RefereeRaceSelector({
           </option>
           {tournamentRaces.map((race) => (
             <option key={race.id} value={race.id}>
-              {race.name} · Vòng {race.round} · {formatRaceTime(race.scheduledAt)} · {viRaceStatus(race.liveStatus)}
+              {race.name} · Số vòng {race.round} · {formatRaceTime(race.scheduledAt)} · {viRaceStatus(race.liveStatus)}
             </option>
           ))}
         </select>

@@ -76,7 +76,7 @@ export default function RaceLeaderboard({ raceId, highlightHorseIds, highlightJo
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <strong>{data.raceName}</strong>
           <span style={{ color: "var(--c-muted)", fontSize: "0.8rem" }}>
-            vòng {data.round}{data.distance ? ` · ${data.distance}m` : ""}{data.tournamentName ? ` · ${data.tournamentName}` : ""}
+            Số vòng {data.round}{data.distance ? ` · ${data.distance}m` : ""}{data.tournamentName ? ` · ${data.tournamentName}` : ""}
           </span>
         </div>
       )}

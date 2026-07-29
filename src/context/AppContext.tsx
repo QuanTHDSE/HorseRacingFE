@@ -104,6 +104,10 @@ const EMPTY_STATE: AppState = {
   spectatorPoints: null,
 };
 
+function hasSameSnapshot<T>(current: T, next: T): boolean {
+  return JSON.stringify(current) === JSON.stringify(next);
+}
+
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
 
 const BADGE: Record<string, string> = {
@@ -653,7 +657,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
   const handleSyncPointWallet = useCallback((points: SpectatorPointsSummary) => {
-    setAppState((previous) => ({ ...previous, spectatorPoints: points }));
+    setAppState((previous) =>
+      hasSameSnapshot(previous.spectatorPoints, points)
+        ? previous
+        : { ...previous, spectatorPoints: points },
+    );
   }, []);
 
   // ─── Fetch role-specific data after login ─────────────────────────────────
@@ -946,12 +954,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const overview = await api.overview.getSidebar(3);
         if (active) {
-          setAppState((previous) => ({
-            ...previous,
-            featuredTournaments: overview.tournaments.map(mapTournamentDto),
-            leaderboardHorses: overview.leaderboard.horses.map(mapHorseLeaderboardCard),
-            leaderboardJockeys: overview.leaderboard.jockeys.map(mapJockeyLeaderboardCard),
-          }));
+          const featuredTournaments = overview.tournaments.map(mapTournamentDto);
+          const leaderboardHorses = overview.leaderboard.horses.map(mapHorseLeaderboardCard);
+          const leaderboardJockeys = overview.leaderboard.jockeys.map(mapJockeyLeaderboardCard);
+          setAppState((previous) => {
+            if (
+              hasSameSnapshot(previous.featuredTournaments, featuredTournaments)
+              && hasSameSnapshot(previous.leaderboardHorses, leaderboardHorses)
+              && hasSameSnapshot(previous.leaderboardJockeys, leaderboardJockeys)
+            ) {
+              return previous;
+            }
+            return {
+              ...previous,
+              featuredTournaments,
+              leaderboardHorses,
+              leaderboardJockeys,
+            };
+          });
         }
       } catch {
         // Keep the last successful shared snapshot and retry later.
@@ -1041,7 +1061,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         if (active) {
-          setAppState((previous) => ({ ...previous, tournaments }));
+          setAppState((previous) =>
+            hasSameSnapshot(previous.tournaments, tournaments)
+              ? previous
+              : { ...previous, tournaments },
+          );
         }
       } catch {
         // Keep the last successful state and retry on the next poll/focus.
@@ -1442,10 +1466,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapRaceDetail(res.race);
   }
 
-  async function handleGetRaceLeaderboard(raceId: string): Promise<RaceLeaderboard> {
+  const handleGetRaceLeaderboard = useCallback(async (raceId: string): Promise<RaceLeaderboard> => {
     const res = await api.leaderboards.get(raceId);
     return res.leaderboard;
-  }
+  }, []);
 
   async function handleAddParticipant(raceId: string, data: AddParticipantInput): Promise<RaceDetail> {
     await api.races.addParticipant(raceId, data);
@@ -1532,11 +1556,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return mapSpectatorRace(res.race);
   }
 
-  async function handleGetSpectatorRaceReplay(
+  const handleGetSpectatorRaceReplay = useCallback(async (
     id: string,
-  ): Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }> {
+  ): Promise<{ available: boolean; resultPublished: boolean; timeline: RaceSimTimeline | null }> => {
     return api.spectator.getReplay(id);
-  }
+  }, []);
 
   async function refreshSpectatorState(account: Account): Promise<void> {
     const [racesRes, predsRes, ptsRes] = await Promise.all([
@@ -1623,10 +1647,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshAdminUsers();
   }
 
-  async function handleGetAdminRaceViolations(raceId: string): Promise<RaceViolation[]> {
+  const handleGetAdminRaceViolations = useCallback(async (raceId: string): Promise<RaceViolation[]> => {
     const res = await api.admin.listRaceViolations(raceId);
     return res.violations;
-  }
+  }, []);
 
   async function handleAdminLiftRaceBan(
     raceId: string,
@@ -1665,12 +1689,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ─── Prediction config ──────────────────────────────────────────────────────
 
-  async function handleGetPredictionConfig(id: string): Promise<PredictionConfig | null> {
+  const handleGetPredictionConfig = useCallback(async (id: string): Promise<PredictionConfig | null> => {
     const res = await api.tournaments.getById(id);
     return res.tournament.predictionConfig
       ? mapPredictionConfig(res.tournament.predictionConfig)
       : null;
-  }
+  }, []);
 
   async function handleUpdatePredictionConfig(
     id: string,
@@ -1685,17 +1709,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ─── Referee ──────────────────────────────────────────────────────────────
 
-  async function handleGetRefereeDashboard(): Promise<RefereeDashboard> {
+  const handleGetRefereeDashboard = useCallback(async (): Promise<RefereeDashboard> => {
     const res = await api.referee.getDashboard();
     return res.dashboard;
-  }
+  }, []);
 
   async function handleRefreshRefereeRaces(): Promise<void> {
     const res = await api.referee.listRaces();
     setAppState((prev) => ({ ...prev, refereeRaces: res.races.map(mapRefereeRace) }));
   }
 
-  async function handleGetRefereeChecks(raceId: string): Promise<RefereeParticipantCheck[]> {
+  const handleGetRefereeChecks = useCallback(async (raceId: string): Promise<RefereeParticipantCheck[]> => {
     const [checksResult, detailResult] = await Promise.allSettled([
       api.referee.listChecks(raceId),
       api.races.getById(raceId),
@@ -1719,7 +1743,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         : row;
     });
-  }
+  }, []);
 
   async function handleToggleRefereeCheck(
     raceId: string,
@@ -1755,15 +1779,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshTournaments();
   }
 
-  async function handleGetViolationRules(): Promise<ViolationRule[]> {
+  const handleGetViolationRules = useCallback(async (): Promise<ViolationRule[]> => {
     const res = await api.referee.listViolationRules();
     return res.rules;
-  }
+  }, []);
 
-  async function handleGetRaceViolations(raceId: string): Promise<RaceViolation[]> {
+  const handleGetRaceViolations = useCallback(async (raceId: string): Promise<RaceViolation[]> => {
     const res = await api.referee.listViolations(raceId);
     return res.violations;
-  }
+  }, []);
 
   async function handlePenalize(raceId: string, input: PenalizeInput): Promise<void> {
     await api.referee.penalize(raceId, input);
@@ -1773,10 +1797,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await api.referee.revokePenalty(raceId, violationId);
   }
 
-  async function handleGetRaceResult(raceId: string): Promise<RefereeResultStatus | null> {
+  const handleGetRaceResult = useCallback(async (raceId: string): Promise<RefereeResultStatus | null> => {
     const res = await api.referee.getResult(raceId);
     return res.result;
-  }
+  }, []);
 
   async function handleSubmitRaceResult(raceId: string, rankings: ResultRankingInput[]): Promise<void> {
     await api.referee.upsertResult(raceId, rankings);

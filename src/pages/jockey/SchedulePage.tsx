@@ -42,7 +42,7 @@ function ScheduleRace({ race }: { race: Race }) {
         </div>
         <div className="jockey-schedule-meta">
           <span><b>Ngựa:</b> {race.horseName ?? "Chưa cập nhật"}</span>
-          <span><b>Vòng:</b> {race.round || "—"}</span>
+          <span><b>Số vòng:</b> {race.round || "—"}</span>
           <span><b>Chủ ngựa:</b> {race.ownerName ?? "Chưa cập nhật"}</span>
           {race.laneNumber ? <span><b>Làn:</b> {race.laneNumber}</span> : null}
         </div>

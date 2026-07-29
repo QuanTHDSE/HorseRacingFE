@@ -399,7 +399,7 @@ export default function RacesPage() {
               <input
                 value={form.name}
                 onChange={(e) => handleField("name", e.target.value)}
-                placeholder="vd: Vòng 01 — Nước rút Vàng"
+                placeholder="Ví dụ: Nước rút Vàng"
                 disabled={formLoading}
               />
             </label>
@@ -431,9 +431,12 @@ export default function RacesPage() {
             </label>
 
             <label className="field">
-              <span>Vòng #</span>
+              <span>Số vòng <span className="required">*</span></span>
               <input
-                type="number" min={1}
+                type="number"
+                min={1}
+                step={1}
+                required
                 value={form.round}
                 onChange={(e) => handleField("round", e.target.value)}
                 placeholder="1"
@@ -524,7 +527,7 @@ export default function RacesPage() {
             { key: "name", label: "Cuộc đua" },
             { key: "date",     label: "Ngày",     render: (row) => fmtDate(row.date) },
             { key: "distance", label: "Cự ly" },
-            { key: "round",    label: "Vòng",    render: (row) => `#${row.round}` },
+            { key: "round",    label: "Số vòng",    render: (row) => row.round },
             {
               key: "liveStatus",
               label: "Trạng thái",
@@ -593,8 +596,8 @@ export default function RacesPage() {
                   <strong>{detail.distance ? `${detail.distance}m` : "—"}</strong>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Vòng</span>
-                  <strong>#{detail.round}</strong>
+                  <span className="detail-label">Số vòng</span>
+                  <strong>{detail.round}</strong>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Số ngựa</span>

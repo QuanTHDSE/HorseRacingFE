@@ -73,7 +73,7 @@ function TournamentRaceRow({ race }: { race: SpectatorRace }) {
           {race.result?.publishedAt && <span className="spectator-published-label">Đã công bố kết quả</span>}
         </div>
         <h4>{race.name}</h4>
-        <p>Vòng {race.round} · {fmtDateTime(race.scheduledAt)}</p>
+        <p>Số vòng {race.round} · {fmtDateTime(race.scheduledAt)}</p>
       </div>
 
       <div className="spectator-tournament-race-meta">

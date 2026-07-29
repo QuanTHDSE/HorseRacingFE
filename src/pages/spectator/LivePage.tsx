@@ -135,7 +135,7 @@ function RaceDetailPanel({ race, onClose }: { race: SpectatorRace; onClose: () =
   return (
     <Panel
       title={race.name}
-      subtitle={`Vòng ${race.round} · ${race.tournamentName}`}
+      subtitle={`Số vòng ${race.round} · ${race.tournamentName}`}
       action={
         <div className="spectator-detail-actions">
           {canWatch && (
@@ -394,7 +394,7 @@ export default function LivePage() {
                             {race.result?.publishedAt && <span className="spectator-published-label">Đã công bố</span>}
                           </div>
                           <h3>{race.name}</h3>
-                          <p>{race.tournamentName} · Vòng {race.round}</p>
+                          <p>{race.tournamentName} · Số vòng {race.round}</p>
                         </div>
                         <button
                           type="button"

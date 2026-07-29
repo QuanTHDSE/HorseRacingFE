@@ -116,7 +116,7 @@ export default function ResultsPage() {
       .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : "Không tải được dữ liệu"))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [raceId, handleGetRefereeChecks, handleGetRaceResult]);
+  }, [raceId, handleGetRefereeChecks, handleGetRaceResult, handleGetRaceViolations]);
 
   function move(idx: number, dir: -1 | 1) {
     setEntries((prev) => {
