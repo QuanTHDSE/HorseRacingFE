@@ -363,9 +363,11 @@ export interface ApiRaceViolation {
   type: string;
   description: string;
   penaltyApplied: string | null;
+  canLiftBan: boolean;
   target: "horse" | "jockey" | "both";
   horseId: string | null;
   horseName: string | null;
+  ownerId: string | null;
   affectedHorseId: string | null;
   affectedHorseName: string | null;
   jockeyId: string | null;
@@ -837,6 +839,13 @@ export const api = {
       request<{ queue: ApiPublishQueueItem[] }>("/admin/results/publish-queue"),
     publishResult: (raceId: string) =>
       request<{ ok: boolean }>(`/admin/races/${raceId}/result/publish`, { method: "PATCH" }),
+    listRaceViolations: (raceId: string) =>
+      request<{ violations: ApiRaceViolation[] }>(`/admin/races/${raceId}/violations`),
+    liftRaceBan: (raceId: string, violationId: string) =>
+      request<{ success: boolean; wasPublished: boolean; message: string }>(
+        `/admin/races/${raceId}/penalties/${violationId}/lift-ban`,
+        { method: "PATCH" },
+      ),
   },
 
   adminTracks: {

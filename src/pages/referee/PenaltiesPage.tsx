@@ -8,6 +8,24 @@ import { viRaceStatus } from "../../utils/viLabels";
 import { penaltyLabel, penaltyTone, isResultVoidingPenalty } from "../../utils/penaltyLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
 
+const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban"];
+
+// Nhãn + tông màu cho từng hình thức xử phạt của BE.
+const PENALTY_LABEL: Record<string, string> = {
+  warning: "Cảnh cáo",
+  result_void: "Hủy kết quả",
+  time_ban: "Cấm thi đấu",
+  permanent_ban: "Cấm vô thời hạn",
+};
+function penaltyLabel(p?: string | null): string {
+  return p ? PENALTY_LABEL[p] ?? p : "—";
+}
+function penaltyTone(p?: string | null): "danger" | "warning" | "info" {
+  if (!p) return "info";
+  if (RESULT_VOIDING_PENALTIES.includes(p)) return "danger";
+  return "info";
+}
+
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("vi-VN", {

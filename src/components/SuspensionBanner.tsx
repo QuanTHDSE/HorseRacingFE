@@ -28,6 +28,13 @@ const TARGET_LABEL: Record<string, string> = {
   both: "Ngựa & nài",
 };
 
+const PENALTY_APPLIED_LABEL: Record<string, string> = {
+  warning: "Cảnh cáo",
+  result_void: "Hủy kết quả",
+  time_ban: "Cấm có thời hạn",
+  permanent_ban: "Cấm vô thời hạn",
+};
+
 export default function SuspensionBanner() {
   const { user, handleGetJockeyPenaltyDetail } = useApp();
   const [expanded, setExpanded] = useState(false);

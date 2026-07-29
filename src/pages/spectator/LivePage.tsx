@@ -42,6 +42,13 @@ const STATUS_TONE: Record<string, "accent" | "success" | "neutral" | "danger"> =
   Cancelled: "danger",
 };
 
+const PENALTY_LABEL: Record<string, string> = {
+  warning: "Cảnh cáo",
+  result_void: "Hủy kết quả",
+  time_ban: "Cấm có thời hạn",
+  permanent_ban: "Cấm vô thời hạn",
+};
+
 function RankBadge({ rank }: { rank: number }) {
   return (
     <span className={cn("spectator-rank-badge", rank <= 3 && `is-rank-${rank}`)}>

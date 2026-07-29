@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Badge, ConfirmDeleteButton, DataTable, LoadingState, MetricCard, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
-import type { AddParticipantInput, Race, RaceDetail, RaceEligibleEntry } from "../../types";
+import type { AddParticipantInput, Race, RaceDetail, RaceEligibleEntry, RaceViolation } from "../../types";
 import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
 
@@ -27,6 +27,19 @@ const NEXT_ACTIONS: Record<string, NextAction[]> = {
     { apiStatus: "cancelled", label: "Hủy cuộc đua",  danger: true },
   ],
 };
+
+const PENALTY_LABEL: Record<string, string> = {
+  warning: "Cảnh cáo",
+  result_void: "Hủy kết quả",
+  time_ban: "Cấm thi đấu có thời hạn",
+  permanent_ban: "Cấm thi đấu vĩnh viễn",
+};
+
+function penaltyTone(penalty?: string | null): "danger" | "warning" | "info" {
+  if (!penalty || penalty === "warning") return "warning";
+  if (penalty === "time_ban") return "info";
+  return "danger";
+}
 
 const EMPTY_FORM = {
   name: "",
@@ -97,6 +110,8 @@ export default function RacesPage() {
     handleAssignRaceReferee,
     handleUpdateRaceStatus,
     handleDeleteRace,
+    handleGetAdminRaceViolations,
+    handleAdminLiftRaceBan,
   } = useApp();
 
   // ── Create form ────────────────────────────────────────────────────────────
@@ -115,6 +130,8 @@ export default function RacesPage() {
   const [detail, setDetail] = useState<RaceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const detailError: string = ""; const setDetailError = fb.error;
+  const [violations, setViolations] = useState<RaceViolation[]>([]);
+  const [violationsLoading, setViolationsLoading] = useState(false);
 
   // ── Status update ──────────────────────────────────────────────────────────
   const [statusLoading, setStatusLoading] = useState(false);
@@ -204,6 +221,8 @@ export default function RacesPage() {
       setDetailError("");
       setStatusMsg("");
       setShowAddForm(false);
+      setViolations([]);
+      setViolationsLoading(false);
       return;
     }
     setSelectedId(race.id);
@@ -216,12 +235,20 @@ export default function RacesPage() {
     setPError("");
     setEntries([]);
     setSelectedEntryId("");
+    setViolations([]);
+    setViolationsLoading(true);
     try {
-      setDetail(await handleGetRaceById(race.id));
+      const [raceDetail, raceViolations] = await Promise.all([
+        handleGetRaceById(race.id),
+        handleGetAdminRaceViolations(race.id),
+      ]);
+      setDetail(raceDetail);
+      setViolations(raceViolations);
     } catch (err: unknown) {
       setDetailError(err instanceof Error ? err.message : "Không tải được chi tiết cuộc đua.");
     } finally {
       setDetailLoading(false);
+      setViolationsLoading(false);
     }
   }
 
@@ -233,6 +260,23 @@ export default function RacesPage() {
     setShowAddForm(false);
     setEntries([]);
     setSelectedEntryId("");
+    setViolations([]);
+  }
+
+  async function liftBan(violationId: string): Promise<void> {
+    if (!detail) return;
+    const { wasPublished } = await handleAdminLiftRaceBan(detail.id, violationId);
+    const [raceDetail, raceViolations] = await Promise.all([
+      handleGetRaceById(detail.id),
+      handleGetAdminRaceViolations(detail.id),
+    ]);
+    setDetail(raceDetail);
+    setViolations(raceViolations);
+    setStatusMsg(
+      wasPublished
+        ? "Đã gỡ án cấm; kết quả đã công bố, trạng thái bị loại, điểm và giải thưởng được giữ nguyên."
+        : "Đã gỡ án cấm; biên bản và trạng thái bị loại vẫn được giữ nguyên.",
+    );
   }
 
   async function toggleAddForm() {
@@ -650,6 +694,81 @@ export default function RacesPage() {
                       </button>
                     </div>
                   </form>
+                )}
+              </div>
+
+              {/* ── Admin violation review ── */}
+              <div style={{ marginTop: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+                  <div>
+                    <strong style={{ display: "block" }}>Biên bản vi phạm</strong>
+                    <span style={{ fontSize: "0.8rem", color: "var(--c-muted)" }}>
+                      Admin chỉ có thể gỡ án cấm theo ngày hoặc cấm vĩnh viễn; biên bản và kết quả vẫn được giữ nguyên.
+                    </span>
+                  </div>
+                  <Badge tone={violations.length > 0 ? "warning" : "neutral"}>
+                    {violations.length} vi phạm
+                  </Badge>
+                </div>
+
+                {violationsLoading ? (
+                  <LoadingState label="Đang tải biên bản vi phạm…" inline />
+                ) : violations.length === 0 ? (
+                  <p className="compact-empty-state" role="status">
+                    Chưa có biên bản vi phạm nào trong cuộc đua này.
+                  </p>
+                ) : (
+                  <div className="referee-violation-list">
+                    {violations.map((violation) => (
+                      <article className="referee-violation-card" key={violation.id}>
+                        <div className="referee-violation-main">
+                          <div className="referee-violation-heading">
+                            <div>
+                              <span className="referee-eyebrow">{fmtDate(violation.recordedAt)}</span>
+                              <strong>{violation.type}</strong>
+                            </div>
+                            <Badge tone={penaltyTone(violation.penaltyApplied)}>
+                              {violation.penaltyApplied
+                                ? (PENALTY_LABEL[violation.penaltyApplied] ?? violation.penaltyApplied)
+                                : "Chưa xác định"}
+                            </Badge>
+                          </div>
+                          <p>{violation.description}</p>
+                          <div className="referee-violation-meta">
+                            <span>
+                              <small>Đối tượng</small>
+                              <b>
+                                {violation.target === "jockey"
+                                  ? (violation.jockeyName ?? "Nài chưa xác định")
+                                  : violation.target === "both"
+                                    ? `${violation.horseName ?? "Ngựa chưa xác định"} & ${violation.jockeyName ?? "nài chưa xác định"}`
+                                    : (violation.horseName ?? "Ngựa chưa xác định")}
+                              </b>
+                            </span>
+                            <span>
+                              <small>Áp dụng cho</small>
+                              <b>{violation.target === "jockey" ? "Nài ngựa" : violation.target === "both" ? "Ngựa và nài" : "Ngựa"}</b>
+                            </span>
+                            {violation.bannedUntil && (
+                              <span>
+                                <small>Cấm đến</small>
+                                <b>{fmtDate(violation.bannedUntil)}</b>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {violation.canLiftBan ? (
+                          <ConfirmDeleteButton
+                            label="Gỡ án cấm"
+                            confirmLabel="Xác nhận gỡ án?"
+                            onConfirm={() => liftBan(violation.id)}
+                          />
+                        ) : (
+                          <Badge tone="neutral">Không thể gỡ</Badge>
+                        )}
+                      </article>
+                    ))}
+                  </div>
                 )}
               </div>
 
