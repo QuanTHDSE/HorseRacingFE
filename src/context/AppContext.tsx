@@ -530,7 +530,6 @@ function mapRefereeCheck(c: ApiRefereeCheck): RefereeParticipantCheck {
     ownerName: c.ownerName,
     laneNumber: c.laneNumber,
     clothNumber: c.clothNumber,
-    vetApproved: c.vetApproved,
     confirmed: c.confirmed,
   };
 }
@@ -648,6 +647,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     applicationPdf: null,
   });
 
+  const handleSyncPointWallet = useCallback((points: SpectatorPointsSummary) => {
+    setAppState((previous) => ({ ...previous, spectatorPoints: points }));
+  }, []);
+
   // ─── Fetch role-specific data after login ─────────────────────────────────
 
   const fetchDataForUser = useCallback(async (account: Account) => {
@@ -744,12 +747,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           racetracks,
         }));
       } else if (role === "owner") {
-        const [horsesRes, regsRes, tourRes, notiRes, invRes] = await Promise.allSettled([
+        const [horsesRes, regsRes, tourRes, notiRes, invRes, pointsRes] = await Promise.allSettled([
           api.horseOwner.listHorses(),
           api.horseOwner.listRegistrations(),
           api.horseOwner.listTournaments(),
           api.horseOwner.listNotifications(),
           api.horseOwner.listInvitations(),
+          api.points.getMine(),
         ]);
 
         // Invitations the owner has sent — the only source of "pending" / "declined",
@@ -803,12 +807,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        setAppState((prev) => ({ ...prev, horses, ownerRegistrations, tournaments, races, notifications, invitations }));
+        const spectatorPoints =
+          pointsRes.status === "fulfilled" ? mapPointsSummary(pointsRes.value.points) : null;
+
+        setAppState((prev) => ({
+          ...prev,
+          horses,
+          ownerRegistrations,
+          tournaments,
+          races,
+          notifications,
+          invitations,
+          spectatorPoints,
+        }));
       } else if (role === "jockey") {
-        const [invRes, racesRes, notiRes] = await Promise.allSettled([
+        const [invRes, racesRes, notiRes, pointsRes] = await Promise.allSettled([
           api.jockey.listInvitations(),
           api.jockey.listRaces(),
           api.jockey.listNotifications(),
+          api.points.getMine(),
         ]);
 
         const invitations =
@@ -826,7 +843,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? notiRes.value.notifications.map((n) => mapNotification(n, account.id))
             : [];
 
-        setAppState((prev) => ({ ...prev, invitations, races, notifications }));
+        const spectatorPoints =
+          pointsRes.status === "fulfilled" ? mapPointsSummary(pointsRes.value.points) : null;
+
+        setAppState((prev) => ({ ...prev, invitations, races, notifications, spectatorPoints }));
       } else if (role === "spectator") {
         const [tourRes, racesRes, predsRes, ptsRes, notiRes] = await Promise.allSettled([
           api.spectator.listTournaments(),
@@ -1689,7 +1709,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function handleToggleRefereeCheck(
     raceId: string,
     horseId: string,
-    field: "vetApprovedAt" | "confirmedAt",
+    field: "confirmedAt",
   ): Promise<RefereeParticipantCheck[]> {
     await api.referee.toggleCheck(raceId, horseId, field);
     return handleGetRefereeChecks(raceId);
@@ -1810,6 +1830,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCancelPrediction,
     handleTopUpPoints,
     handleCreatePayosTopUp,
+    handleSyncPointWallet,
     handleUpdateRegistration,
     handleCreateAdminUser,
     handleUpdateAdminUser,

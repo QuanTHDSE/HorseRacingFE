@@ -41,11 +41,11 @@ export default function ChecksPage() {
     return () => { alive = false; };
   }, [raceId, handleGetRefereeChecks]);
 
-  async function toggle(horseId: string, field: "vetApprovedAt" | "confirmedAt") {
-    setBusy(`${horseId}-${field}`);
+  async function toggle(horseId: string) {
+    setBusy(`${horseId}-confirmedAt`);
     setError("");
     try {
-      const updated = await handleToggleRefereeCheck(raceId, horseId, field);
+      const updated = await handleToggleRefereeCheck(raceId, horseId, "confirmedAt");
       setChecks(updated);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Cập nhật thất bại");
@@ -54,13 +54,12 @@ export default function ChecksPage() {
     }
   }
 
-  const vetDone = checks.filter((c) => c.vetApproved).length;
   const lineupDone = checks.filter((c) => c.confirmed).length;
   const selected = checks.find((c) => c.horseId === selectedHorseId) ?? null;
 
   return (
     <div className="page-stack">
-      <Panel title="Duyệt trước cuộc đua" subtitle="Chọn cuộc đua để kiểm tra thú y và xác nhận xuất phát từng ngựa">
+      <Panel title="Xác nhận trước cuộc đua" subtitle="Xác nhận danh sách ngựa đủ điều kiện xuất phát trước khi mở phiên điều hành">
         <RefereeRaceSelector
           races={eligible}
           value={raceId}
@@ -73,13 +72,12 @@ export default function ChecksPage() {
 
       {raceId && (
         <>
-          <div className="metric-grid three">
+          <div className="metric-grid two">
             <MetricCard label="Số ngựa" value={String(checks.length)} note="Tham gia cuộc đua" loading={loading} />
-            <MetricCard label="Đã duyệt thú y" value={`${vetDone}/${checks.length}`} note="Đã kiểm tra thú y" tone={vetDone === checks.length && checks.length > 0 ? "success" : "warning"} loading={loading} />
             <MetricCard label="Đã xác nhận xuất phát" value={`${lineupDone}/${checks.length}`} note="Đã xác nhận đội hình" tone={lineupDone === checks.length && checks.length > 0 ? "success" : "warning"} loading={loading} />
           </div>
 
-          <Panel title="Checklist từng ngựa" subtitle="Bấm để bật/tắt từng mục">
+          <Panel title="Danh sách xuất phát" subtitle="Đối chiếu hồ sơ và xác nhận từng ngựa trong đội hình">
             {loading && checks.length === 0 ? (
               <LoadingState label="Đang tải checklist…" />
             ) : (
@@ -102,20 +100,6 @@ export default function ChecksPage() {
                     ),
                   },
                   {
-                    key: "vetApproved",
-                    label: "Thú y",
-                    render: (r) => (
-                      <button
-                        type="button"
-                        className={cn("table-button", r.vetApproved && "is-complete")}
-                        disabled={busy === `${r.horseId}-vetApprovedAt`}
-                        onClick={() => toggle(r.horseId, "vetApprovedAt")}
-                      >
-                        {r.vetApproved ? "✓ Đã duyệt" : "Duyệt"}
-                      </button>
-                    ),
-                  },
-                  {
                     key: "confirmed",
                     label: "Xuất phát",
                     render: (r) => (
@@ -123,7 +107,7 @@ export default function ChecksPage() {
                         type="button"
                         className={cn("table-button", r.confirmed && "is-complete")}
                         disabled={busy === `${r.horseId}-confirmedAt`}
-                        onClick={() => toggle(r.horseId, "confirmedAt")}
+                        onClick={() => toggle(r.horseId)}
                       >
                         {r.confirmed ? "✓ Đã xác nhận" : "Xác nhận"}
                       </button>
@@ -133,9 +117,9 @@ export default function ChecksPage() {
                     key: "checkStatus",
                     label: "Trạng thái",
                     render: (r) =>
-                      r.vetApproved && r.confirmed
+                      r.confirmed
                         ? <Badge tone="success">Sẵn sàng</Badge>
-                        : <Badge tone="warning">Chưa đủ</Badge>,
+                        : <Badge tone="warning">Chờ xác nhận</Badge>,
                   },
                 ]}
                 rows={checks.map((c) => ({ ...c, id: c.horseId }))}
@@ -224,9 +208,9 @@ export default function ChecksPage() {
                   <div className="detail-item">
                     <span className="detail-label">Trạng thái kiểm tra</span>
                     <span>
-                      {selected.vetApproved && selected.confirmed
+                      {selected.confirmed
                         ? <Badge tone="success">Đủ điều kiện thi đấu</Badge>
-                        : <Badge tone="warning">Chưa hoàn tất</Badge>}
+                        : <Badge tone="warning">Chờ xác nhận xuất phát</Badge>}
                     </span>
                   </div>
                 </div>
@@ -234,22 +218,14 @@ export default function ChecksPage() {
                 <div className="detail-actions" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
                   <div>
                     <strong style={{ display: "block" }}>Quyết định trước cuộc đua</strong>
-                    <span className="detail-action-hint">Kiểm tra hồ sơ và thể trạng trước khi xác nhận ngựa xuất phát.</span>
+                    <span className="detail-action-hint">Đối chiếu hồ sơ và xác nhận ngựa có trong danh sách xuất phát.</span>
                   </div>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <button
                       type="button"
-                      className={cn("table-button", selected.vetApproved && "is-complete")}
-                      disabled={busy === `${selected.horseId}-vetApprovedAt`}
-                      onClick={() => toggle(selected.horseId, "vetApprovedAt")}
-                    >
-                      {selected.vetApproved ? "Bỏ duyệt thú y" : "Duyệt thú y"}
-                    </button>
-                    <button
-                      type="button"
                       className={cn("primary-button", "btn-xs", selected.confirmed && "is-complete")}
                       disabled={busy === `${selected.horseId}-confirmedAt`}
-                      onClick={() => toggle(selected.horseId, "confirmedAt")}
+                      onClick={() => toggle(selected.horseId)}
                     >
                       {selected.confirmed ? "Hủy xác nhận xuất phát" : "Xác nhận đủ điều kiện đua"}
                     </button>

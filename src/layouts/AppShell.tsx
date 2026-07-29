@@ -38,7 +38,7 @@ function RolePages({ role, page }: RolePagesProps) {
 
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, appState, handleLogout, isDataLoading } = useApp();
+  const { user, appState, handleLogout, handleSyncPointWallet, isDataLoading } = useApp();
   const { page } = useParams<{ page: string }>();
   const navigate = useNavigate();
 
@@ -68,7 +68,6 @@ export default function AppShell() {
 
   return (
     <div className={cn("dashboard-layout", collapsed && "sidebar-collapsed")}>
-      <PointChangeNotifier userId={user.id} role={user.role} />
       <aside className="sidebar">
 
         <button
@@ -138,6 +137,11 @@ export default function AppShell() {
           </div>
           <div className="topbar-actions">
             <Badge tone="accent">{role.menu.find((item) => item.id === activePage)?.label}</Badge>
+            <PointChangeNotifier
+              userId={user.id}
+              role={user.role}
+              onPointsChange={handleSyncPointWallet}
+            />
             <Badge tone="neutral">Phiên đang hoạt động</Badge>
             <NotificationBell notifications={notifications} />
           </div>

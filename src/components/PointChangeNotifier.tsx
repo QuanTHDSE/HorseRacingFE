@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type ApiSpectatorPoints } from "../services/api";
 import { useToast } from "../context/ToastContext";
-import type { Role } from "../types";
+import type { Role, SpectatorPointsSummary } from "../types";
 
 interface Props {
   userId: string;
   role: Role;
+  onPointsChange?: (points: SpectatorPointsSummary) => void;
 }
 
 type PointTx = ApiSpectatorPoints["transactions"][number];
@@ -18,13 +19,13 @@ function describe(tx: PointTx): string {
   return tx.note || tx.type.replace(/_/g, " ");
 }
 
-export default function PointChangeNotifier({ userId, role }: Props) {
+export default function PointChangeNotifier({ userId, role, onPointsChange }: Props) {
   const toast = useToast();
   const [balance, setBalance] = useState<number | null>(null);
   const [lastTx, setLastTx] = useState<PointTx | null>(null);
   const seenRef = useRef<string | null>(null);
   const readyRef = useRef(false);
-  const enabled = role !== "admin";
+  const enabled = ["owner", "jockey", "spectator"].includes(role);
 
   const storageKey = useMemo(() => `horse-race:last-point-tx:${userId}`, [userId]);
 
@@ -41,6 +42,11 @@ export default function PointChangeNotifier({ userId, role }: Props) {
         const res = await api.points.getMine();
         if (cancelled) return;
         setBalance(res.points.currentBalance);
+        onPointsChange?.({
+          currentBalance: res.points.currentBalance,
+          totalPointsEarned: res.points.totalPointsEarned,
+          totalPointsSpent: res.points.totalPointsSpent,
+        });
         const newest = res.points.transactions[0];
         if (!newest) {
           readyRef.current = true;
@@ -78,43 +84,15 @@ export default function PointChangeNotifier({ userId, role }: Props) {
       cancelled = true;
       if (timer) window.clearInterval(timer);
     };
-  }, [enabled, storageKey, toast]);
+  }, [enabled, onPointsChange, storageKey, toast]);
 
   if (!enabled || balance === null) return null;
 
   const tone = lastTx && lastTx.points < 0 ? "negative" : "positive";
   return (
-    <div
-      style={{
-        position: "fixed",
-        right: 18,
-        bottom: 18,
-        zIndex: 45,
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        borderRadius: 999,
-        padding: "9px 12px",
-        background: "rgba(20, 20, 20, 0.88)",
-        color: "#fff",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.22)",
-        pointerEvents: "none",
-        fontSize: 13,
-        maxWidth: "min(320px, calc(100vw - 32px))",
-      }}
-      aria-live="polite"
-    >
-      <span
-        style={{
-          width: 10,
-          height: 10,
-          borderRadius: 999,
-          background: tone === "negative" ? "#ef4444" : "#22c55e",
-          boxShadow: `0 0 0 4px ${tone === "negative" ? "rgba(239,68,68,.18)" : "rgba(34,197,94,.18)"}`,
-          flex: "0 0 auto",
-        }}
-      />
-      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+    <div className={`header-point-wallet is-${tone}`} aria-live="polite">
+      <span className="header-point-wallet-dot" aria-hidden="true" />
+      <span>
         Ví điểm: <strong>{balance.toLocaleString("vi-VN")}</strong>
       </span>
     </div>

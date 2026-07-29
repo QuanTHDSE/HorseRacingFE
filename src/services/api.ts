@@ -289,7 +289,6 @@ export interface ApiRefereeCheck {
   ownerName?: string;
   laneNumber: number;
   clothNumber?: number;
-  vetApproved: boolean;
   confirmed: boolean;
 }
 
@@ -1115,7 +1114,7 @@ export const api = {
     listRaces: () => request<{ races: ApiRefereeRace[] }>("/referee/races"),
     listChecks: (raceId: string) =>
       request<{ checks: ApiRefereeCheck[] }>(`/referee/races/${raceId}/checks`),
-    toggleCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") =>
+    toggleCheck: (raceId: string, horseId: string, field: "confirmedAt") =>
       request<{ ok: boolean }>(`/referee/races/${raceId}/checks`, {
         method: "PATCH",
         body: JSON.stringify({ horseId, field }),

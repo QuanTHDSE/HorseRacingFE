@@ -193,7 +193,6 @@ export interface RefereeParticipantCheck {
   ownerName?: string;
   laneNumber: number;
   clothNumber?: number;
-  vetApproved: boolean;
   confirmed: boolean;
 }
 
@@ -772,6 +771,7 @@ export interface AppContextValue {
   handleCancelPrediction: (predictionId: string) => Promise<void>;
   handleTopUpPoints: (points: number) => Promise<void>;
   handleCreatePayosTopUp: (points: number) => Promise<string>;
+  handleSyncPointWallet: (points: SpectatorPointsSummary) => void;
   handleUpdateRegistration: (id: string, status: "Approved" | "Rejected", adminNote?: string) => Promise<void>;
   handleCreateAdminUser: (data: {
     email: string;
@@ -802,7 +802,7 @@ export interface AppContextValue {
   handleGetRefereeDashboard: () => Promise<RefereeDashboard>;
   handleRefreshRefereeRaces: () => Promise<void>;
   handleGetRefereeChecks: (raceId: string) => Promise<RefereeParticipantCheck[]>;
-  handleToggleRefereeCheck: (raceId: string, horseId: string, field: "vetApprovedAt" | "confirmedAt") => Promise<RefereeParticipantCheck[]>;
+  handleToggleRefereeCheck: (raceId: string, horseId: string, field: "confirmedAt") => Promise<RefereeParticipantCheck[]>;
   handleStartRefereeRace: (raceId: string) => Promise<void>;
   handleSimulateRefereeDraft: (raceId: string) => Promise<RaceSimTimeline>;
   handleFinishRefereeRace: (raceId: string) => Promise<void>;

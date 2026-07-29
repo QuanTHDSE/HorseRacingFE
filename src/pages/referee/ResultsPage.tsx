@@ -22,8 +22,12 @@ const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "d
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+  return new Date(iso).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -162,7 +166,10 @@ export default function ResultsPage() {
 
   return (
     <div className="page-stack">
-      <Panel title="Xếp hạng & xác nhận kết quả" subtitle="Chọn cuộc đua đang/đã diễn ra, điều chỉnh thứ hạng rồi xác nhận">
+      <Panel
+        title="Xếp hạng & xác nhận kết quả"
+        subtitle="Chọn giải đấu và cuộc đua, rà thứ tự về đích rồi gửi kết quả cho admin"
+      >
         <RefereeRaceSelector
           races={eligible}
           value={raceId}
@@ -176,8 +183,9 @@ export default function ResultsPage() {
 
       {raceId && (
         <>
-          <div className="metric-grid three">
+          <div className="metric-grid four">
             <MetricCard label="Trạng thái đua" value={race ? viRaceStatus(race.liveStatus) : "—"} note="Trạng thái cuộc đua" loading={loading} />
+            <MetricCard label="Thí sinh xếp hạng" value={String(entries.length)} note="Không tính ngựa bị hủy kết quả" tone="neutral" loading={loading} />
             <MetricCard
               label="Kết quả"
               value={published ? "Đã công bố" : confirmed ? "Đã xác nhận" : status?.rankingsCount ? "Bản nháp" : "Chưa nhập"}
@@ -185,100 +193,124 @@ export default function ResultsPage() {
               tone={published ? "success" : confirmed ? "accent" : "warning"}
               loading={loading}
             />
-            <MetricCard label="Xác nhận lúc" value={confirmed ? "✓" : "—"} note={fmtDate(status?.confirmedAt)} tone={confirmed ? "success" : "neutral"} loading={loading} />
+            <MetricCard label="Biên bản ảnh hưởng" value={String(resultVoidedCount)} note={`${violations.length} biên bản đã ghi`} tone={resultVoidedCount ? "warning" : "neutral"} loading={loading} />
           </div>
 
           <Panel
-            title="Thứ hạng về đích"
-            subtitle={locked ? "Kết quả đã khóa, không thể sửa" : "Dùng ↑ ↓ để sắp thứ tự về đích (trên cùng = hạng 1)"}
+            title="Thứ tự về đích"
+            subtitle={locked ? "Kết quả đã được khóa và chỉ còn ở chế độ xem" : "Đưa ngựa lên hoặc xuống để sắp đúng thứ tự về đích"}
           >
             {loading ? (
               <LoadingState label="Đang tải thứ hạng…" />
             ) : entries.length === 0 ? (
-              <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Cuộc đua chưa có ngựa tham gia.</p>
+              <div className="referee-empty-state">
+                <span>BXH</span>
+                <strong>Chưa có thí sinh để xếp hạng</strong>
+                <p>Hãy chọn cuộc đua đã bắt đầu hoặc đã hoàn tất và có danh sách ngựa tham gia.</p>
+              </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 84 }}>Hạng</th>
-                      <th>Ngựa</th>
-                      <th style={{ width: 170 }}>Thời gian về đích (chỉ xem)</th>
-                      <th style={{ width: 92 }}>Di chuyển</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="referee-result-list">
                 {entries.map((e, i) => (
-                  <tr key={e.horseId}>
-                    <td>
+                  <article className={`referee-result-card ${i === 0 ? "is-winner" : ""}`} key={e.horseId}>
+                    <div className="referee-result-rank">
+                      <span>{i === 0 ? "Dẫn đầu" : "Thứ hạng"}</span>
+                      <strong>#{i + 1}</strong>
                       <Badge tone={i === 0 ? "success" : i <= 2 ? "accent" : "neutral"}>
-                        {`Hạng ${i + 1}`}
+                        Hạng {i + 1}
                       </Badge>
-                    </td>
-                    <td>
+                    </div>
+                    <div className="referee-result-participant">
                       <strong>{e.horseName}</strong>
-                      <div style={{ fontSize: "0.82rem", color: "var(--c-muted)" }}>
-                        {e.jockeyName} · Chủ ngựa {e.ownerName ?? "—"}
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-                        {typeof e.finishTime === "number" ? `${e.finishTime.toFixed(3)} giây` : "—"}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: "4px" }}>
-                        <button type="button" className="table-button" disabled={locked || i === 0} onClick={() => move(i, -1)}>↑</button>
-                        <button type="button" className="table-button" disabled={locked || i === entries.length - 1} onClick={() => move(i, 1)}>↓</button>
-                      </div>
-                    </td>
-                  </tr>
+                      <p>Nài ngựa: {e.jockeyName}</p>
+                      <small>Chủ ngựa: {e.ownerName ?? "—"}</small>
+                    </div>
+                    <div className="referee-result-time">
+                      <span>Thời gian về đích</span>
+                      <strong>{typeof e.finishTime === "number" ? `${e.finishTime.toFixed(3)} giây` : "Chưa ghi nhận"}</strong>
+                    </div>
+                    <div className="referee-result-order-actions" aria-label={`Điều chỉnh thứ hạng của ${e.horseName}`}>
+                      <button
+                        type="button"
+                        className="table-button"
+                        aria-label={`Đưa ${e.horseName} lên một hạng`}
+                        disabled={locked || i === 0}
+                        onClick={() => move(i, -1)}
+                      >
+                        ↑ <span>Lên</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="table-button"
+                        aria-label={`Đưa ${e.horseName} xuống một hạng`}
+                        disabled={locked || i === entries.length - 1}
+                        onClick={() => move(i, 1)}
+                      >
+                        ↓ <span>Xuống</span>
+                      </button>
+                    </div>
+                  </article>
                 ))}
-                  </tbody>
-                </table>
               </div>
             )}
 
             {resultVoidedCount > 0 && (
-              <p className="pc-hint" style={{ marginTop: "12px" }}>
-                Đã áp dụng {resultVoidedCount} án hủy kết quả từ biên bản xử phạt. Không cập nhật thời gian phạt ở bước này.
-              </p>
+              <div className="referee-inline-alert is-warning">
+                <strong>{resultVoidedCount} thí sinh đã bị loại khỏi bảng xếp hạng</strong>
+                <span> do biên bản có hình thức hủy kết quả. Thứ tự còn lại đã được hệ thống cập nhật.</span>
+              </div>
             )}
 
             {!locked && entries.length > 0 && (
-              <div className="form-actions" style={{ marginTop: "16px" }}>
+              <div className="referee-result-savebar">
+                <div>
+                  <strong>{status?.rankingsCount ? "Bản nháp đã có thay đổi?" : "Thứ tự đã chính xác?"}</strong>
+                  <p>Lưu bản nháp trước khi chuyển sang bước xác nhận cuối cùng.</p>
+                </div>
                 <button type="button" className="primary-button" disabled={submitting} onClick={submit}>
-                  {submitting ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : status?.rankingsCount ? "Cập nhật thứ hạng" : "Lưu thứ hạng"}
+                  {submitting ? <><Spinner size="sm" onPrimary /> Đang lưu…</> : status?.rankingsCount ? "Cập nhật bản nháp" : "Lưu kết quả nháp"}
                 </button>
               </div>
             )}
           </Panel>
 
-          {/* Confirm step */}
           {!published && (
-            <Panel title="Xác nhận kết quả" subtitle="Sau khi xác nhận, kết quả khóa và chờ admin công bố">
+            <Panel title="Xác nhận và bàn giao kết quả" subtitle="Đây là bước cuối cùng của trọng tài trước khi admin công bố">
               {confirmed ? (
-                <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>
-                  ✓ Đã xác nhận lúc {fmtDate(status?.confirmedAt)}. Đang chờ admin công bố.
-                </p>
-              ) : (
-                <>
-                  <p className="pc-hint" style={{ marginBottom: "12px" }}>
-                    Chỉ xác nhận được khi cuộc đua đã <strong>kết thúc (Completed)</strong> và đã có kết quả.
-                  </p>
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      className="primary-button"
-                      disabled={confirming || race?.liveStatus !== "Completed" || !status?.rankingsCount}
-                      onClick={confirm}
-                    >
-                      {confirming ? <><Spinner size="sm" onPrimary /> Đang xác nhận…</> : "Xác nhận kết quả"}
-                    </button>
+                <div className="referee-confirm-state is-complete">
+                  <span>✓</span>
+                  <div>
+                    <strong>Đã xác nhận kết quả</strong>
+                    <p>Xác nhận lúc {fmtDate(status?.confirmedAt)}. Kết quả đang chờ admin công bố và không thể chỉnh sửa.</p>
                   </div>
-                </>
+                </div>
+              ) : (
+                <div className="referee-confirm-state">
+                  <span>4</span>
+                  <div>
+                    <strong>Kiểm tra lần cuối trước khi khóa</strong>
+                    <p>Cuộc đua phải đã kết thúc và bản nháp phải có đầy đủ thứ hạng. Sau khi xác nhận, bạn không thể sắp xếp lại.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={confirming || race?.liveStatus !== "Completed" || !status?.rankingsCount}
+                    onClick={confirm}
+                  >
+                    {confirming ? <><Spinner size="sm" onPrimary /> Đang xác nhận…</> : "Xác nhận kết quả"}
+                  </button>
+                </div>
               )}
             </Panel>
+          )}
+
+          {published && (
+            <div className="referee-confirm-state is-complete">
+              <span>✓</span>
+              <div>
+                <strong>Kết quả đã được công bố</strong>
+                <p>Admin đã hoàn tất công bố. Bảng xếp hạng hiện chỉ dùng để đối chiếu.</p>
+              </div>
+            </div>
           )}
         </>
       )}

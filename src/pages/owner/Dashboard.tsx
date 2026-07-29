@@ -19,6 +19,7 @@ export default function OwnerDashboard() {
   const fitCount  = horses.filter((h) => h.health === "Fit").length;
   const pendingRegs  = regs.filter((r) => r.status === "Pending").length;
   const approvedRegs = regs.filter((r) => r.status === "Approved").length;
+  const pointBalance = appState.spectatorPoints?.currentBalance ?? 0;
 
   const recentHorses = horses.slice(0, 4);
   const recentRegs   = regs.slice(0, 5);
@@ -33,11 +34,18 @@ export default function OwnerDashboard() {
         </div>
       </section>
 
-      <div className="metric-grid four">
+      <div className="metric-grid owner-overview-metrics">
         <MetricCard label="Tổng số ngựa"          value={String(horses.length)}    note="Trong chuồng của bạn"                     loading={isDataLoading} />
         <MetricCard label="Ngựa khỏe mạnh"         value={String(fitCount)}          note="Sẵn sàng thi đấu"          tone="success" loading={isDataLoading} />
         <MetricCard label="Đăng ký đang hoạt động" value={String(approvedRegs)}      note="Đã duyệt cho cuộc đua"     tone="accent"  loading={isDataLoading} />
         <MetricCard label="Đăng ký chờ duyệt"      value={String(pendingRegs)}       note="Đang chờ admin xét duyệt"  tone="warning" loading={isDataLoading} />
+        <MetricCard
+          label="Số dư ví điểm"
+          value={pointBalance.toLocaleString("vi-VN")}
+          note="Thưởng từ thành tích cuộc đua"
+          tone="success"
+          loading={isDataLoading && !appState.spectatorPoints}
+        />
       </div>
 
       <div className="content-grid two">

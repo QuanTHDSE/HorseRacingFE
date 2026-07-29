@@ -100,7 +100,7 @@ export default function RefereeRaceSelector({
   }
 
   return (
-    <div className="form-grid-2" style={{ maxWidth: "900px", alignItems: "start" }}>
+    <div className="form-grid-2 referee-race-selector" style={{ maxWidth: "900px", alignItems: "start" }}>
       <label className="field">
         <span>Giải đấu</span>
         <select

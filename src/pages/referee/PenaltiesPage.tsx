@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Badge, DataTable, MetricCard, Panel, Spinner } from "../../components";
+import { Badge, LoadingState, MetricCard, Panel, Spinner } from "../../components";
 import RaceLivePlayer from "../../components/RaceLivePlayer";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
+import { viRaceStatus } from "../../utils/viLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
 
 const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "disqualify", "disqualification"];
@@ -28,7 +29,13 @@ function penaltyTone(p?: string | null): "danger" | "warning" | "info" {
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function participantLabel(p: RefereeParticipantCheck): string {
@@ -74,6 +81,7 @@ export default function PenaltiesPage() {
   const isUpcoming = race?.liveStatus === "Upcoming";
   const isReady = race?.liveStatus === "Ready";
   const isLive = race?.liveStatus === "Live";
+  const isCompleted = race?.liveStatus === "Completed";
   const hasDraft = !!result && !result.confirmedAt;
   // Lập biên bản được khi đang điều hành (ready/live) hoặc còn kết quả nháp chưa xác nhận.
   const canPenalize = isReady || isLive || hasDraft;
@@ -198,7 +206,10 @@ export default function PenaltiesPage() {
           showRaceNotes
         />
       )}
-      <Panel title="Điều hành trận đấu" subtitle="Chọn cuộc đua, bắt đầu điều hành và theo dõi trạng thái trước khi lập biên bản xử phạt">
+      <Panel
+        title="Điều hành & xử phạt cuộc đua"
+        subtitle="Chọn giải đấu, chọn cuộc đua rồi thực hiện lần lượt các bước bên dưới"
+      >
         <RefereeRaceSelector races={races} value={raceId} onChange={setRaceId} />
       </Panel>
 
@@ -207,9 +218,11 @@ export default function PenaltiesPage() {
 
       {raceId && (
         <>
-          <div className="metric-grid three">
-            <MetricCard label="Trạng thái đua" value={race?.liveStatus ?? "—"} note="Race status"
+          <div className="metric-grid four">
+            <MetricCard label="Trạng thái đua" value={race ? viRaceStatus(race.liveStatus) : "—"} note="Cập nhật theo phiên điều hành"
               tone={isLive || isReady ? "success" : isUpcoming ? "accent" : "neutral"} loading={loading} />
+            <MetricCard label="Thí sinh" value={String(checks.length)} note="Ngựa và nài trong cuộc đua"
+              tone="neutral" loading={loading} />
             <MetricCard label="Số biên bản" value={String(violations.length)} note="Vi phạm đã ghi"
               tone={violations.length > 0 ? "warning" : "neutral"} loading={loading} />
             <MetricCard label="Kết quả nháp" value={hasDraft ? "Có" : result?.confirmedAt ? "Đã xác nhận" : "Chưa có"}
@@ -217,8 +230,26 @@ export default function PenaltiesPage() {
           </div>
 
           {/* Lifecycle controls */}
-          <Panel title="Điều hành cuộc đua" subtitle="Bước 1: Bắt đầu điều hành (Ready) → Bước 2: Chạy đua (Live) → Xem xong: chốt kết quả (Completed) → lập biên bản → Results xác nhận">
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <Panel title="Thao tác điều hành" subtitle="Hệ thống chỉ hiển thị hành động phù hợp với trạng thái hiện tại">
+            <div className="referee-primary-action">
+              <div>
+                <Badge tone={isLive || isReady ? "success" : isUpcoming ? "accent" : "neutral"}>
+                  {race ? viRaceStatus(race.liveStatus) : "—"}
+                </Badge>
+                <strong>
+                  {isUpcoming && "Cuộc đua đang chờ bắt đầu"}
+                  {isReady && "Đã sẵn sàng — có thể chạy mô phỏng"}
+                  {isLive && "Cuộc đua đang diễn ra"}
+                  {isCompleted && "Cuộc đua đã hoàn tất"}
+                </strong>
+                <p>
+                  {isUpcoming && "Kiểm tra đủ thí sinh và checklist trước khi mở phiên điều hành."}
+                  {isReady && "Bắt đầu chạy để theo dõi diễn biến trực tiếp và nhận thứ hạng tạm thời."}
+                  {isLive && "Kết thúc phiên để chốt thứ hạng nháp và lập biên bản nếu cần."}
+                  {isCompleted && "Rà soát biên bản trước khi chuyển sang trang Kết quả để xác nhận."}
+                </p>
+              </div>
+              <div className="referee-primary-action-buttons">
               {isUpcoming && (
                 <button
                   type="button"
@@ -226,30 +257,26 @@ export default function PenaltiesPage() {
                   disabled={busy || (race?.participantCount ?? 0) < 2}
                   onClick={startOfficiating}
                 >
-                  ▶ Bắt đầu điều hành
+                  Bắt đầu điều hành
                 </button>
-              )}
-              {isUpcoming && (race?.participantCount ?? 0) < 2 && (
-                <span style={{ color: "var(--c-muted)", fontSize: "0.85rem", alignSelf: "center" }}>
-                  Cần ít nhất 2 ngựa trong đường đua (hiện {race?.participantCount ?? 0}). Admin cần thêm participant trước.
-                </span>
               )}
               {isReady && (
                 <button type="button" className="primary-button" disabled={busy} onClick={runRace}>
-                  ▶ Chạy đua &amp; xem trực tiếp
+                  Chạy đua &amp; xem trực tiếp
                 </button>
               )}
               {isLive && (
                 <button type="button" className="primary-button" disabled={busy} onClick={finishRun}>
-                  ■ Kết thúc &amp; chốt kết quả tạm thời
+                  Kết thúc &amp; chốt kết quả tạm thời
                 </button>
               )}
-              {!isUpcoming && !isReady && !isLive && !hasDraft && (
-                <span style={{ color: "var(--c-muted)", fontSize: "0.85rem" }}>
-                  Cuộc đua không ở giai đoạn xử phạt trực tiếp.
-                </span>
-              )}
+              </div>
             </div>
+            {isUpcoming && (race?.participantCount ?? 0) < 2 && (
+              <div className="referee-inline-alert is-warning">
+                Cần ít nhất 2 ngựa trong đường đua; hiện có {race?.participantCount ?? 0}. Admin cần bổ sung thí sinh trước.
+              </div>
+            )}
           </Panel>
 
           {/* Conduct penalty */}
@@ -264,7 +291,7 @@ export default function PenaltiesPage() {
             ) : loading ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Đang tải…</p>
             ) : (
-              <div className="form-grid-2">
+              <div className="form-grid-2 referee-penalty-form">
                 <label className="field">
                   <span>Đối tượng bị lập biên bản <span className="required">*</span></span>
                   <select
@@ -301,7 +328,7 @@ export default function PenaltiesPage() {
               </div>
             )}
             {selectedRule && RESULT_VOIDING_PENALTIES.includes(selectedRule.penaltyApplied) && (
-              <p style={{ color: "var(--c-danger)", fontSize: "0.8rem", marginTop: "8px" }}>
+              <p className="referee-inline-alert is-danger">
                 Luật này sẽ <strong>hủy kết quả của cuộc đua hiện tại</strong>; nếu là cấm có thời hạn hoặc cấm vô thời hạn thì hệ thống mới chặn thi đấu ở các trận sau.
               </p>
             )}
@@ -313,60 +340,67 @@ export default function PenaltiesPage() {
           </Panel>
 
           {/* Violations list */}
-          <Panel title="Biên bản đã lập" subtitle={`${violations.length} vi phạm`}>
-            <DataTable
-              columns={[
-                { key: "recordedAt", label: "Lúc", render: (r) => fmtDate(r.recordedAt) },
-                {
-                  key: "horseName", label: "Đối tượng",
-                  render: (r) => (
-                    <span>
-                      {r.target === "jockey" ? (r.jockeyName ?? "—") : (r.horseName ?? "—")}
-                      <Badge tone={r.target === "jockey" ? "info" : "accent"}>
-                        {r.target === "jockey" ? "Nài" : r.target === "both" ? "Cả hai" : "Ngựa"}
-                      </Badge>
-                    </span>
-                  ),
-                },
-                { key: "affectedHorseName", label: "Bị ảnh hưởng", render: (r) => r.affectedHorseName ?? "—" },
-                { key: "type", label: "Lỗi" },
-                {
-                  key: "penaltyApplied", label: "Hình thức",
-                  render: (r) => (
-                    <span>
-                      <Badge tone={penaltyTone(r.penaltyApplied)}>{penaltyLabel(r.penaltyApplied)}</Badge>
-                      {r.bannedUntil && (
-                        <span style={{ color: "var(--c-muted)", fontSize: "0.72rem", display: "block", marginTop: 2 }}>
-                          cấm đến {fmtDate(r.bannedUntil)}
+          <Panel title="Biên bản đã lập" subtitle={`${violations.length} vi phạm trong cuộc đua này`}>
+            {loading ? (
+              <LoadingState label="Đang tải biên bản…" />
+            ) : violations.length === 0 ? (
+              <div className="referee-empty-state">
+                <span>✓</span>
+                <strong>Chưa ghi nhận vi phạm</strong>
+                <p>Các biên bản mới sẽ xuất hiện tại đây để trọng tài rà soát trước khi xác nhận kết quả.</p>
+              </div>
+            ) : (
+              <div className="referee-violation-list">
+                {violations.map((violation) => (
+                  <article className="referee-violation-card" key={violation.id}>
+                    <div className="referee-violation-main">
+                      <div className="referee-violation-heading">
+                        <div>
+                          <span className="referee-eyebrow">{fmtDate(violation.recordedAt)}</span>
+                          <strong>{violation.type}</strong>
+                        </div>
+                        <Badge tone={penaltyTone(violation.penaltyApplied)}>{penaltyLabel(violation.penaltyApplied)}</Badge>
+                      </div>
+                      <p>{violation.description}</p>
+                      <div className="referee-violation-meta">
+                        <span>
+                          <small>Đối tượng</small>
+                          <b>{violation.target === "jockey" ? (violation.jockeyName ?? "—") : (violation.horseName ?? "—")}</b>
                         </span>
-                      )}
-                    </span>
-                  ),
-                },
-                { key: "description", label: "Mô tả", render: (r) => <span style={{ fontSize: "0.8rem" }}>{r.description}</span> },
-                {
-                  key: "id", label: "",
-                  render: (r) => (
+                        <span>
+                          <small>Phạm vi</small>
+                          <b>{violation.target === "jockey" ? "Nài ngựa" : violation.target === "both" ? "Cả ngựa và nài" : "Ngựa"}</b>
+                        </span>
+                        <span>
+                          <small>Ngựa liên quan</small>
+                          <b>{violation.affectedHorseName ?? violation.horseName ?? "—"}</b>
+                        </span>
+                        {violation.bannedUntil && (
+                          <span>
+                            <small>Thời hạn cấm</small>
+                            <b>Đến {fmtDate(violation.bannedUntil)}</b>
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     <button
                       type="button"
                       className="table-button is-danger"
                       disabled={busy || !canPenalize}
                       title={!canPenalize ? "Chỉ hoàn tác khi cuộc đua đang điều hành hoặc kết quả nháp chưa xác nhận" : undefined}
-                      onClick={() => revoke(r.id)}
+                      onClick={() => revoke(violation.id)}
                     >
-                      Hoàn tác
+                      Hoàn tác án phạt
                     </button>
-                  ),
-                },
-              ]}
-              rows={violations.map((v) => ({ ...v, id: v.id }))}
-              empty="Chưa có biên bản vi phạm nào."
-              loading={loading}
-            />
+                  </article>
+                ))}
+              </div>
+            )}
           </Panel>
 
-          <div className="form-banner" style={{ background: "var(--c-surf-low)", border: "1px solid var(--c-outline-var)", color: "var(--c-muted)", fontSize: "0.8rem" }}>
-            Quy trình: <strong>Bắt đầu điều hành</strong> → <strong>Chạy đua &amp; xem trực tiếp</strong> → lập biên bản cho <strong>ngựa</strong> hoặc <strong>nài ngựa</strong> theo luật (cảnh cáo / hủy kết quả / cấm thi đấu) — người bị phạt nhận thông báo → sang trang <strong>Results</strong> để xác nhận. Sau khi xác nhận thì không lập/hoàn tác biên bản được nữa.
+          <div className="referee-process-note">
+            <strong>Lưu ý trước khi xác nhận kết quả</strong>
+            <p>Hãy hoàn tất mọi biên bản và kiểm tra lại án phạt. Sau khi kết quả được xác nhận, trọng tài không thể lập mới hoặc hoàn tác biên bản.</p>
           </div>
         </>
       )}

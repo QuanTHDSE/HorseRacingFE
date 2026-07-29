@@ -32,6 +32,7 @@ export default function JockeyDashboardPage() {
   const pendingInvites  = stats?.pendingInvitations ?? appState.invitations.filter((i) => i.status === "Pending").length;
   const upcomingRaces   = stats?.upcomingRaces      ?? appState.races.filter((r) => ["Upcoming", "Ready", "Live"].includes(r.liveStatus)).length;
   const completedRaces  = stats?.completedRaces     ?? appState.races.filter((r) => r.liveStatus === "Completed").length;
+  const pointBalance = appState.spectatorPoints?.currentBalance ?? 0;
 
   const recentInvites = appState.invitations.slice(0, 5);
   const recentRaces   = appState.races.filter((r) => r.liveStatus !== "Completed").slice(0, 5);
@@ -47,7 +48,7 @@ export default function JockeyDashboardPage() {
         </div>
       </section>
 
-      <div className="metric-grid three">
+      <div className="metric-grid four">
         <MetricCard
           label="Lời mời chờ phản hồi"
           value={String(pendingInvites)}
@@ -68,6 +69,13 @@ export default function JockeyDashboardPage() {
           note="Tổng đã hoàn thành"
           tone="success"
           loading={metricsLoading}
+        />
+        <MetricCard
+          label="Số dư ví điểm"
+          value={pointBalance.toLocaleString("vi-VN")}
+          note="Thưởng từ thành tích cuộc đua"
+          tone="success"
+          loading={isDataLoading && !appState.spectatorPoints}
         />
       </div>
 
