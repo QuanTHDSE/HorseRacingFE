@@ -6,6 +6,7 @@ import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, SpectatorRace } from "../../types";
 import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
+import { PENALTY_LABEL } from "../../utils/penaltyLabels";
 
 const REPLAY_POLL_MS = 3000;
 
@@ -39,15 +40,6 @@ const STATUS_TONE: Record<string, "accent" | "success" | "neutral" | "danger"> =
   Live: "success",
   Completed: "neutral",
   Cancelled: "danger",
-};
-
-const PENALTY_LABEL: Record<string, string> = {
-  warning: "Cảnh cáo",
-  result_void: "Hủy kết quả",
-  disqualify: "Hủy kết quả",
-  disqualification: "Hủy kết quả",
-  time_ban: "Cấm có thời hạn",
-  permanent_ban: "Cấm vô thời hạn",
 };
 
 function RankBadge({ rank }: { rank: number }) {

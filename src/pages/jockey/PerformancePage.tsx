@@ -4,6 +4,7 @@ import { useApp } from "../../context/AppContext";
 import type { Race, Tone } from "../../types";
 import { cn } from "../../utils/cn";
 import { formatRaceDateTime, raceTimestamp } from "./jockeyUi";
+import { penaltyLabel, penaltyTone } from "../../utils/penaltyLabels";
 
 type Filter = "all" | "wins" | "podiums" | "other";
 
@@ -43,13 +44,17 @@ function rankLabel(rank?: number): string {
 
 function ResultCard({ race, onViewLeaderboard }: { race: Race; onViewLeaderboard: (raceId: string) => void }) {
   const rank = race.result?.rank;
+  const isDisqualified = !!race.result?.isDisqualified;
+  const violation = race.violations?.[0];
 
   return (
-    <article className={cn("performance-result-card", rank === 1 && "is-winner")}>
+    <article className={cn("performance-result-card", rank === 1 && !isDisqualified && "is-winner", isDisqualified && "is-void")}>
       <div className="performance-rank-block">
-        <span>{rank === 1 ? "Chiến thắng" : "Về đích"}</span>
-        <strong>{rank ? `#${rank}` : "—"}</strong>
-        <Badge tone={rankTone(rank)}>{rankLabel(rank)}</Badge>
+        <span>{isDisqualified ? "Bị xử phạt" : rank === 1 ? "Chiến thắng" : "Về đích"}</span>
+        <strong>{isDisqualified ? "—" : rank ? `#${rank}` : "—"}</strong>
+        {isDisqualified
+          ? <Badge tone="danger">Hủy kết quả</Badge>
+          : <Badge tone={rankTone(rank)}>{rankLabel(rank)}</Badge>}
       </div>
 
       <div className="performance-result-content">
@@ -59,20 +64,36 @@ function ResultCard({ race, onViewLeaderboard }: { race: Race; onViewLeaderboard
         <h3>{race.name}</h3>
         <p>{formatRaceDateTime(race.date)}</p>
 
-        <dl className="performance-result-details">
-          <div>
-            <dt>Ngựa thi đấu</dt>
-            <dd>{race.horseName ?? "Chưa cập nhật"}</dd>
+        {isDisqualified ? (
+          <dl className="performance-result-details">
+            <div>
+              <dt>Ngựa thi đấu</dt>
+              <dd>{race.horseName ?? "Chưa cập nhật"}</dd>
+            </div>
+          </dl>
+        ) : (
+          <dl className="performance-result-details">
+            <div>
+              <dt>Ngựa thi đấu</dt>
+              <dd>{race.horseName ?? "Chưa cập nhật"}</dd>
+            </div>
+            <div>
+              <dt>Thời gian về đích</dt>
+              <dd>{formatFinishTime(race.result?.finishTime)}</dd>
+            </div>
+            <div>
+              <dt>Giải thưởng</dt>
+              <dd>{formatPrize(race.result?.prize)}</dd>
+            </div>
+          </dl>
+        )}
+
+        {!!violation && (
+          <div className="performance-violation-note">
+            <Badge tone={penaltyTone(violation.penaltyApplied)}>{penaltyLabel(violation.penaltyApplied)}</Badge>
+            <p>{violation.description}</p>
           </div>
-          <div>
-            <dt>Thời gian về đích</dt>
-            <dd>{formatFinishTime(race.result?.finishTime)}</dd>
-          </div>
-          <div>
-            <dt>Giải thưởng</dt>
-            <dd>{formatPrize(race.result?.prize)}</dd>
-          </div>
-        </dl>
+        )}
       </div>
 
       <button
@@ -94,7 +115,7 @@ export default function PerformancePage() {
   const completed = useMemo(() => [...appState.races]
     .filter((race) => race.liveStatus === "Completed")
     .sort((left, right) => raceTimestamp(right.date) - raceTimestamp(left.date)), [appState.races]);
-  const withResult = completed.filter((race) => race.result?.rank !== undefined);
+  const withResult = completed.filter((race) => race.result?.rank !== undefined && !race.result?.isDisqualified);
   const wins = withResult.filter((race) => race.result?.rank === 1).length;
   const podiums = withResult.filter((race) => (race.result?.rank ?? Number.MAX_SAFE_INTEGER) <= 3).length;
   const winRate = withResult.length > 0 ? Math.round((wins / withResult.length) * 100) : 0;
@@ -105,6 +126,7 @@ export default function PerformancePage() {
   const totalPrize = withResult.reduce((sum, race) => sum + (race.result?.prize ?? 0), 0);
 
   const filtered = useMemo(() => completed.filter((race) => {
+    if (race.result?.isDisqualified) return filter === "all" || filter === "other";
     const rank = race.result?.rank;
     if (filter === "wins") return rank === 1;
     if (filter === "podiums") return rank !== undefined && rank <= 3;

@@ -4,6 +4,7 @@ import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
+import { penaltyLabel, penaltyTone } from "../../utils/penaltyLabels";
 import {
   formatRaceDateTime,
   JOCKEY_RACE_STATUS_TONE,
@@ -29,7 +30,8 @@ function formatFinishTime(value?: number): string {
   return `${(value / 1000).toFixed(2)} giây`;
 }
 
-function ResultBadge({ rank }: { rank?: number }) {
+function ResultBadge({ rank, isDisqualified }: { rank?: number; isDisqualified?: boolean }) {
+  if (isDisqualified) return <Badge tone="danger">Hủy kết quả</Badge>;
   if (!rank) return <Badge tone="neutral">Chưa có thứ hạng</Badge>;
   if (rank === 1) return <Badge tone="success">Hạng 1</Badge>;
   if (rank === 2) return <Badge tone="accent">Hạng 2</Badge>;
@@ -90,21 +92,35 @@ function RaceCard({ race }: { race: Race }) {
       )}
 
       {hasResult && race.result && (
-        <div className="jockey-result-panel">
+        <div className={cn("jockey-result-panel", race.result.isDisqualified && "is-void")}>
           <div className="jockey-result-heading">
             <strong>Kết quả của bạn</strong>
-            <ResultBadge rank={race.result.rank} />
+            <ResultBadge rank={race.result.rank} isDisqualified={race.result.isDisqualified} />
           </div>
-          <dl>
-            <div>
-              <dt>Thời gian về đích</dt>
-              <dd>{formatFinishTime(race.result.finishTime)}</dd>
+          {!race.result.isDisqualified && (
+            <dl>
+              <div>
+                <dt>Thời gian về đích</dt>
+                <dd>{formatFinishTime(race.result.finishTime)}</dd>
+              </div>
+              <div>
+                <dt>Giải thưởng</dt>
+                <dd>{formatPrize(race.result.prize)}</dd>
+              </div>
+            </dl>
+          )}
+        </div>
+      )}
+
+      {!!race.violations?.length && (
+        <div className="jockey-result-panel jockey-violation-panel">
+          <strong>Thông báo từ trọng tài</strong>
+          {race.violations.map((v, idx) => (
+            <div className="jockey-violation-item" key={idx}>
+              <Badge tone={penaltyTone(v.penaltyApplied)}>{penaltyLabel(v.penaltyApplied)}</Badge>
+              <p>{v.description}</p>
             </div>
-            <div>
-              <dt>Giải thưởng</dt>
-              <dd>{formatPrize(race.result.prize)}</dd>
-            </div>
-          </dl>
+          ))}
         </div>
       )}
 

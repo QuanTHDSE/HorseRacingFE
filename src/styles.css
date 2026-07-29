@@ -4037,6 +4037,44 @@ button:disabled {
   margin: 0;
 }
 
+.jockey-result-panel.is-void {
+  border-color: rgba(180, 43, 30, .18);
+  background: var(--c-danger-c);
+}
+
+.jockey-result-panel.is-void .jockey-result-heading > strong {
+  color: var(--c-on-danger-c);
+}
+
+.jockey-violation-panel {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(180, 43, 30, .18);
+  border-radius: var(--r-lg);
+  background: var(--c-danger-c);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.jockey-violation-panel > strong {
+  color: var(--c-on-danger-c);
+  font-size: .86rem;
+}
+
+.jockey-violation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jockey-violation-item p {
+  margin: 0;
+  color: var(--c-on-danger-c);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
 .jockey-empty-state strong {
   display: block;
   margin-bottom: 5px;
@@ -4202,6 +4240,17 @@ button:disabled {
 .jockey-schedule-rank strong {
   color: var(--c-on-surface);
   font-size: .86rem;
+}
+
+.jockey-schedule-rank strong.is-danger {
+  color: var(--c-danger);
+}
+
+.jockey-schedule-rank em {
+  color: var(--c-danger);
+  font-size: .68rem;
+  font-style: normal;
+  font-weight: 600;
 }
 
 @media (max-width: 1050px) {
@@ -4419,6 +4468,33 @@ button:disabled {
   width: 4px;
   content: "";
   background: var(--c-success);
+}
+
+.performance-result-card.is-void {
+  border-color: rgba(180, 43, 30, .16);
+  background: linear-gradient(90deg, var(--c-danger-c), var(--c-surf-low) 42%);
+}
+
+.performance-result-card.is-void::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: var(--c-danger);
+}
+
+.performance-violation-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.performance-violation-note p {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: .78rem;
+  line-height: 1.45;
 }
 
 .performance-rank-block {

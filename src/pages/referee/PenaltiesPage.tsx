@@ -5,27 +5,8 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
 import { viRaceStatus } from "../../utils/viLabels";
+import { penaltyLabel, penaltyTone, isResultVoidingPenalty } from "../../utils/penaltyLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
-
-const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "disqualify", "disqualification"];
-
-// Nhãn + tông màu cho từng hình thức xử phạt của BE.
-const PENALTY_LABEL: Record<string, string> = {
-  warning: "Cảnh cáo",
-  result_void: "Hủy kết quả",
-  disqualify: "Hủy kết quả",
-  disqualification: "Hủy kết quả",
-  time_ban: "Cấm thi đấu",
-  permanent_ban: "Cấm vô thời hạn",
-};
-function penaltyLabel(p?: string | null): string {
-  return p ? PENALTY_LABEL[p] ?? p : "—";
-}
-function penaltyTone(p?: string | null): "danger" | "warning" | "info" {
-  if (!p) return "info";
-  if (RESULT_VOIDING_PENALTIES.includes(p)) return "danger";
-  return "info";
-}
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";
@@ -359,7 +340,7 @@ export default function PenaltiesPage() {
                 </label>
               </div>
             )}
-            {selectedRule && RESULT_VOIDING_PENALTIES.includes(selectedRule.penaltyApplied) && (
+            {selectedRule && isResultVoidingPenalty(selectedRule.penaltyApplied) && (
               <p className="referee-inline-alert is-danger">
                 Luật này sẽ <strong>hủy kết quả của cuộc đua hiện tại</strong>; nếu là cấm có thời hạn hoặc cấm vô thời hạn thì hệ thống mới chặn thi đấu ở các trận sau.
               </p>

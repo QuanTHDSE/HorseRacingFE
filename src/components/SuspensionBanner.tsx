@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
+import { PENALTY_LABEL as PENALTY_APPLIED_LABEL } from "../utils/penaltyLabels";
 import type { PenaltyDetail } from "../types";
 
 function fmtDate(iso: string): string {
@@ -25,15 +26,6 @@ const TARGET_LABEL: Record<string, string> = {
   horse: "Ngựa",
   jockey: "Nài ngựa",
   both: "Ngựa & nài",
-};
-
-const PENALTY_APPLIED_LABEL: Record<string, string> = {
-  warning: "Cảnh cáo",
-  result_void: "Hủy kết quả",
-  disqualify: "Hủy kết quả",
-  disqualification: "Hủy kết quả",
-  time_ban: "Cấm có thời hạn",
-  permanent_ban: "Cấm vô thời hạn",
 };
 
 export default function SuspensionBanner() {
