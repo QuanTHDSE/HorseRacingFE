@@ -6,6 +6,7 @@ import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, SpectatorRace } from "../../types";
 import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
+import { PENALTY_LABEL } from "../../utils/penaltyLabels";
 
 const REPLAY_POLL_MS = 3000;
 

@@ -609,12 +609,25 @@ export interface ApiRaceRanking {
   jockey: { id: string; fullName: string };
   finishTime?: number;
   prize: number;
+  isDisqualified?: boolean;
+}
+
+export interface ApiRaceViolation {
+  target: "horse" | "jockey" | "both";
+  horseId: string | null;
+  horseName: string | null;
+  jockeyId: string | null;
+  jockeyName: string | null;
+  type: string;
+  description: string;
+  penaltyApplied: string | null;
 }
 
 export interface ApiRaceResult {
   id: string;
   publishedAt: string | null;
   rankings: ApiRaceRanking[];
+  violations?: ApiRaceViolation[];
 }
 
 export interface ApiLeaderboardRanking {

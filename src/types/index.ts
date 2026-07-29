@@ -93,7 +93,9 @@ export interface Race {
   ownerName?: string;
   laneNumber?: number;
   tournamentName?: string;
-  result?: { rank?: number; finishTime?: number; prize?: number } | null;
+  result?: { rank?: number; finishTime?: number; prize?: number; isDisqualified?: boolean } | null;
+  /** Violations recorded against this jockey/horse in this race (empty if none). */
+  violations?: RaceViolationSummary[];
 }
 
 export interface Result {
@@ -234,6 +236,18 @@ export interface RaceViolation {
   jockeyName: string | null;
   bannedUntil: string | null;
   recordedAt: string;
+}
+
+/** Lighter violation shape returned inline on a race's result (spectator/jockey views) — no id/ruleId/bannedUntil/recordedAt. */
+export interface RaceViolationSummary {
+  target: "horse" | "jockey" | "both";
+  horseId: string | null;
+  horseName: string | null;
+  jockeyId: string | null;
+  jockeyName: string | null;
+  type: string;
+  description: string;
+  penaltyApplied: string | null;
 }
 
 export interface PenalizeInput {
@@ -623,16 +637,7 @@ export interface SpectatorRaceResult {
     prize: number;
     isDisqualified?: boolean;
   }>;
-  violations?: Array<{
-    target: "horse" | "jockey" | "both";
-    horseId: string | null;
-    horseName: string | null;
-    jockeyId: string | null;
-    jockeyName: string | null;
-    type: string;
-    description: string;
-    penaltyApplied: string | null;
-  }>;
+  violations?: RaceViolationSummary[];
 }
 
 export interface SpectatorRace {

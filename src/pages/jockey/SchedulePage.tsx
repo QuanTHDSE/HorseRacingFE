@@ -4,6 +4,7 @@ import { useApp } from "../../context/AppContext";
 import type { Race } from "../../types";
 import { cn } from "../../utils/cn";
 import { viRaceStatus } from "../../utils/viLabels";
+import { penaltyLabel } from "../../utils/penaltyLabels";
 import {
   formatRaceTime,
   formatScheduleDay,
@@ -47,10 +48,18 @@ function ScheduleRace({ race }: { race: Race }) {
         </div>
       </div>
 
-      {race.result?.rank ? (
+      {race.result?.isDisqualified ? (
+        <div className="jockey-schedule-rank">
+          <span>Kết quả</span>
+          <strong className="is-danger">Hủy kết quả</strong>
+        </div>
+      ) : race.result?.rank ? (
         <div className="jockey-schedule-rank">
           <span>Kết quả</span>
           <strong>Hạng {race.result.rank}</strong>
+          {!!race.violations?.length && (
+            <em>{penaltyLabel(race.violations[0].penaltyApplied)}</em>
+          )}
         </div>
       ) : null}
     </article>

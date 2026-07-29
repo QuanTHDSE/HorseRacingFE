@@ -54,6 +54,8 @@ export default function RaceLeaderboard({ raceId, highlightHorseIds, highlightJo
   }
 
   const visibleRankings = data.rankings.filter((r) => !r.isDisqualified);
+  const myRowDisqualified = !!highlightJockeyId
+    && data.rankings.some((r) => r.jockey.id === highlightJockeyId && r.isDisqualified);
 
   if (visibleRankings.length === 0) {
     return (
@@ -65,6 +67,11 @@ export default function RaceLeaderboard({ raceId, highlightHorseIds, highlightJo
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {myRowDisqualified && (
+        <div className="form-banner form-banner-error" style={{ fontSize: "0.82rem" }}>
+          Kết quả của bạn trong cuộc đua này đã bị hủy nên không xuất hiện trong bảng xếp hạng bên dưới.
+        </div>
+      )}
       {!hideHeader && (
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <strong>{data.raceName}</strong>
