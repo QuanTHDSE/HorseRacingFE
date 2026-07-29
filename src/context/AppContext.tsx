@@ -1621,6 +1621,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshAdminUsers();
   }
 
+  async function handleGetAdminRaceViolations(raceId: string): Promise<RaceViolation[]> {
+    const res = await api.admin.listRaceViolations(raceId);
+    return res.violations;
+  }
+
+  async function handleAdminLiftRaceBan(
+    raceId: string,
+    violationId: string,
+  ): Promise<{ wasPublished: boolean }> {
+    const res = await api.admin.liftRaceBan(raceId, violationId);
+    return { wasPublished: res.wasPublished };
+  }
+
   // ─── Deletes ──────────────────────────────────────────────────────────────
 
   async function handleDeleteTournament(id: string): Promise<void> {
@@ -1841,6 +1854,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     handleCreateAdminUser,
     handleUpdateAdminUser,
     handleDeleteAdminUser,
+    handleGetAdminRaceViolations,
+    handleAdminLiftRaceBan,
     handleDeleteTournament,
     handleDeleteRace,
     handleDeleteHorse,

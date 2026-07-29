@@ -18,7 +18,7 @@ interface Entry {
   finishTime?: number | "";
 }
 
-const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban", "disqualify", "disqualification"];
+const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban"];
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—";

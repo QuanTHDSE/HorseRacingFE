@@ -66,6 +66,7 @@ export const roleConfigs: Record<Role, RoleConfig> = {
       { id: "jockey-approvals", label: "Duyệt Jockey", abbr: "DJ" },
       { id: "owner-approvals", label: "Duyệt Chủ ngựa", abbr: "DC" },
       { id: "violation-rules", label: "Luật vi phạm", abbr: "LV" },
+      { id: "penalty-review", label: "Gỡ án cấm", abbr: "GC" },
       { id: "results", label: "Kết quả & Dự đoán", abbr: "KD" },
       { id: "account", label: "Tài khoản của tôi", abbr: "CN" },
     ],
