@@ -44,8 +44,6 @@ const STATUS_TONE: Record<string, "accent" | "success" | "neutral" | "danger"> =
 const PENALTY_LABEL: Record<string, string> = {
   warning: "Cảnh cáo",
   result_void: "Hủy kết quả",
-  disqualify: "Hủy kết quả",
-  disqualification: "Hủy kết quả",
   time_ban: "Cấm có thời hạn",
   permanent_ban: "Cấm vô thời hạn",
 };

@@ -223,9 +223,11 @@ export interface RaceViolation {
   type: string;
   description: string;
   penaltyApplied: string | null;
+  canLiftBan: boolean;
   target: "horse" | "jockey" | "both";
   horseId: string | null;
   horseName: string | null;
+  ownerId: string | null;
   affectedHorseId: string | null;
   affectedHorseName: string | null;
   jockeyId: string | null;
@@ -794,6 +796,8 @@ export interface AppContextValue {
     certificationId?: string | null;
   }) => Promise<void>;
   handleDeleteAdminUser: (id: string) => Promise<void>;
+  handleGetAdminRaceViolations: (raceId: string) => Promise<RaceViolation[]>;
+  handleAdminLiftRaceBan: (raceId: string, violationId: string) => Promise<{ wasPublished: boolean }>;
   handleDeleteTournament: (id: string) => Promise<void>;
   handleDeleteRace: (id: string) => Promise<void>;
   handleDeleteHorse: (id: string) => Promise<void>;

@@ -30,8 +30,6 @@ const TARGET_LABEL: Record<string, string> = {
 const PENALTY_APPLIED_LABEL: Record<string, string> = {
   warning: "Cảnh cáo",
   result_void: "Hủy kết quả",
-  disqualify: "Hủy kết quả",
-  disqualification: "Hủy kết quả",
   time_ban: "Cấm có thời hạn",
   permanent_ban: "Cấm vô thời hạn",
 };
