@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { cn } from "../utils/cn";
-import { PENALTY_LABEL as PENALTY_APPLIED_LABEL } from "../utils/penaltyLabels";
 import type { PenaltyDetail } from "../types";
 
 function fmtDate(iso: string): string {

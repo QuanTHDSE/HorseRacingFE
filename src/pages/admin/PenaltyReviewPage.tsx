@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, ConfirmDeleteButton, LoadingState, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
-import type { RaceViolation } from "../../types";
+import type { Race, RaceViolation } from "../../types";
 import { viRaceStatus } from "../../utils/viLabels";
 
 const PENALTY_LABEL: Record<string, string> = {
@@ -31,6 +31,17 @@ function fmtDate(value?: string | null): string {
   });
 }
 
+function racePriority(status: string): number {
+  if (status === "Ready" || status === "Live") return 0;
+  if (status === "Upcoming") return 1;
+  if (status === "Completed") return 2;
+  return 3;
+}
+
+function tournamentKey(race: Race): string {
+  return race.tournamentId || `unknown:${race.tournamentName ?? race.track}`;
+}
+
 export default function PenaltyReviewPage() {
   const {
     appState,
@@ -39,6 +50,7 @@ export default function PenaltyReviewPage() {
     handleAdminLiftRaceBan,
   } = useApp();
   const { success: showSuccess, error: showError } = useFeedback();
+  const [chosenTournamentId, setChosenTournamentId] = useState("");
   const [raceId, setRaceId] = useState("");
   const [violations, setViolations] = useState<RaceViolation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,8 +63,81 @@ export default function PenaltyReviewPage() {
     [appState.races],
   );
 
+  const tournamentNameById = useMemo(
+    () => new Map(appState.tournaments.map((tournament) => [tournament.id, tournament.name])),
+    [appState.tournaments],
+  );
+
+  const tournaments = useMemo(() => {
+    const byId = new Map<string, {
+      id: string;
+      name: string;
+      raceCount: number;
+      priority: number;
+      firstRaceAt: number;
+      lastRaceAt: number;
+    }>();
+
+    for (const race of races) {
+      const id = tournamentKey(race);
+      const scheduledAt = new Date(race.date).getTime();
+      const safeScheduledAt = Number.isNaN(scheduledAt) ? 0 : scheduledAt;
+      const existing = byId.get(id);
+      if (existing) {
+        existing.raceCount += 1;
+        existing.priority = Math.min(existing.priority, racePriority(race.liveStatus));
+        existing.firstRaceAt = Math.min(existing.firstRaceAt, safeScheduledAt);
+        existing.lastRaceAt = Math.max(existing.lastRaceAt, safeScheduledAt);
+      } else {
+        byId.set(id, {
+          id,
+          name: tournamentNameById.get(race.tournamentId)
+            ?? race.tournamentName
+            ?? "Giải đấu chưa xác định",
+          raceCount: 1,
+          priority: racePriority(race.liveStatus),
+          firstRaceAt: safeScheduledAt,
+          lastRaceAt: safeScheduledAt,
+        });
+      }
+    }
+
+    return [...byId.values()].sort((a, b) => {
+      const priorityDiff = a.priority - b.priority;
+      if (priorityDiff) return priorityDiff;
+      const dateDiff = a.priority >= 2
+        ? b.lastRaceAt - a.lastRaceAt
+        : a.firstRaceAt - b.firstRaceAt;
+      return dateDiff || a.name.localeCompare(b.name, "vi");
+    });
+  }, [races, tournamentNameById]);
+
   const selectedRace = races.find((race) => race.id === raceId);
+  const selectedTournamentId = selectedRace
+    ? tournamentKey(selectedRace)
+    : (tournaments.some((tournament) => tournament.id === chosenTournamentId)
+        ? chosenTournamentId
+        : "");
+  const effectiveTournamentId = selectedTournamentId
+    || (tournaments.length === 1 ? tournaments[0]!.id : "");
+  const tournamentRaces = useMemo(
+    () => races
+      .filter((race) => tournamentKey(race) === effectiveTournamentId)
+      .sort((a, b) => {
+        const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+        return dateDiff || a.name.localeCompare(b.name, "vi");
+      }),
+    [effectiveTournamentId, races],
+  );
   const liftableBans = violations.filter((violation) => violation.canLiftBan);
+
+  useEffect(() => {
+    if (raceId && !selectedRace) setRaceId("");
+  }, [raceId, selectedRace]);
+
+  useEffect(() => {
+    if (!raceId && tournamentRaces.length === 1) setRaceId(tournamentRaces[0]!.id);
+  }, [raceId, tournamentRaces]);
 
   useEffect(() => {
     if (!raceId) {
@@ -92,27 +177,59 @@ export default function PenaltyReviewPage() {
     );
   }
 
+  function handleTournamentChange(tournamentId: string): void {
+    setChosenTournamentId(tournamentId);
+    setRaceId("");
+  }
+
   return (
     <div className="page-stack">
       <Panel
         title="Gỡ án cấm ngựa và nài ngựa"
         subtitle="Chỉ gỡ án cấm theo ngày hoặc cấm vĩnh viễn; biên bản và kết quả cuộc đua vẫn được giữ nguyên"
       >
-        <label className="field">
-          <span>Chọn cuộc đua</span>
-          <select
-            value={raceId}
-            onChange={(event) => setRaceId(event.target.value)}
-            disabled={isDataLoading}
-          >
-            <option value="">— Chọn cuộc đua cần kiểm tra —</option>
-            {races.map((race) => (
-              <option key={race.id} value={race.id}>
-                {race.name} · {viRaceStatus(race.liveStatus)} · {fmtDate(race.date)}
+        <div className="form-grid-2 referee-race-selector" style={{ maxWidth: "900px", alignItems: "start" }}>
+          <label className="field">
+            <span>Giải đấu</span>
+            <select
+              value={effectiveTournamentId}
+              onChange={(event) => handleTournamentChange(event.target.value)}
+              disabled={isDataLoading}
+            >
+              <option value="">— Chọn giải đấu —</option>
+              {tournaments.map((tournament) => (
+                <option key={tournament.id} value={tournament.id}>
+                  {tournament.name} ({tournament.raceCount} cuộc đua)
+                </option>
+              ))}
+            </select>
+            {tournaments.length === 0 && !isDataLoading && (
+              <span style={{ fontSize: "0.78rem", color: "var(--c-muted)" }}>
+                Chưa có giải đấu hoặc cuộc đua để kiểm tra.
+              </span>
+            )}
+          </label>
+
+          <label className="field">
+            <span>Cuộc đua</span>
+            <select
+              value={raceId}
+              onChange={(event) => setRaceId(event.target.value)}
+              disabled={isDataLoading || !effectiveTournamentId}
+            >
+              <option value="">
+                {effectiveTournamentId
+                  ? "— Chọn cuộc đua cần kiểm tra —"
+                  : "— Chọn giải đấu trước —"}
               </option>
-            ))}
-          </select>
-        </label>
+              {tournamentRaces.map((race) => (
+                <option key={race.id} value={race.id}>
+                  {race.name} · Vòng {race.round} · {fmtDate(race.date)} · {viRaceStatus(race.liveStatus)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </Panel>
 
       {raceId && (

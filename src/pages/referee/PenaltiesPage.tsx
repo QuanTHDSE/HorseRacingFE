@@ -5,18 +5,54 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RaceSimTimeline, RaceViolation, RefereeParticipantCheck, RefereeResultStatus, ViolationRule } from "../../types";
 import { viRaceStatus } from "../../utils/viLabels";
-import { penaltyLabel, penaltyTone, isResultVoidingPenalty } from "../../utils/penaltyLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
 
-const RESULT_VOIDING_PENALTIES = ["result_void", "time_ban", "permanent_ban"];
+const RESULT_VOIDING_PENALTIES = [
+  "result_void",
+  "disqualify",
+  "disqualification",
+  "time_ban",
+  "permanent_ban",
+];
 
 // Nhãn + tông màu cho từng hình thức xử phạt của BE.
 const PENALTY_LABEL: Record<string, string> = {
   warning: "Cảnh cáo",
   result_void: "Hủy kết quả",
+  demote: "Hạ bậc",
+  disqualify: "Tước quyền thi đấu",
+  disqualification: "Tước quyền thi đấu",
   time_ban: "Cấm thi đấu",
   permanent_ban: "Cấm vô thời hạn",
 };
+
+const VIOLATION_RULE_NAME_VI: Record<string, string> = {
+  "JCK-01": "Chèn ép hoặc cản trở đối thủ",
+  "JCK-02": "Lái ẩu nguy hiểm",
+  "JCK-03": "Sử dụng roi quá mức",
+  "JCK-04": "Không nỗ lực về đích",
+  "JCK-05": "Sai trọng lượng khi cân",
+  "JCK-07": "Hành vi phản thể thao nghiêm trọng",
+  "HRS-01": "Dương tính chất cấm",
+  "HRS-02": "Không đạt kiểm tra thú y",
+  "HRS-03": "Xuất huyết phổi khi đua",
+  "HRS-04": "Trang bị ngựa không hợp lệ",
+  "HRS-05": "Mất kiểm soát ở cổng xuất phát",
+  "HRS-06": "Vi phạm y tế nghiêm trọng",
+};
+
+function removeDuplicateEnglishSuffix(value: string): string {
+  return value.replace(/\s*\(([^()]*)\)\s*$/, (suffix, content: string) => {
+    const hasLatinLetters = /[A-Za-z]/.test(content);
+    const hasVietnameseLetters = /[À-ỹĐđ]/u.test(content);
+    return hasLatinLetters && !hasVietnameseLetters ? "" : suffix;
+  }).trim();
+}
+
+function violationRuleName(rule: ViolationRule): string {
+  return VIOLATION_RULE_NAME_VI[rule.code] ?? removeDuplicateEnglishSuffix(rule.name);
+}
+
 function penaltyLabel(p?: string | null): string {
   return p ? PENALTY_LABEL[p] ?? p : "—";
 }
@@ -353,7 +389,9 @@ export default function PenaltiesPage() {
                   <select value={cRuleId} onChange={(e) => setCRuleId(e.target.value)} disabled={busy}>
                     <option value="">— Chọn luật —</option>
                     {visibleRules.map((r) => (
-                      <option key={r.id} value={r.id}>{r.code} · {r.name} ({penaltyLabel(r.penaltyApplied)})</option>
+                      <option key={r.id} value={r.id}>
+                        {r.code} · {violationRuleName(r)} ({penaltyLabel(r.penaltyApplied)})
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -363,7 +401,7 @@ export default function PenaltiesPage() {
                 </label>
               </div>
             )}
-            {selectedRule && isResultVoidingPenalty(selectedRule.penaltyApplied) && (
+            {selectedRule && RESULT_VOIDING_PENALTIES.includes(selectedRule.penaltyApplied) && (
               <p className="referee-inline-alert is-danger">
                 Luật này sẽ <strong>hủy kết quả của cuộc đua hiện tại</strong>; nếu là cấm có thời hạn hoặc cấm vô thời hạn thì hệ thống mới chặn thi đấu ở các trận sau.
               </p>
@@ -393,7 +431,7 @@ export default function PenaltiesPage() {
                       <div className="referee-violation-heading">
                         <div>
                           <span className="referee-eyebrow">{fmtDate(violation.recordedAt)}</span>
-                          <strong>{violation.type}</strong>
+                          <strong>{removeDuplicateEnglishSuffix(violation.type)}</strong>
                         </div>
                         <Badge tone={penaltyTone(violation.penaltyApplied)}>{penaltyLabel(violation.penaltyApplied)}</Badge>
                       </div>
