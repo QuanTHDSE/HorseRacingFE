@@ -84,9 +84,12 @@ export default function PenaltiesPage() {
   const isReady = race?.liveStatus === "Ready";
   const isLive = race?.liveStatus === "Live";
   const isCompleted = race?.liveStatus === "Completed";
-  const hasDraft = !!result && !result.confirmedAt;
-  // Lập biên bản được khi đang điều hành (ready/live) hoặc còn kết quả nháp chưa xác nhận.
-  const canPenalize = isReady || isLive || hasDraft;
+  const hasDraft = !!result
+    && result.rankingsCount > 0
+    && !result.confirmedAt
+    && !result.publishedAt;
+  // Chỉ lập/hoàn tác biên bản sau khi cuộc đua đã kết thúc và kết quả vẫn là bản nháp.
+  const canPenalize = isCompleted && hasDraft;
 
   // Chỉ hiện luật áp dụng cho đúng đối tượng đang chọn (hoặc luật dùng chung).
   const visibleRules = rules.filter((r) => r.appliesTo === cTarget || r.appliesTo === "both");
@@ -314,11 +317,13 @@ export default function PenaltiesPage() {
           {/* Conduct penalty */}
           <Panel
             title="Lập biên bản vi phạm"
-            subtitle={canPenalize ? "Áp dụng cảnh cáo / hủy kết quả / cấm thi đấu theo luật — người bị phạt sẽ nhận thông báo" : "Cần bắt đầu điều hành (hoặc còn kết quả nháp chưa xác nhận) mới lập được biên bản"}
+            subtitle={canPenalize ? "Áp dụng cảnh cáo / hủy kết quả / cấm thi đấu theo luật — người bị phạt sẽ nhận thông báo" : "Chỉ được lập biên bản sau khi cuộc đua đã kết thúc và trước khi xác nhận kết quả"}
           >
             {!canPenalize ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>
-                Chưa vào giai đoạn xử phạt. Hãy <strong>Bắt đầu điều hành</strong> rồi <strong>Chạy đua &amp; xem trực tiếp</strong> để có bảng xếp hạng nháp.
+                {isCompleted
+                  ? <>Kết quả đã được xác nhận hoặc chưa có bản nháp hợp lệ nên không thể lập thêm biên bản.</>
+                  : <>Cuộc đua chưa kết thúc. Hãy hoàn thành và chốt cuộc đua trước khi lập biên bản vi phạm.</>}
               </p>
             ) : loading ? (
               <p style={{ color: "var(--c-muted)", fontSize: "0.875rem" }}>Đang tải…</p>
@@ -419,7 +424,7 @@ export default function PenaltiesPage() {
                       type="button"
                       className="table-button is-danger"
                       disabled={busy || !canPenalize}
-                      title={!canPenalize ? "Chỉ hoàn tác khi cuộc đua đang điều hành hoặc kết quả nháp chưa xác nhận" : undefined}
+                      title={!canPenalize ? "Chỉ hoàn tác sau khi cuộc đua kết thúc và trước khi xác nhận kết quả" : undefined}
                       onClick={() => revoke(violation.id)}
                     >
                       Hoàn tác án phạt
