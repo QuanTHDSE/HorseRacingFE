@@ -4,13 +4,17 @@ import { useFeedback } from "../../context/ToastContext";
 import {
   api,
   type ApiAdminViolationRule,
+  type ApiLegacyViolationPenalty,
   type ApiViolationCategory,
   type ApiViolationPenalty,
   type ApiViolationRuleInput,
   type ApiViolationSeverity,
 } from "../../services/api";
 
-type RuleRow = Omit<ApiAdminViolationRule, "_id" | "id"> & { id: string };
+type RuleRow = Omit<ApiAdminViolationRule, "_id" | "id" | "requiresBanDuration"> & {
+  id: string;
+  requiresBanDuration: boolean;
+};
 
 const CATEGORY_LABEL: Record<ApiViolationCategory, string> = {
   race_conduct: "Hành vi thi đấu",
@@ -53,6 +57,28 @@ const PENALTY_LABEL: Record<ApiViolationPenalty, string> = {
   permanent_ban: "Cấm vô thời hạn",
 };
 
+const LEGACY_PENALTY_LABEL: Record<ApiLegacyViolationPenalty, string> = {
+  demote: "Hạ bậc",
+  disqualify: "Tước quyền thi đấu",
+  disqualification: "Tước quyền thi đấu",
+  restart: "Cho xuất phát lại",
+};
+
+const PENALTY_DISPLAY_LABEL: Record<string, string> = {
+  ...PENALTY_LABEL,
+  ...LEGACY_PENALTY_LABEL,
+};
+
+function removeDuplicateEnglishSuffix(value: string): string {
+  return value
+    .replace(/\s*\(([^()]*)\)\s*$/, (suffix, content: string) => {
+      const hasLatinLetters = /[A-Za-z]/.test(content);
+      const hasVietnameseLetters = /[À-ỹĐđ]/u.test(content);
+      return hasLatinLetters && !hasVietnameseLetters ? "" : suffix;
+    })
+    .trim();
+}
+
 const EMPTY_FORM: ApiViolationRuleInput = {
   code: "",
   name: "",
@@ -67,7 +93,13 @@ const EMPTY_FORM: ApiViolationRuleInput = {
 };
 
 function normalizeRule(rule: ApiAdminViolationRule): RuleRow {
-  return { ...rule, id: rule.id ?? rule._id };
+  return {
+    ...rule,
+    id: rule.id ?? rule._id,
+    name: removeDuplicateEnglishSuffix(rule.name),
+    requiresBanDuration:
+      rule.requiresBanDuration ?? rule.penaltyApplied === "time_ban",
+  };
 }
 
 function severityTone(
@@ -145,6 +177,13 @@ export default function ViolationRulesPage() {
   }
 
   function editRule(rule: RuleRow) {
+    if (!(rule.penaltyApplied in PENALTY_LABEL)) {
+      feedback.error(
+        `Luật ${rule.code} đang dùng hình phạt của dữ liệu cũ “${PENALTY_DISPLAY_LABEL[rule.penaltyApplied] ?? rule.penaltyApplied}”. Cần chuyển đổi luật sang chuẩn mới trước khi chỉnh sửa.`,
+      );
+      return;
+    }
+
     setEditingId(rule.id);
     setForm({
       code: rule.code,
@@ -153,8 +192,8 @@ export default function ViolationRulesPage() {
       category: rule.category,
       severity: rule.severity,
       appliesTo: rule.appliesTo,
-      penaltyApplied: rule.penaltyApplied,
-      requiresBanDuration: rule.requiresBanDuration ?? rule.penaltyApplied === "time_ban",
+      penaltyApplied: rule.penaltyApplied as ApiViolationPenalty,
+      requiresBanDuration: rule.requiresBanDuration,
       banDurationDays: rule.banDurationDays,
       isActive: rule.isActive,
     });
@@ -418,7 +457,7 @@ export default function ViolationRulesPage() {
               label: "Hình phạt",
               render: (rule) => (
                 <span>
-                  {PENALTY_LABEL[rule.penaltyApplied] ?? rule.penaltyApplied}
+                  {PENALTY_DISPLAY_LABEL[rule.penaltyApplied] ?? "Hình phạt chưa xác định"}
                   {rule.requiresBanDuration && ` (${rule.banDurationDays} ngày)`}
                 </span>
               ),

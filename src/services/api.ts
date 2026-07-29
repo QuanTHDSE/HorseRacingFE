@@ -326,6 +326,14 @@ export type ApiViolationPenalty =
   | "time_ban"
   | "permanent_ban";
 
+// Dữ liệu được tạo trước đợt chuẩn hóa hình phạt vẫn có thể chứa các giá trị này.
+// Chỉ response từ API chấp nhận legacy; form tạo/sửa vẫn dùng ApiViolationPenalty.
+export type ApiLegacyViolationPenalty =
+  | "demote"
+  | "disqualify"
+  | "disqualification"
+  | "restart";
+
 export interface ApiAdminViolationRule {
   _id: string;
   id?: string;
@@ -335,8 +343,8 @@ export interface ApiAdminViolationRule {
   category: ApiViolationCategory;
   severity: ApiViolationSeverity;
   appliesTo: "horse" | "jockey" | "both";
-  penaltyApplied: ApiViolationPenalty;
-  requiresBanDuration: boolean;
+  penaltyApplied: ApiViolationPenalty | ApiLegacyViolationPenalty;
+  requiresBanDuration: boolean | null;
   banDurationDays: number;
   isActive: boolean;
   createdBy?: { _id?: string; fullName?: string; email?: string } | string | null;
