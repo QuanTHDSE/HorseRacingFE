@@ -10,12 +10,6 @@ interface Props {
   editable: boolean;
 }
 
-const ROLLOVER_OPTIONS: { value: PredictionConfig["rolloverPolicy"]; label: string }[] = [
-  { value: "to_organizer",       label: "Chuyển về ban tổ chức" },
-  { value: "rollover_next_race", label: "Chuyển sang cuộc đua kế tiếp" },
-  { value: "refund",             label: "Hoàn điểm cho người chơi" },
-];
-
 function toLocalInput(iso?: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -209,7 +203,6 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         off={!cfg.isEnabled}
       >
         <div className="form-grid-2">
-          <NumField label="Số lượt dự đoán mỗi cuộc đua" value={cfg.maxPredictionsPerRace} min={1} max={5} disabled={dis || !cfg.isEnabled} onChange={(v) => set("maxPredictionsPerRace", v)} />
           <label className="field">
             <span>Thời điểm mở dự đoán</span>
             <input type="datetime-local" value={toLocalInput(cfg.predictionOpenAt)} disabled={dis || !cfg.isEnabled} onChange={(e) => set("predictionOpenAt", fromLocalInput(e.target.value))} />
@@ -227,24 +220,9 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         sub="Người chơi mua vé dự đoán; người thắng chia quỹ thưởng"
         right={<Switch checked={cfg.poolEnabled} disabled={dis} onChange={(v) => set("poolEnabled", v)} label="Bật quỹ thưởng" />}
       >
-        <p className="pc-hint">
-          Chi phí = <strong>giá vé × số vé</strong>. Dự đoán đúng được hoàn chi phí vé và
-          chia quỹ thưởng khán giả theo <strong>số vé</strong>.
-        </p>
         <div className={cn(poolOff && "is-off")} style={poolOff ? { opacity: 0.5, pointerEvents: dis ? "none" : "auto" } : undefined}>
           <div className="form-grid-2">
             <NumField label="Giá vé dự đoán (điểm)" value={cfg.ticketPrice} min={0} disabled={dis || poolOff} onChange={(v) => set("ticketPrice", v)} />
-            <NumField label="Số vé thắng tối thiểu để chia quỹ" value={cfg.minScoreToShare} min={1} disabled={dis || poolOff} onChange={(v) => set("minScoreToShare", v)} />
-            <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Các mức số vé gợi ý (số nguyên dương, cách nhau bằng dấu phẩy)</span>
-              <input value={ticketPresetText} disabled={dis || poolOff} onChange={(e) => { setTicketPresetText(e.target.value); setMsg(""); }} placeholder="1, 2, 3, 6" />
-            </label>
-            <label className="field" style={{ gridColumn: "1 / -1" }}>
-              <span>Cách xử lý quỹ chưa có người nhận</span>
-              <select value={cfg.rolloverPolicy} disabled={dis || poolOff} onChange={(e) => set("rolloverPolicy", e.target.value as PredictionConfig["rolloverPolicy"])}>
-                {ROLLOVER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </label>
           </div>
         </div>
       </Section>
@@ -405,7 +383,7 @@ export default function PredictionConfigForm({ tournamentId, editable }: Props) 
         <>
           {!valid && (
             <p className="pc-section-sub" style={{ color: "var(--c-danger)", fontWeight: 600 }}>
-              Phân bổ quỹ, tỷ lệ thưởng cố định, tỷ lệ chủ ngựa/nài ngựa và tỷ lệ thưởng theo hạng đều phải có tổng bằng 100%. Các mức số vé gợi ý phải có ít nhất một số nguyên dương.
+              Phân bổ quỹ, tỷ lệ thưởng cố định, tỷ lệ chủ ngựa/nài ngựa và tỷ lệ thưởng theo hạng đều phải có tổng bằng 100%.
             </p>
           )}
           <div className="form-actions">
