@@ -1,13 +1,12 @@
 import { Badge, LoadingState, MetricCard, Panel } from "../../components";
 import { useApp } from "../../context/AppContext";
-import { viHealth, viRegStatus } from "../../utils/viLabels";
+import { viRegStatus } from "../../utils/viLabels";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("vi-VN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const HEALTH_TONE: Record<string, string> = { Fit: "success", Injured: "warning", Retired: "neutral" };
 const REG_TONE: Record<string, string>    = { Pending: "warning", Approved: "success", Rejected: "danger" };
 
 export default function OwnerDashboard() {
@@ -16,7 +15,7 @@ export default function OwnerDashboard() {
 
   const horses    = appState.horses;
   const regs      = appState.ownerRegistrations;
-  const fitCount  = horses.filter((h) => h.health === "Fit").length;
+  const assignedJockeyCount = horses.filter((h) => Boolean(h.jockeyId)).length;
   const pendingRegs  = regs.filter((r) => r.status === "Pending").length;
   const approvedRegs = regs.filter((r) => r.status === "Approved").length;
   const pointBalance = appState.spectatorPoints?.currentBalance ?? 0;
@@ -36,7 +35,7 @@ export default function OwnerDashboard() {
 
       <div className="metric-grid owner-overview-metrics">
         <MetricCard label="Tổng số ngựa"          value={String(horses.length)}    note="Trong chuồng của bạn"                     loading={isDataLoading} />
-        <MetricCard label="Ngựa khỏe mạnh"         value={String(fitCount)}          note="Sẵn sàng thi đấu"          tone="success" loading={isDataLoading} />
+        <MetricCard label="Ngựa đã có nài"         value={String(assignedJockeyCount)} note="Đã hoàn tất phân công"       tone="success" loading={isDataLoading} />
         <MetricCard label="Đăng ký đang hoạt động" value={String(approvedRegs)}      note="Đã duyệt cho cuộc đua"     tone="accent"  loading={isDataLoading} />
         <MetricCard label="Đăng ký chờ duyệt"      value={String(pendingRegs)}       note="Đang chờ admin xét duyệt"  tone="warning" loading={isDataLoading} />
         <MetricCard
@@ -49,7 +48,7 @@ export default function OwnerDashboard() {
       </div>
 
       <div className="content-grid two">
-        <Panel title="Ngựa của tôi" subtitle="Tổng quan sức khỏe và phân công">
+        <Panel title="Ngựa của tôi" subtitle="Thông tin hồ sơ và phân công nài">
           {isDataLoading && recentHorses.length === 0 && <LoadingState label="Đang tải danh sách ngựa…" />}
           {!isDataLoading && recentHorses.length === 0 && (
             <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>Chưa đăng ký ngựa nào.</p>
@@ -59,7 +58,6 @@ export default function OwnerDashboard() {
               <article key={horse.id} className="info-card">
                 <div className="card-head">
                   <strong>{horse.name}</strong>
-                  <Badge tone={HEALTH_TONE[horse.health] as any ?? "neutral"}>{viHealth(horse.health)}</Badge>
                 </div>
                 <p style={{ margin: "4px 0 2px", fontSize: "0.875rem" }}>
                   {horse.breed} · {horse.age} tuổi{horse.color ? ` · ${horse.color}` : ""}

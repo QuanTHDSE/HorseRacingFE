@@ -19,7 +19,7 @@ const FEATURES: { icon: LucideIcon; title: string; desc: string }[] = [
   {
     icon: Users,
     title: "Quản lý ngựa & nài ngựa",
-    desc: "Đăng ký ngựa, phân công nài, theo dõi hồ sơ sức khỏe và thống kê thành tích.",
+    desc: "Đăng ký ngựa, phân công nài, theo dõi hồ sơ thi đấu và thống kê thành tích.",
   },
   {
     icon: Radio,

@@ -4,7 +4,7 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { Approval } from "../../types";
 import { cn } from "../../utils/cn";
-import { viHealth, viRegStatus } from "../../utils/viLabels";
+import { viRegStatus } from "../../utils/viLabels";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
@@ -12,10 +12,6 @@ function fmtDate(iso?: string): string {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }
-
-const HEALTH_TONE: Record<string, string> = {
-  Fit: "success", Injured: "warning", Retired: "neutral",
-};
 
 export default function ApprovalsPage() {
   const { appState, isDataLoading, handleUpdateRegistration } = useApp();
@@ -169,15 +165,6 @@ export default function ApprovalsPage() {
                 {selected.horseAge ? ` · ${selected.horseAge} tuổi` : ""}
               </strong>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">Sức khỏe</span>
-              <span>
-                {selected.horseHealth
-                  ? <Badge tone={HEALTH_TONE[selected.horseHealth] as any ?? "neutral"}>{viHealth(selected.horseHealth)}</Badge>
-                  : "—"}
-              </span>
-            </div>
-
             <div className="detail-item">
               <span className="detail-label">Hồ sơ ngựa (PDF)</span>
               {selected.horsePdfUrl ? (

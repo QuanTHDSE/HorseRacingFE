@@ -285,7 +285,6 @@ export default function ResultsPage() {
                 </div>
               ) : (
                 <div className="referee-confirm-state">
-                  <span>4</span>
                   <div>
                     <strong>Kiểm tra lần cuối trước khi khóa</strong>
                     <p>Cuộc đua phải đã kết thúc và bản nháp phải có đầy đủ thứ hạng. Sau khi xác nhận, bạn không thể sắp xếp lại.</p>

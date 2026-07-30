@@ -4,14 +4,7 @@ import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { RefereeParticipantCheck } from "../../types";
 import { cn } from "../../utils/cn";
-import { viHealth } from "../../utils/viLabels";
 import RefereeRaceSelector from "./RefereeRaceSelector";
-
-const HEALTH_TONE: Record<string, "success" | "warning" | "neutral"> = {
-  Fit: "success",
-  Injured: "warning",
-  Retired: "neutral",
-};
 
 export default function ChecksPage() {
   const { appState, handleGetRefereeChecks, handleToggleRefereeCheck } = useApp();
@@ -162,14 +155,6 @@ export default function ChecksPage() {
                       {selected.horseBreed ?? "—"}
                       {selected.horseAge ? ` · ${selected.horseAge} tuổi` : ""}
                     </strong>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Sức khỏe</span>
-                    <span>
-                      {selected.horseHealth
-                        ? <Badge tone={HEALTH_TONE[selected.horseHealth] ?? "neutral"}>{viHealth(selected.horseHealth)}</Badge>
-                        : "—"}
-                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Màu lông / Cân nặng</span>

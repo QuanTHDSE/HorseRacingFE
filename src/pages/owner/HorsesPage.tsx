@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
-import { Badge, ConfirmDeleteButton, DataTable, MetricCard, Panel, Spinner } from "../../components";
+import { ConfirmDeleteButton, DataTable, MetricCard, Panel, Spinner } from "../../components";
 import { useApp } from "../../context/AppContext";
 import { useFeedback } from "../../context/ToastContext";
 import type { CreateHorseInput, Horse } from "../../types";
 import { cn } from "../../utils/cn";
-import { viHealth } from "../../utils/viLabels";
 
 /** Reusable PDF uploader — uploads to BE and reports back { url, name }. */
 function PdfUploadField({
@@ -63,10 +62,6 @@ function PdfUploadField({
   );
 }
 
-type HealthFilter = "all" | "Fit" | "Injured" | "Retired";
-
-const HEALTH_TONE: Record<string, string> = { Fit: "success", Injured: "warning", Retired: "neutral" };
-
 // Các giống ngựa đua phổ biến để owner chọn thay vì tự gõ
 const HORSE_BREEDS = [
   "Thoroughbred",
@@ -118,15 +113,10 @@ export default function HorsesPage() {
     if (low.includes("fail") || low.includes("error")) fb.error(m); else fb.success(m);
   };
 
-  // Filter
-  const [filter, setFilter] = useState<HealthFilter>("all");
-
   const horses = appState.horses;
-  const filtered = filter === "all" ? horses : horses.filter((h) => h.health === filter);
-
-  const fitCount = horses.filter((h) => h.health === "Fit").length;
-  const injuredCount = horses.filter((h) => h.health === "Injured").length;
-  const retiredCount = horses.filter((h) => h.health === "Retired").length;
+  const pdfCount = horses.filter((h) => Boolean(h.profilePdfUrl)).length;
+  const trainerCount = horses.filter((h) => Boolean(h.trainerName)).length;
+  const assignedJockeyCount = horses.filter((h) => Boolean(h.jockeyId)).length;
 
   // ── Create handlers ────────────────────────────────────────────────────────
 
@@ -219,9 +209,9 @@ export default function HorsesPage() {
       {/* ── Metrics ── */}
       <div className="metric-grid four">
         <MetricCard label="Tổng số ngựa" value={String(horses.length)} note="Trong chuồng của bạn" loading={isDataLoading} />
-        <MetricCard label="Khỏe mạnh" value={String(fitCount)} note="Sẵn sàng thi đấu" tone="success" loading={isDataLoading} />
-        <MetricCard label="Chấn thương" value={String(injuredCount)} note="Đang theo dõi" tone="warning" loading={isDataLoading} />
-        <MetricCard label="Giải nghệ" value={String(retiredCount)} note="Không còn thi đấu" tone="neutral" loading={isDataLoading} />
+        <MetricCard label="Có hồ sơ PDF" value={String(pdfCount)} note="Hồ sơ đã tải lên" tone="accent" loading={isDataLoading} />
+        <MetricCard label="Có huấn luyện viên" value={String(trainerCount)} note="Đã cập nhật người phụ trách" tone="success" loading={isDataLoading} />
+        <MetricCard label="Đã có nài" value={String(assignedJockeyCount)} note="Đã phân công nài ngựa" tone="warning" loading={isDataLoading} />
       </div>
 
       {/* ── Create form (toggle) ── */}
@@ -275,10 +265,6 @@ export default function HorsesPage() {
                   <span>Tên huấn luyện viên</span>
                   <input value={cForm.trainerName ?? ""} onChange={(e) => cf("trainerName", e.target.value)} placeholder="Không bắt buộc" disabled={cLoading} />
                 </label>
-                <label className="field" style={{ gridColumn: "1 / -1" }}>
-                  <span>Mã đăng ký</span>
-                  <input value={cForm.registrationId ?? ""} onChange={(e) => cf("registrationId", e.target.value)} placeholder="Số đăng ký chính thức (không bắt buộc)" disabled={cLoading} />
-                </label>
                 <PdfUploadField
                   url={cForm.profilePdfUrl}
                   name={cForm.profilePdfName}
@@ -302,16 +288,7 @@ export default function HorsesPage() {
       {/* ── Horse list ── */}
       <Panel
         title="Hồ sơ ngựa"
-        subtitle={`${filtered.length} / ${horses.length} ngựa`}
-        action={
-          <div className="filter-tabs">
-            {(["all", "Fit", "Injured", "Retired"] as HealthFilter[]).map((f) => (
-              <button key={f} type="button" className={cn("filter-tab", filter === f && "is-active")} onClick={() => setFilter(f)}>
-                {f === "all" ? "Tất cả" : viHealth(f)}
-              </button>
-            ))}
-          </div>
-        }
+        subtitle={`${horses.length} ngựa trong hồ sơ`}
       >
         <DataTable
           columns={[
@@ -320,11 +297,6 @@ export default function HorsesPage() {
             { key: "age", label: "Tuổi", render: (row) => `${row.age} tuổi` },
             { key: "color", label: "Màu lông", render: (row) => row.color ?? "—" },
             { key: "weight", label: "Cân nặng", render: (row) => row.weight ? `${row.weight}kg` : "—" },
-            {
-              key: "health",
-              label: "Sức khỏe",
-              render: (row) => <Badge tone={HEALTH_TONE[row.health] as any ?? "neutral"}>{viHealth(row.health)}</Badge>,
-            },
             {
               key: "profilePdfUrl",
               label: "PDF",
@@ -348,7 +320,7 @@ export default function HorsesPage() {
               ),
             },
           ]}
-          rows={filtered}
+          rows={horses}
           empty="Không tìm thấy ngựa nào."
           loading={isDataLoading}
         />

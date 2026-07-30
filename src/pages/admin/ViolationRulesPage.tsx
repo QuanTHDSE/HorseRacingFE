@@ -50,6 +50,11 @@ const TARGET_LABEL = {
   both: "Cả hai",
 } as const;
 
+const TARGET_OPTIONS = [
+  { value: "horse", label: TARGET_LABEL.horse },
+  { value: "jockey", label: TARGET_LABEL.jockey },
+] as const;
+
 const PENALTY_LABEL: Record<ApiViolationPenalty, string> = {
   warning: "Cảnh cáo",
   result_void: "Hủy kết quả",
@@ -85,7 +90,7 @@ const EMPTY_FORM: ApiViolationRuleInput = {
   description: "",
   category: "race_conduct",
   severity: "medium",
-  appliesTo: "both",
+  appliesTo: "horse",
   penaltyApplied: "result_void",
   requiresBanDuration: false,
   banDurationDays: 0,
@@ -191,7 +196,7 @@ export default function ViolationRulesPage() {
       description: rule.description,
       category: rule.category,
       severity: rule.severity,
-      appliesTo: rule.appliesTo,
+      appliesTo: rule.appliesTo === "both" ? "horse" : rule.appliesTo,
       penaltyApplied: rule.penaltyApplied as ApiViolationPenalty,
       requiresBanDuration: rule.requiresBanDuration,
       banDurationDays: rule.banDurationDays,
@@ -333,8 +338,8 @@ export default function ViolationRulesPage() {
                 onChange={(event) => setField("appliesTo", event.target.value as ApiViolationRuleInput["appliesTo"])}
                 disabled={busy === "save"}
               >
-                {Object.entries(TARGET_LABEL).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
+                {TARGET_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
             </label>
